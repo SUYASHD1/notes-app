@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Notes App - Ultra-Lightweight & Portable</title>
+  <link rel="stylesheet" href="/public/styles.css?v=3.0.0">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body data-layout="layout-a">
+  <div id="app-container">
+    
+    <!-- Top Master App Bar -->
+    <header id="top-bar">
+      <!-- Left: Sidebar Toggle & Notebook Selector -->
+      <div class="header-left">
+        <button id="btn-toggle-sidebar" class="icon-btn" title="Toggle Navigation Sidebar (Ctrl+\)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+        <div class="notebook-dropdown-wrapper">
+          <span class="notebook-icon">📓</span>
+          <select id="notebook-select" title="Active Notebook">
+            <option value="nb_physics">Physics & Calculus 101</option>
+            <option value="nb_chemistry">Chemistry & Organic Lab</option>
+            <option value="nb_personal">Personal Research & Ideas</option>
+          </select>
+        </div>
+        <span class="badge" id="storage-status">Local Saved</span>
+      </div>
+
+
+
+      <!-- Right: Navigate vs. Ink Mode & Settings -->
+      <div class="header-right">
+        <div class="mode-pill-toggle">
+          <button id="btn-mode-win" class="pill-btn active" title="Navigate Mode: Smooth touch pan, zoom & keyboard editing">💻 Navigate</button>
+          <button id="btn-mode-ipad" class="pill-btn" title="Ink Mode: Dedicated Apple Pencil & stylus writing">✏️ Ink Mode</button>
+        </div>
+        <button id="btn-r2-sync" class="icon-btn" title="Cloudflare R2 S3 Sync Settings">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Floating, User-Draggable Quick-Toggle Puck (Parkable Anywhere) -->
+    <div id="floating-mode-puck" class="floating-puck" title="Drag anywhere to park. Tap to toggle Navigate vs Ink Mode">
+      <span id="puck-icon" class="puck-icon">✏️</span>
+      <span id="puck-label" class="puck-label">Ink Mode</span>
+      <span class="puck-drag-dots" title="Drag handle">⋮⋮</span>
+    </div>
+
+    <!-- Zone 1: Dedicated Typography & Tools Ribbon (Visible in Layout A) -->
+    <div id="ribbon-bar">
+      <!-- Undo / Redo Cluster -->
+      <div class="ribbon-cluster">
+        <button id="btn-undo" class="fmt-btn" title="Undo (Ctrl+Z)">↺</button>
+        <button id="btn-redo" class="fmt-btn" title="Redo (Ctrl+Y)">↻</button>
+      </div>
+
+      <!-- Windows Mode: Typography & Text Editing Controls -->
+      <div id="ribbon-text-group" class="ribbon-mode-group">
+        <!-- Tool Selection Cluster (Select vs Hand) -->
+        <div class="ribbon-cluster" id="win-tool-cluster">
+          <button id="btn-tool-select" class="fmt-btn active" title="Select Tool (V) - Select, move and resize elements">↖</button>
+          <button id="btn-tool-hand" class="fmt-btn" title="Hand / Pan Tool (H) - Pan canvas freely">✋</button>
+        </div>
+
+        <!-- Font Family & Size Cluster -->
+        <div class="ribbon-cluster">
+          <select id="ribbon-font" title="Font Family">
+            <option value="-apple-system, Segoe UI, sans-serif">Segoe UI</option>
+            <option value="'Calibri', sans-serif">Calibri</option>
+            <option value="'Georgia', serif">Georgia</option>
+            <option value="'Fira Code', monospace">Fira Code</option>
+          </select>
+          <select id="ribbon-font-size" title="Font Size">
+            <option value="12px">12pt</option>
+            <option value="14px">14pt</option>
+            <option value="16px" selected>16pt</option>
+            <option value="18px">18pt</option>
+            <option value="24px">24pt</option>
+            <option value="32px">32pt</option>
+          </select>
+          <select id="ribbon-heading" title="Paragraph Style">
+            <option value="p">Normal</option>
+            <option value="h1">Heading 1</option>
+            <option value="h2">Heading 2</option>
+            <option value="h3">Heading 3</option>
+          </select>
+        </div>
+
+        <!-- Formatting cluster -->
+        <div class="ribbon-cluster">
+          <button id="ribbon-bold" class="fmt-btn" title="Bold (Ctrl+B)"><b>B</b></button>
+          <button id="ribbon-italic" class="fmt-btn" title="Italic (Ctrl+I)"><i>I</i></button>
+          <button id="ribbon-underline" class="fmt-btn" title="Underline (Ctrl+U)"><u>U</u></button>
+          <button id="ribbon-strike" class="fmt-btn" title="Strikethrough"><s>S</s></button>
+          <input type="color" id="ribbon-color" value="#0f172a" title="Text Color">
+          <button id="ribbon-highlight" class="fmt-btn" title="Highlight">🖍</button>
+        </div>
+
+        <!-- Lists & Structure Cluster -->
+        <div class="ribbon-cluster">
+          <button id="ribbon-bullet" class="fmt-btn" title="Bullet List">•≡</button>
+          <button id="ribbon-num" class="fmt-btn" title="Numbered List">1≡</button>
+          <button id="ribbon-task" class="fmt-btn" title="Task Checkbox">☑</button>
+        </div>
+      </div>
+
+      <!-- iPad Mode: Inking, Colors & Advanced Eraser Palette -->
+      <div id="ribbon-ink-group" class="ribbon-mode-group" style="display:none;">
+        <!-- Tool Switcher (Pen vs Highlighter vs Eraser) -->
+        <div class="ribbon-cluster ink-tool-switcher">
+          <button id="ink-tool-pen" class="ink-pill-btn active" title="Pen (Draw with Stylus/Mouse)">🖊 Pen</button>
+          <button id="ink-tool-highlighter" class="ink-pill-btn" title="Highlighter (Semi-transparent)">🖍 Highlighter</button>
+          <button id="ink-tool-eraser" class="ink-pill-btn" title="Eraser">🧹 Eraser</button>
+        </div>
+
+        <div class="v-divider"></div>
+
+        <!-- Pen Tip Size & Color Cluster -->
+        <div id="pen-controls-cluster" class="ribbon-cluster">
+          <span class="ribbon-cluster-label">Tip:</span>
+          <div class="ink-size-group">
+            <button class="ink-size-btn" data-size="1" title="Extra Fine (1px)">
+              <span class="size-dot" style="width:3px; height:3px;"></span>
+            </button>
+            <button class="ink-size-btn active" data-size="3" title="Fine (3px)">
+              <span class="size-dot" style="width:6px; height:6px;"></span>
+            </button>
+            <button class="ink-size-btn" data-size="6" title="Medium (6px)">
+              <span class="size-dot" style="width:9px; height:9px;"></span>
+            </button>
+            <button class="ink-size-btn" data-size="10" title="Thick (10px)">
+              <span class="size-dot" style="width:13px; height:13px;"></span>
+            </button>
+          </div>
+
+          <span class="ribbon-cluster-label" style="margin-left:6px;">Color:</span>
+          <div class="ink-colors-group">
+            <button class="ink-swatch active" data-color="#0f172a" style="background:#0f172a;" title="Black"></button>
+            <button class="ink-swatch" data-color="#2563eb" style="background:#2563eb;" title="Blue"></button>
+            <button class="ink-swatch" data-color="#dc2626" style="background:#dc2626;" title="Red"></button>
+            <button class="ink-swatch" data-color="#16a34a" style="background:#16a34a;" title="Green"></button>
+            <button class="ink-swatch" data-color="#9333ea" style="background:#9333ea;" title="Purple"></button>
+            <button class="ink-swatch" data-color="#facc15" style="background:#facc15;" title="Highlighter"></button>
+            <input type="color" id="ink-color-custom" value="#0f172a" class="ink-color-custom-input" title="Custom Color">
+          </div>
+        </div>
+
+        <!-- Eraser Controls Cluster (Mode & Size) -->
+        <div id="eraser-controls-cluster" class="ribbon-cluster" style="display:none;">
+          <span class="ribbon-cluster-label">Type:</span>
+          <div class="ink-mode-toggle">
+            <button id="eraser-mode-full" class="ink-toggle-btn active" title="OneNote-style: Touching any part deletes the whole stroke">⚡ Full Stroke</button>
+            <button id="eraser-mode-partial" class="ink-toggle-btn" title="Segment Eraser: Erases only the points under the eraser">✂ Partial Stroke</button>
+          </div>
+
+          <div class="v-divider"></div>
+
+          <span class="ribbon-cluster-label">Size:</span>
+          <div class="ink-eraser-sizes">
+            <button class="ink-eraser-size-btn" data-radius="12" title="Small (12px)">Small</button>
+            <button class="ink-eraser-size-btn active" data-radius="24" title="Medium (24px)">Medium</button>
+            <button class="ink-eraser-size-btn" data-radius="48" title="Large (48px)">Large</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Insert Cluster: Universal Container & Mixed Media Tools -->
+      <div class="ribbon-cluster insert-cluster">
+        <button id="btn-add-note" class="btn btn-sm btn-accent" title="Add Universal Note Box (or double-click anywhere on canvas)">+ New Note</button>
+        <button id="btn-browse-media" class="btn btn-sm btn-action" title="Browse Images/Media from your computer">🖼 Media</button>
+        <button id="btn-browse-pdf" class="btn btn-sm btn-action" title="Browse PDF document from your computer">📑 PDF</button>
+        <button id="btn-insert-sketch" class="btn btn-sm btn-action" title="Insert In-Box Handwriting Canvas into Note">✍ Sketch</button>
+        <button id="btn-insert-table" class="btn btn-sm btn-action" title="Insert Table into Note">⊞ Table</button>
+        <button id="btn-insert-plot" class="btn btn-sm btn-action" title="Insert Function Plot into Note">📈 Plot</button>
+        <button id="btn-add-math" class="btn btn-sm btn-action" title="Insert LaTeX Equation">$fx Math</button>
+      </div>
+
+      <!-- Accessible Local File Pickers for Desktop & iPad -->
+      <input type="file" id="media-file-input" accept="image/*" class="visually-hidden-file-input" aria-hidden="true">
+      <input type="file" id="pdf-file-input" accept="application/pdf, .pdf" class="visually-hidden-file-input" aria-hidden="true">
+
+      <!-- Marquee Multi-Select Status -->
+      <div class="ribbon-cluster ml-auto">
+        <span id="selection-status" class="selection-indicator">0 selected</span>
+        <button id="btn-group-blocks" class="btn btn-sm" title="Group selected blocks (Ctrl+G)">Group</button>
+      </div>
+    </div>
+
+    <!-- Main Body: Sidebar Hierarchy + Infinite Canvas Workspace -->
+    <div id="main-layout-body">
+      
+      <!-- Zone 2 & 3: 2-Tier Hierarchy Navigation Sidebar -->
+      <aside id="app-sidebar">
+        <!-- Sections Column -->
+        <div id="sections-column">
+          <div class="sidebar-header">
+            <span>SECTIONS</span>
+            <button id="btn-new-section" class="mini-btn" title="New Section">+</button>
+          </div>
+          <ul id="sections-list" class="sidebar-items">
+            <!-- Populated dynamically by HierarchyManager -->
+          </ul>
+        </div>
+
+        <!-- Pages Column (with Subpage Indentation) -->
+        <div id="pages-column">
+          <div class="sidebar-header">
+            <span>PAGES</span>
+            <button id="btn-new-page" class="mini-btn" title="New Page">+</button>
+          </div>
+          <div class="search-box">
+            <input type="text" id="page-search-input" placeholder="Search pages...">
+          </div>
+          <ul id="pages-list" class="sidebar-items">
+            <!-- Populated dynamically by HierarchyManager -->
+          </ul>
+        </div>
+      </aside>
+
+      <!-- Zone 4: Infinite Freeform 2D Canvas Workspace -->
+      <main id="canvas-container">
+        <!-- Infinite coordinate world transform element -->
+        <div id="canvas-world">
+          <!-- Interactive Blocks Container -->
+          <div id="blocks-container" class="canvas-layer"></div>
+
+          <!-- SVG Layer for Global Vector Annotations (inside world transform for unified 120fps GPU panning) -->
+          <svg id="global-annotations-svg" class="vector-annotations-layer"></svg>
+
+          <!-- Multi-selection Elastic Marquee Box -->
+          <div id="selection-marquee" class="marquee-box hidden"></div>
+        </div>
+
+        <!-- Active iPad Ink Simulation Overlay Canvas -->
+        <canvas id="active-draw-canvas" class="hidden"></canvas>
+      </main>
+    </div>
+
+    <!-- Bottom Status Bar -->
+    <footer id="status-bar">
+      <div class="status-left">
+        <span id="page-status-label">Physics & Calculus > Limits & Continuity > Derivatives Intro</span>
+      </div>
+      <div class="status-right">
+        <button id="btn-zoom-out" class="icon-btn-sm" title="Zoom Out">-</button>
+        <span id="zoom-indicator">100%</span>
+        <button id="btn-zoom-in" class="icon-btn-sm" title="Zoom In">+</button>
+        <button id="btn-zoom-fit" class="btn btn-sm" title="Zoom to Fit All Content (Shift+1)" style="margin-left: 8px;">Fit All</button>
+        <button id="btn-reset-view" class="btn btn-sm" style="margin-left: 4px;">100%</button>
+      </div>
+    </footer>
+
+    <!-- Cloudflare R2 Settings Modal -->
+    <div id="r2-modal" class="modal hidden">
+      <div class="modal-content">
+        <h3>Cloudflare R2 (S3-Compatible) Sync</h3>
+        <p class="modal-sub">Zero-cost private cloud sync with 10 GB free storage.</p>
+        <div class="form-group">
+          <label>R2 Account ID / Endpoint:</label>
+          <input type="text" id="r2-endpoint" placeholder="e.g. https://<account_id>.r2.cloudflarestorage.com">
+        </div>
+        <div class="form-group">
+          <label>Access Key ID:</label>
+          <input type="password" id="r2-key-id" placeholder="Access Key ID">
+        </div>
+        <div class="form-group">
+          <label>Secret Access Key:</label>
+          <input type="password" id="r2-key-secret" placeholder="Secret Access Key">
+        </div>
+        <div class="form-group">
+          <label>Bucket Name:</label>
+          <input type="text" id="r2-bucket" placeholder="e.g. notes-app-sync">
+        </div>
+        <div class="modal-actions">
+          <button id="r2-cancel-btn" class="btn">Cancel</button>
+          <button id="r2-save-btn" class="btn btn-accent">Save & Test Sync</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module" src="/public/app.js?v=3.0.0"></script>
+</body>
+</html>
