@@ -25,7 +25,8 @@ const server = http.createServer((req, res) => {
   // Map module imports from src
   let filePath;
   if (reqPath.startsWith('/src/')) {
-    filePath = path.join(__dirname, reqPath);
+    const pubSrc = path.join(__dirname, 'public', reqPath);
+    filePath = fs.existsSync(pubSrc) ? pubSrc : path.join(__dirname, reqPath);
   } else if (reqPath.startsWith('/public/')) {
     filePath = path.join(__dirname, reqPath);
   } else {

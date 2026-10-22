@@ -25,7 +25,7 @@ import {
   Sandbox,
   BlockType,
   LocalVault
-} from '/src/core.js';
+} from './src/core.js';
 
 // Global State
 const state = {
