@@ -3310,7 +3310,7 @@ function setupKeyboardAndClipboard() {
 // --- Sidebar Controls ---
 
 function setupSidebarControls() {
-  document.getElementById('btn-new-section').addEventListener('click', () => {
+  document.getElementById('btn-new-section').addEventListener('click', async () => {
     const name = prompt('Enter New Section Name:', 'New Section');
     if (name) {
       const colors = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ec4899'];
