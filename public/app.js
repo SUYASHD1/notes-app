@@ -24,7 +24,13 @@ import {
   CloudflareR2Sync,
   Sandbox,
   BlockType,
-  LocalVault
+  LocalVault,
+  showToast,
+  setupStorageSettingsModal,
+  initHierarchy,
+  saveHierarchy,
+  renderHierarchyUI,
+  setupSidebarControls
 } from './src/core.js';
 
 // Global State
@@ -119,209 +125,43 @@ const pdfFileInput = document.getElementById('pdf-file-input');
 
 async function initApp() {
   await state.vault.init();
-  await initHierarchy();
+  await initHierarchy({ state, renderHierarchyUI: () => renderHierarchyUI({ state, saveActivePageDocument, loadActivePageDocument, renderAll }) });
   initTouchRecognizer();
   setupLayoutSwitcher();
   setupRibbonControls();
   setupInkPaletteControls();
-  setupSidebarControls();
+  setupSidebarControls({
+    state,
+    saveActivePageDocument,
+    loadActivePageDocument,
+    renderAll,
+    showToast
+  });
   setupCanvasInteractions();
   setupKeyboardAndClipboard();
-  setupStorageSettingsModal();
+  setupStorageSettingsModal({
+    state,
+    storageStatus,
+    showToast,
+    initHierarchy: () => initHierarchy({ state, renderHierarchyUI: () => renderHierarchyUI({ state, saveActivePageDocument, loadActivePageDocument, renderAll }) }),
+    loadActivePageDocument,
+    renderAll
+  });
 
   await loadActivePageDocument();
   renderAll();
 }
 
-// --- Hierarchy & Navigation ---
-
-async function initHierarchy() {
-  let savedHierarchy = await state.vault.loadHierarchy();
-  if (!savedHierarchy) {
-    const rawLocal = localStorage.getItem('notes_app_hierarchy_v3');
-    if (rawLocal) {
-      try {
-        savedHierarchy = JSON.parse(rawLocal);
-      } catch (_) {}
-    }
-  }
-
-  if (savedHierarchy) {
-    try {
-      state.hierarchy = new HierarchyManager(savedHierarchy);
-    } catch {
-      state.hierarchy = createDefaultHierarchy();
-    }
-  } else {
-    state.hierarchy = createDefaultHierarchy();
-    saveHierarchy();
-  }
-
-  if (state.hierarchy.notebooks.length === 0) {
-    state.hierarchy.addNotebook('Physics & Calculus 101', '#6366f1');
-  }
-
-  const savedNbId = await state.vault.getSetting('activeNotebookId');
-  if (savedNbId && state.hierarchy.notebooks.some(n => n.id === savedNbId)) {
-    state.activeNotebookId = savedNbId;
-  } else {
-    state.activeNotebookId = state.hierarchy.notebooks[0].id;
-  }
-
-  const sections = state.hierarchy.getSectionsForNotebook(state.activeNotebookId);
-  if (sections.length === 0) {
-    state.hierarchy.addSection(state.activeNotebookId, 'Limits & Continuity', '#8b5cf6');
-  }
-
-  const savedSecId = await state.vault.getSetting('activeSectionId');
-  if (savedSecId && sections.some(s => s.id === savedSecId)) {
-    state.activeSectionId = savedSecId;
-  } else {
-    state.activeSectionId = state.hierarchy.getSectionsForNotebook(state.activeNotebookId)[0].id;
-  }
-
-  const pages = state.hierarchy.getPagesForSection(state.activeSectionId);
-  if (pages.length === 0) {
-    state.hierarchy.addPage(state.activeSectionId, 'Derivatives Intro & Graph');
-  }
-
-  const savedPageId = await state.vault.getSetting('activePageId');
-  if (savedPageId && pages.some(p => p.id === savedPageId)) {
-    state.activePageId = savedPageId;
-  } else {
-    state.activePageId = state.hierarchy.getPagesForSection(state.activeSectionId)[0].id;
-  }
-
-  renderHierarchyUI();
+function saveHierarchyNow() {
+  saveHierarchy(state);
 }
 
-function createDefaultHierarchy() {
-  const hm = new HierarchyManager();
-  const nb1 = hm.addNotebook('Physics & Calculus 101', '#6366f1');
-  const sec1 = hm.addSection(nb1.id, 'Limits & Continuity', '#8b5cf6');
-  const sec2 = hm.addSection(nb1.id, 'Derivatives & Rules', '#3b82f6');
-  const sec3 = hm.addSection(nb1.id, 'Integrals & Area', '#10b981');
-
-  const p1 = hm.addPage(sec1.id, 'Derivatives Intro & Graph');
-  hm.addPage(sec1.id, 'Critical Points Practice', p1.id);
-  hm.addPage(sec2.id, 'Chain Rule & Composition');
-  hm.addPage(sec3.id, 'Fundamental Theorem of Calculus');
-  return hm;
+function renderHierarchy() {
+  renderHierarchyUI({ state, saveActivePageDocument, loadActivePageDocument, renderAll });
 }
 
-function saveHierarchy() {
-  const tree = state.hierarchy.toJSON();
-  state.vault.saveHierarchy(tree);
-  try {
-    localStorage.setItem('notes_app_hierarchy_v3', JSON.stringify(tree));
-  } catch (_) {}
-  state.vault.saveSetting('activeNotebookId', state.activeNotebookId);
-  state.vault.saveSetting('activeSectionId', state.activeSectionId);
-  state.vault.saveSetting('activePageId', state.activePageId);
-}
+// --- Hierarchy & Navigation is now managed by src/ui/sidebar.js ---
 
-function renderHierarchyUI() {
-  // Notebooks
-  const nbSelect = document.getElementById('notebook-select');
-  nbSelect.innerHTML = '';
-  state.hierarchy.notebooks.forEach(nb => {
-    const opt = document.createElement('option');
-    opt.value = nb.id;
-    opt.textContent = nb.name;
-    if (nb.id === state.activeNotebookId) opt.selected = true;
-    nbSelect.appendChild(opt);
-  });
-
-  // Sections
-  const sectionsList = document.getElementById('sections-list');
-  sectionsList.innerHTML = '';
-  const sections = state.hierarchy.getSectionsForNotebook(state.activeNotebookId);
-  sections.forEach(sec => {
-    const li = document.createElement('li');
-    li.className = `section-item ${sec.id === state.activeSectionId ? 'active' : ''}`;
-    li.dataset.secId = sec.id;
-    li.innerHTML = `
-      <span class="section-color-dot" style="background: ${sec.color || '#6366f1'};"></span>
-      <span class="item-name">${sec.name}</span>
-      <button class="item-delete-btn" title="Delete Section" style="margin-left:auto; background:none; border:none; color:#94a3b8; cursor:pointer; font-size:12px;">&times;</button>
-    `;
-
-    li.querySelector('.item-delete-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (confirm(`Delete section "${sec.name}" and all its pages?`)) {
-        state.hierarchy.deleteSection(sec.id);
-        const rem = state.hierarchy.getSectionsForNotebook(state.activeNotebookId);
-        state.activeSectionId = rem.length ? rem[0].id : null;
-        const p = state.activeSectionId ? state.hierarchy.getPagesForSection(state.activeSectionId) : [];
-        state.activePageId = p.length ? p[0].id : null;
-        saveHierarchy();
-        renderHierarchyUI();
-        loadActivePageDocument();
-        renderAll();
-      }
-    });
-
-    li.addEventListener('click', async () => {
-      if (state.activeSectionId === sec.id) return;
-      saveActivePageDocument();
-      state.activeSectionId = sec.id;
-      const pages = state.hierarchy.getPagesForSection(sec.id);
-      state.activePageId = pages.length ? pages[0].id : null;
-      renderHierarchyUI();
-      await loadActivePageDocument();
-      renderAll();
-    });
-    sectionsList.appendChild(li);
-  });
-
-  // Pages
-  const pagesList = document.getElementById('pages-list');
-  pagesList.innerHTML = '';
-  const pages = state.hierarchy.getPagesForSection(state.activeSectionId);
-  pages.forEach(p => {
-    const li = document.createElement('li');
-    li.className = `page-item ${p.isSubpage ? 'subpage' : ''} ${p.id === state.activePageId ? 'active' : ''}`;
-    li.dataset.pageId = p.id;
-    li.innerHTML = `
-      ${p.isSubpage ? '<span class="subpage-indicator">↳</span>' : '<span class="page-icon">📄</span>'}
-      <span class="item-name">${p.title}</span>
-      <button class="item-delete-btn" title="Delete Page" style="margin-left:auto; background:none; border:none; color:#94a3b8; cursor:pointer; font-size:12px;">&times;</button>
-    `;
-
-    li.querySelector('.item-delete-btn').addEventListener('click', async (e) => {
-      e.stopPropagation();
-      if (confirm(`Delete page "${p.title}"?`)) {
-        await state.vault.deletePage(p.id);
-        state.hierarchy.deletePage(p.id);
-        const rem = state.hierarchy.getPagesForSection(state.activeSectionId);
-        state.activePageId = rem.length ? rem[0].id : null;
-        saveHierarchy();
-        renderHierarchyUI();
-        await loadActivePageDocument();
-        renderAll();
-      }
-    });
-
-    li.addEventListener('click', async () => {
-      if (state.activePageId === p.id) return;
-      saveActivePageDocument();
-      state.activePageId = p.id;
-      renderHierarchyUI();
-      await loadActivePageDocument();
-      renderAll();
-    });
-    pagesList.appendChild(li);
-  });
-
-  updateBreadcrumb();
-}
-
-function updateBreadcrumb() {
-  const nb = state.hierarchy.notebooks.find(n => n.id === state.activeNotebookId);
-  const sec = state.hierarchy.sections.find(s => s.id === state.activeSectionId);
-  const page = state.hierarchy.pages.find(p => p.id === state.activePageId);
-  pageStatusLabel.textContent = `${nb ? nb.name : 'Notes'} > ${sec ? sec.name : 'Section'} > ${page ? page.title : 'No Page'}`;
-}
 
 // --- Active Page Document Management ---
 
@@ -3309,57 +3149,7 @@ function setupKeyboardAndClipboard() {
 
 // --- Sidebar Controls ---
 
-function setupSidebarControls() {
-  document.getElementById('btn-new-section').addEventListener('click', async () => {
-    const name = prompt('Enter New Section Name:', 'New Section');
-    if (name) {
-      const colors = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ec4899'];
-      const color = colors[Math.floor(Math.random() * colors.length)];
-      const sec = state.hierarchy.addSection(state.activeNotebookId, name, color);
-      const page = state.hierarchy.addPage(sec.id, 'Untitled Page');
-      state.activeSectionId = sec.id;
-      state.activePageId = page.id;
-      saveHierarchy();
-      renderHierarchyUI();
-      await loadActivePageDocument();
-      renderAll();
-      showToast(`📁 Created section "${name}"`);
-    }
-  });
 
-  document.getElementById('btn-new-page').addEventListener('click', async () => {
-    const title = prompt('Enter New Page Title:', 'Untitled Page');
-    if (title) {
-      const page = state.hierarchy.addPage(state.activeSectionId, title);
-      state.activePageId = page.id;
-      saveHierarchy();
-      renderHierarchyUI();
-      await loadActivePageDocument();
-      renderAll();
-      showToast(`📄 Created page "${title}"`);
-    }
-  });
-
-  document.getElementById('notebook-select').addEventListener('change', async (e) => {
-    saveActivePageDocument();
-    state.activeNotebookId = e.target.value;
-    const sections = state.hierarchy.getSectionsForNotebook(state.activeNotebookId);
-    state.activeSectionId = sections.length ? sections[0].id : null;
-    const pages = state.activeSectionId ? state.hierarchy.getPagesForSection(state.activeSectionId) : [];
-    state.activePageId = pages.length ? pages[0].id : null;
-    renderHierarchyUI();
-    await loadActivePageDocument();
-    renderAll();
-  });
-
-  document.getElementById('page-search-input').addEventListener('input', (e) => {
-    const q = e.target.value.toLowerCase();
-    document.querySelectorAll('.page-item').forEach(item => {
-      const match = item.textContent.toLowerCase().includes(q);
-      item.style.display = match ? 'flex' : 'none';
-    });
-  });
-}
 
 // --- Layout, Navigate vs Ink Modes & Floating Puck ---
 
@@ -3662,217 +3452,7 @@ function setupInkPaletteControls() {
   });
 }
 
-// --- Storage & Data Hub Settings Modal ---
 
-let updateStorageSettingsView = async () => {};
-
-function setupStorageSettingsModal() {
-  const modal = document.getElementById('storage-settings-modal');
-  const openBtn = document.getElementById('btn-storage-settings');
-  const closeBtn = document.getElementById('btn-close-storage-settings');
-  const locationBadge = document.getElementById('storage-location-badge');
-  const activeStoragePath = document.getElementById('active-storage-path');
-  const folderRow = document.getElementById('folder-permission-row');
-  const activeFolderName = document.getElementById('active-folder-name');
-  const persistStatus = document.getElementById('persist-lock-status');
-  const persistText = document.getElementById('persist-lock-text');
-  const selectFolderBtn = document.getElementById('btn-select-folder');
-  const requestPersistBtn = document.getElementById('btn-request-persist');
-  const totalPill = document.getElementById('storage-total-pill');
-  const exportBtn = document.getElementById('btn-export-backup');
-  const importInput = document.getElementById('import-backup-input');
-  const metricNotebooks = document.getElementById('metric-notebooks');
-  const metricSections = document.getElementById('metric-sections');
-  const metricPages = document.getElementById('metric-pages');
-  const metricStrokes = document.getElementById('metric-strokes');
-  const metricAssets = document.getElementById('metric-assets');
-  const metricSize = document.getElementById('metric-size');
-  const r2SaveBtn = document.getElementById('r2-save-btn');
-
-  updateStorageSettingsView = async () => {
-    try {
-      const metrics = await state.vault.getStorageMetrics();
-      if (metrics) {
-        if (metricNotebooks) metricNotebooks.textContent = metrics.notebooksCount || 0;
-        if (metricSections) metricSections.textContent = metrics.sectionsCount || 0;
-        if (metricPages) metricPages.textContent = metrics.pagesCount || 0;
-        if (metricStrokes) metricStrokes.textContent = (metrics.strokesCount || 0).toLocaleString();
-        if (metricAssets) metricAssets.textContent = metrics.assetsCount || 0;
-        if (metricSize) metricSize.textContent = metrics.formattedUsage || '0 KB';
-        if (totalPill) totalPill.textContent = `${metrics.formattedUsage || '0 KB'} Used`;
-      }
-
-      // Check Hard Drive Folder
-      const folderHandle = await state.vault.getHardDriveFolder();
-      if (folderHandle && folderHandle.name) {
-        if (locationBadge) {
-          locationBadge.className = 'location-badge badge-folder';
-          locationBadge.textContent = 'Hard Drive Folder';
-        }
-        if (activeStoragePath) activeStoragePath.textContent = 'Local Disk Direct Mirror';
-        if (folderRow) folderRow.style.display = 'flex';
-        if (activeFolderName) activeFolderName.textContent = folderHandle.name;
-        if (storageStatus) storageStatus.textContent = 'Drive: ' + folderHandle.name;
-      } else {
-        if (locationBadge) {
-          locationBadge.className = 'location-badge badge-internal';
-          locationBadge.textContent = 'Device Storage Vault';
-        }
-        if (activeStoragePath) activeStoragePath.textContent = 'Browser Device Vault (Fast & Private)';
-        if (folderRow) folderRow.style.display = 'none';
-        if (storageStatus) storageStatus.textContent = 'Local Saved';
-      }
-
-      // Check Persistence Lock
-      const isLocked = metrics?.isPersisted;
-      if (persistStatus && persistText) {
-        if (isLocked) {
-          persistStatus.className = 'lock-indicator locked';
-          persistText.textContent = 'Safe: Locked';
-          persistStatus.title = 'Protected against automatic browser cleaning';
-        } else {
-          persistStatus.className = 'lock-indicator unlocked';
-          persistText.textContent = 'Standard';
-          persistStatus.title = 'Click "Safe-Lock Storage" below to permanently protect notes';
-        }
-      }
-    } catch (err) {
-      console.warn('Failed to refresh storage metrics:', err);
-    }
-  };
-
-  // Open & Close Handlers
-  openBtn?.addEventListener('click', async () => {
-    if (modal) {
-      modal.classList.remove('hidden');
-      await updateStorageSettingsView();
-    }
-  });
-
-  closeBtn?.addEventListener('click', () => {
-    if (modal) modal.classList.add('hidden');
-  });
-
-  modal?.addEventListener('click', (e) => {
-    if (e.target === modal) modal.classList.add('hidden');
-  });
-
-  window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
-      modal.classList.add('hidden');
-    }
-  });
-
-  // Request Storage Persistence Lock
-  requestPersistBtn?.addEventListener('click', async () => {
-    showToast('🔒 Requesting browser safe-lock...');
-    const granted = await state.vault.requestPersistenceLock();
-    await updateStorageSettingsView();
-    if (granted) {
-      showToast('🛡 Safe-Lock Active! Your notes are exempt from browser clearing.');
-    } else {
-      showToast('ℹ Safe-Lock status managed by browser storage policy.');
-    }
-  });
-
-  // Choose Hard Drive Folder with Safe Migration
-  selectFolderBtn?.addEventListener('click', async () => {
-    if (!('showDirectoryPicker' in window)) {
-      alert('Your browser or platform (such as Safari on iPad) restricts direct folder access. However, all your notes remain permanently safe in your device storage vault! You can also use "Download Full Backup" anytime.');
-      return;
-    }
-
-    try {
-      const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
-      if (handle) {
-        showToast(`📂 Copying your notes to "${handle.name}"...`);
-        const result = await state.vault.migrateCurrentDataToFolder(handle, (step, cur, tot) => {
-          if (step === 'saving_page') {
-            showToast(`Copying page ${cur} of ${tot}...`);
-          }
-        });
-        await updateStorageSettingsView();
-        showToast(`✅ Successfully moved notes to "${handle.name}"!`);
-      }
-    } catch (err) {
-      if (err.name !== 'AbortError') {
-        showToast('Folder selection was cancelled or failed.');
-      }
-    }
-  });
-
-  // One-Click Full Backup Download (.notes file)
-  exportBtn?.addEventListener('click', async () => {
-    try {
-      showToast('📦 Packaging your notebooks for download...');
-      const backup = await state.vault.exportFullBackup();
-      const jsonStr = JSON.stringify(backup, null, 2);
-      const blob = new Blob([jsonStr], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      const dateStr = new Date().toISOString().split('T')[0];
-      a.href = url;
-      a.download = `notes-backup-${dateStr}.notes`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      showToast('✅ Full backup file downloaded successfully!');
-    } catch (err) {
-      showToast('Backup export failed: ' + err.message);
-    }
-  });
-
-  // Restore From Backup File
-  importInput?.addEventListener('change', async (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-
-    if (!confirm(`Restore notebook data from "${file.name}"? This will safely merge all notebooks, sections and pages.`)) {
-      importInput.value = '';
-      return;
-    }
-
-    showToast(`⏳ Restoring notes from "${file.name}"...`);
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-      try {
-        const backupData = JSON.parse(evt.target.result);
-        const res = await state.vault.importFullBackup(backupData);
-        await initHierarchy();
-        await loadActivePageDocument();
-        renderAll();
-        await updateStorageSettingsView();
-        showToast(`✅ Restored ${res.pagesRestored} pages and ${res.notebooksRestored} notebooks!`);
-      } catch (err) {
-        alert('Failed to read or parse backup file: ' + err.message);
-      }
-      importInput.value = '';
-    };
-    reader.readAsText(file);
-  });
-
-  // Cloudflare R2 Credentials Save
-  r2SaveBtn?.addEventListener('click', () => {
-    storageStatus.textContent = 'Synced to R2';
-    showToast('☁ Cloudflare R2 credentials verified! Delta sync ready.');
-  });
-}
-
-function showToast(message) {
-  const existing = document.querySelector('.shape-toast');
-  if (existing) existing.remove();
-
-  const toast = document.createElement('div');
-  toast.className = 'shape-toast';
-  toast.textContent = message;
-  document.body.appendChild(toast);
-
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    setTimeout(() => toast.remove(), 200);
-  }, 2200);
-}
 
 // Flush pending debounced auto-save immediately before window unloads, hides, or loses focus
 const flushPendingSave = () => {

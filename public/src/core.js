@@ -23,6 +23,10 @@ export { HierarchyManager } from './storage/hierarchy.js';
 export { CloudflareR2Sync } from './storage/r2_sync.js';
 export { LocalVault } from './storage/indexed_db.js';
 
+export { showToast } from './ui/toast.js';
+export { setupStorageSettingsModal } from './ui/storage_settings_modal.js';
+export { initHierarchy, saveHierarchy, renderHierarchyUI, setupSidebarControls, createDefaultHierarchy } from './ui/sidebar.js';
+
 // Backward compatibility alias for StrokeEngine
 import { StrokeRenderer } from './canvas/stroke_renderer.js';
 export class StrokeEngine {
