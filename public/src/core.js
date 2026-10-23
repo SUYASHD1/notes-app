@@ -28,6 +28,7 @@ export { setupStorageSettingsModal } from './ui/storage_settings_modal.js';
 export { initHierarchy, saveHierarchy, renderHierarchyUI, setupSidebarControls, createDefaultHierarchy } from './ui/sidebar.js';
 export { setupInkPaletteControls } from './ui/ink_palette.js';
 export { setupLayoutSwitcher, setMode, setupFloatingModePuck } from './ui/layout_puck.js';
+export { setupInstallPrompt, registerServiceWorker, showIOSInstallModal, isStandaloneMode, isIOSDevice } from './ui/install_prompt.js';
 
 // Backward compatibility alias for StrokeEngine
 import { StrokeRenderer } from './canvas/stroke_renderer.js';

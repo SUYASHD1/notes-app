@@ -18,7 +18,7 @@ To transition from our proven prototype into a world-class production system wit
 
 ## 🧩 2. Current Features Already Built & Verified
 
-The following capabilities have been engineered, integrated, and verified with **53 passing automated tests (100%)**:
+The following capabilities have been engineered, integrated, and verified with **57 passing automated tests (100%)**:
 
 ### ✍️ A. Inking & Apple Pencil Engine
 * **Zero Tap-Delay on iPad:** Solved the classic 300ms mobile Safari hesitation timer by intercepting non-passive touch events and disabling double-tap heuristics.
@@ -126,13 +126,14 @@ Every page is an independent digital document structured in clean, open JSON for
 
 ---
 
-### 🟢 Phase 2: Installable Progressive Web App (PWA)
+### ✅ Phase 2: Installable Progressive Web App (PWA) [COMPLETED]
 * **Goal:** Remove all web browser bloat (tabs, URL bars, navigation buttons) to deliver a true native app experience on iPadOS, Windows 11, macOS, and Android.
-* **Deliverables:**
-  1. **Web App Manifest (`manifest.json`):** Configure `display: "standalone"`, orientation locks, background theme colors, and application metadata.
-  2. **Service Worker (`sw.js`):** Cache all core assets (HTML, CSS, JS, fonts, KaTeX math engine, icons) so the app launches instantly even with Wi-Fi completely disabled.
-  3. **App Icon Suite:** High-resolution icons tailored for iPad Retina Home Screen, Windows Start Menu / Taskbar, and Android App Drawers.
-  4. **Install Prompts:** In-app notification gently guiding the user on how to click "Install App" (on PC) or "Add to Home Screen" (on iPad).
+* **Delivered & Verified:**
+  1. **Web App Manifest (`public/manifest.json`):** Configured with `display: "standalone"`, `#4f46e5` theme color, and dark slate background.
+  2. **Offline-First Service Worker (`public/sw.js`):** Implemented cache-first shell caching and dynamic offline fallback. The app works 100% offline in Airplane Mode.
+  3. **High-Resolution App Icons (`public/icons/`):** 180x180 (Apple iPad Retina), 192x192, and 512x512 PNG assets generated and linked.
+  4. **In-App Install Controller (`src/ui/install_prompt.js`):** Desktop & Android install button with native prompt trigger; iPadOS interactive step-by-step visual guide modal.
+  5. **Automated Testing Suite:** 57/57 tests passing including dedicated PWA manifest, service worker, and icon tests.
 
 ---
 

@@ -33,7 +33,9 @@ import {
   setupSidebarControls,
   setupInkPaletteControls,
   setupLayoutSwitcher,
-  setMode
+  setMode,
+  setupInstallPrompt,
+  registerServiceWorker
 } from './src/core.js';
 
 // Global State
@@ -169,6 +171,10 @@ async function initApp() {
     loadActivePageDocument,
     renderAll
   });
+
+  // PWA Offline-First Service Worker & Install Management
+  registerServiceWorker(showToast);
+  setupInstallPrompt({ showToast });
 
   await loadActivePageDocument();
   renderAll();

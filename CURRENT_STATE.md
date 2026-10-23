@@ -1,9 +1,9 @@
 # 📓 Notes App — Current State & Knowledge Log
 
 > **Last Updated:** October 2026  
-> **Status:** Fully Functional, Deployed to Production (Vercel), Storage & Data Hub Active  
+> **Status:** Fully Functional, PWA Standalone Enabled, Deployed to Production (Vercel)  
 > **Live Web Application:** [https://notes-app-topaz-six.vercel.app/](https://notes-app-topaz-six.vercel.app/)  
-> **Automated Test Suite:** `53 / 53 tests passed (100%)`
+> **Automated Test Suite:** `57 / 57 tests passed (100%)`
 
 ---
 
@@ -50,6 +50,14 @@ This application is a freeform, ultra-fast note-taking system designed to combin
   * Shows live counts of Notebooks, Sections, Pages, Handwritten Strokes, Images/PDFs, and total size (e.g. `8.2 KB Used`).
   * Provides one-click buttons for Hard Drive Folder Selection, Safe-Lock, Full Backup Download, and Backup Restoration.
 
+### 6. Zero-Distraction Fullscreen: Progressive Web App (PWA) & Airplane Mode
+* **The Problem:** Writing in a web browser means dealing with URL bars, browser tabs, and navigation buttons that waste precious screen space and distract from note-taking. Furthermore, if you take an iPad onto a flight with no Wi-Fi, typical web apps fail to load.
+* **The Solution:**
+  1. **Web App Manifest (`public/manifest.json`):** Sets the display to `standalone`, removing browser chrome completely.
+  2. **Offline-First Service Worker (`public/sw.js`):** Automatically pre-caches the app shell, styles, scripts, KaTeX math engine, PDF viewer, and icons. Notes open and run smoothly in 100% Airplane Mode.
+  3. **High-Resolution App Icons:** Created 180x180 (iPad Retina Home Screen), 192x192, and 512x512 icons for desktop and mobile docks.
+  4. **Smart Installation Flow (`install_prompt.js`):** On Windows/Mac/Android, an install button triggers native installation to the taskbar/desktop. On iPadOS Safari, an interactive visual guide shows the user exactly how to tap "Share ➔ Add to Home Screen".
+
 ---
 
 ## 🚀 3. Features & Capabilities
@@ -88,16 +96,20 @@ This application is a freeform, ultra-fast note-taking system designed to combin
 | [public/index.html](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/index.html) | Main HTML layout, top bar, canvas viewport, and Storage & Data Hub settings flyout. |
 | [public/app.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/app.js) | Slim master application orchestrator importing modular UI, canvas, and block components. |
 | [public/styles.css](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/styles.css) | Modern glassmorphism UI styles, docked ribbon, floating puck, note boxes, and settings menu. |
-| `src/ui/` | Modular UI controllers: `toast.js`, `storage_settings_modal.js`, `sidebar.js`, `ink_palette.js`, `layout_puck.js`. |
+| `src/ui/` | Modular UI controllers: `toast.js`, `storage_settings_modal.js`, `sidebar.js`, `ink_palette.js`, `layout_puck.js`, `install_prompt.js`. |
+| [public/manifest.json](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/manifest.json) | Web App Manifest for standalone installation and home screen launching. |
+| [public/sw.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/sw.js) | Service Worker providing offline-first caching for Airplane Mode reliability. |
+| `public/icons/` | High-resolution Retina icons (180x180, 192x192, 512x512). |
 | `src/canvas/` | Math, viewport, stroke smoothing, gesture recognition, and eraser engines. |
 | `src/blocks/` | Universal note containers, text/latex, tables, math plots, and PDF printout managers. |
 | [src/storage/indexed_db.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/src/storage/indexed_db.js) | Full storage engine: IndexedDB vault, hard drive folder migration, live metrics, and backup/restore. |
 | [dev-server.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/dev-server.js) | Local development server with URL query-stripping and strict no-cache headers. |
-| `tests/` | 53 automated unit tests covering all inking, geometry, storage, and backup systems. |
+| `tests/` | 57 automated unit tests covering inking, geometry, storage, backups, and PWA validity. |
 
 ---
 
 ## 🧪 5. Automated Test Status
-* **Unit Tests Passing:** `53 / 53 tests passed (100%)`
-* **Storage Hub Verification:** Headless browser verified modal opening, metrics calculation, backup download, and clean close.
+* **Unit Tests Passing:** `57 / 57 tests passed (100%)`
+* **Storage Hub Verification:** Verified modal opening, metrics calculation, backup download, and clean close.
+* **PWA Verification:** Manifest schema, icon asset verification, and service worker offline caching fully verified.
 * **Production Status:** Deployed live on Vercel at `https://notes-app-topaz-six.vercel.app/`.
