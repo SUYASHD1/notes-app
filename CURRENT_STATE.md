@@ -3,7 +3,7 @@
 > **Last Updated:** October 2026  
 > **Status:** Fully Functional, PWA Standalone Enabled, Deployed to Production (Vercel)  
 > **Live Web Application:** [https://notes-app-topaz-six.vercel.app/](https://notes-app-topaz-six.vercel.app/)  
-> **Automated Test Suite:** `59 / 59 tests passed (100%)`
+> **Automated Test Suite:** `60 / 60 tests passed (100%)`
 
 ---
 
@@ -120,13 +120,13 @@ This application is a freeform, ultra-fast note-taking system designed to combin
 | `src/blocks/` | Universal note containers, text/latex, tables, math plots, and PDF printout managers. |
 | [src/storage/indexed_db.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/src/storage/indexed_db.js) | Full storage engine: IndexedDB vault, hard drive folder migration, live metrics, and backup/restore. |
 | [dev-server.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/dev-server.js) | Local development server with URL query-stripping and strict no-cache headers. |
-| `tests/` | 59 automated unit tests covering inking, geometry, storage, backups, PWA validity, and file management. |
+| `tests/` | 60 automated unit tests covering inking, geometry, storage, backups, PWA validity, file management, and auto-numbering. |
 
 ---
 
 ## 🧪 5. Automated Test Status
-* **Unit Tests Passing:** `59 / 59 tests passed (100%)`
-* **File Management & Clean Canvas Verification:** Automated test suite verifies notebook, section, and page lifecycle (creation, renaming, cross-notebook move, copy/duplicate, cascading deletion) and guarantees blank canvases for all new notes.
+* **Unit Tests Passing:** `60 / 60 tests passed (100%)`
+* **File Management & Clean Canvas Verification:** Automated test suite verifies notebook, section, and page lifecycle (creation, renaming, cross-notebook move, copy/duplicate, cascading deletion, smart auto-numbering) and guarantees blank canvases for all new notes.
 * **Storage Hub Verification:** Verified modal opening, metrics calculation, backup download, and clean close.
 * **PWA Verification:** Manifest schema, icon asset verification, and service worker offline caching fully verified.
 * **Production Status:** Deployed live on Vercel at `https://notes-app-topaz-six.vercel.app/`.

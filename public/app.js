@@ -210,14 +210,34 @@ async function loadActivePageDocument() {
   // 1. Load full document from LocalVault (IndexedDB)
   const vaultDoc = await state.vault.loadPage(state.activePageId);
   if (vaultDoc) {
-    state.doc = DocumentModel.fromJSON(vaultDoc);
+    const parsed = DocumentModel.fromJSON(vaultDoc);
+    // Legacy cleanup: If a non-demo page was polluted by the early prototype demo data, auto-clean to a blank canvas
+    if (
+      state.activePageId !== 'nb_physics_demo_p1' &&
+      parsed.blocks &&
+      parsed.blocks.some(b => b.title === 'Kinematics & Derivatives' || b.id === 'note_kinematics_1')
+    ) {
+      state.doc = createBlankDocument(state.activePageId);
+      saveActivePageDocument(state.activePageId);
+    } else {
+      state.doc = parsed;
+    }
   } else {
     // Fallback to localStorage for backward compatibility with initial prototype data
     const key = getPageStorageKey(state.activePageId);
     const raw = localStorage.getItem(key);
     if (raw) {
       try {
-        state.doc = DocumentModel.fromJSON(raw);
+        const parsed = DocumentModel.fromJSON(raw);
+        if (
+          state.activePageId !== 'nb_physics_demo_p1' &&
+          parsed.blocks &&
+          parsed.blocks.some(b => b.title === 'Kinematics & Derivatives' || b.id === 'note_kinematics_1')
+        ) {
+          state.doc = createBlankDocument(state.activePageId);
+        } else {
+          state.doc = parsed;
+        }
       } catch {
         state.doc = createBlankDocument(state.activePageId);
       }
@@ -229,7 +249,7 @@ async function loadActivePageDocument() {
       state.doc = createBlankDocument(state.activePageId);
     }
     // Persist clean page into LocalVault
-    saveActivePageDocument();
+    saveActivePageDocument(state.activePageId);
   }
 
   if (state.doc.viewport) {
@@ -245,22 +265,29 @@ async function loadActivePageDocument() {
 let saveTimer = null;
 function debouncedSave(delay = 500) {
   if (saveTimer) clearTimeout(saveTimer);
+  const targetId = state.activePageId;
   saveTimer = setTimeout(() => {
-    saveActivePageDocument();
+    saveTimer = null;
+    saveActivePageDocument(targetId);
   }, delay);
 }
 
-function saveActivePageDocument() {
-  if (!state.doc || !state.activePageId) return;
+function saveActivePageDocument(targetPageId = state.activePageId) {
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+  const pageIdToSave = targetPageId || state.activePageId;
+  if (!state.doc || !pageIdToSave) return;
   state.doc.viewport = { x: state.viewport.x, y: state.viewport.y, zoom: state.viewport.zoom };
   const docJson = state.doc.toJSON();
 
   // 1. Always persist full fidelity in LocalVault (IndexedDB)
-  state.vault.savePage(state.activePageId, docJson).catch(e => console.warn('LocalVault save warning:', e));
+  state.vault.savePage(pageIdToSave, docJson).catch(e => console.warn('LocalVault save warning:', e));
 
   // 2. Also save to localStorage for instant synchronous boot
   try {
-    const key = getPageStorageKey(state.activePageId);
+    const key = getPageStorageKey(pageIdToSave);
     localStorage.setItem(key, JSON.stringify(docJson));
   } catch (err) {
     try {
@@ -275,7 +302,7 @@ function saveActivePageDocument() {
           }
         });
       }
-      localStorage.setItem(getPageStorageKey(state.activePageId), JSON.stringify(shallow));
+      localStorage.setItem(getPageStorageKey(pageIdToSave), JSON.stringify(shallow));
     } catch (_) {}
   }
 

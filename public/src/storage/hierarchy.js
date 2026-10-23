@@ -156,6 +156,48 @@ export class HierarchyManager {
     this.pages = [...otherPages, ...reordered];
   }
 
+  generateUniqueNotebookName(baseName = 'Untitled Notebook') {
+    const existingNames = new Set(this.notebooks.map(n => n.name.toLowerCase()));
+    if (!existingNames.has(baseName.toLowerCase())) return baseName;
+    let counter = 2;
+    while (existingNames.has(`${baseName} ${counter}`.toLowerCase())) {
+      counter++;
+    }
+    return `${baseName} ${counter}`;
+  }
+
+  generateUniqueSectionName(notebookId, baseName = 'New Section') {
+    const sections = this.getSectionsForNotebook(notebookId);
+    const existingNames = new Set(sections.map(s => s.name.toLowerCase()));
+    if (!existingNames.has(baseName.toLowerCase())) return baseName;
+    let counter = 2;
+    while (existingNames.has(`${baseName} ${counter}`.toLowerCase())) {
+      counter++;
+    }
+    return `${baseName} ${counter}`;
+  }
+
+  generateUniquePageTitle(sectionId, baseName = 'Untitled Page') {
+    const pages = this.getPagesForSection(sectionId);
+    const existingTitles = new Set(pages.map(p => p.title.toLowerCase()));
+    if (!existingTitles.has(baseName.toLowerCase())) return baseName;
+    let counter = 2;
+    while (existingTitles.has(`${baseName} ${counter}`.toLowerCase())) {
+      counter++;
+    }
+    return `${baseName} ${counter}`;
+  }
+
+  isDuplicateSectionName(notebookId, name, excludeSecId = null) {
+    const normalized = name.trim().toLowerCase();
+    return this.getSectionsForNotebook(notebookId).some(s => s.id !== excludeSecId && s.name.trim().toLowerCase() === normalized);
+  }
+
+  isDuplicatePageTitle(sectionId, title, excludePageId = null) {
+    const normalized = title.trim().toLowerCase();
+    return this.getPagesForSection(sectionId).some(p => p.id !== excludePageId && p.title.trim().toLowerCase() === normalized);
+  }
+
   toJSON() {
     return {
       notebooks: this.notebooks,
@@ -164,3 +206,4 @@ export class HierarchyManager {
     };
   }
 }
+

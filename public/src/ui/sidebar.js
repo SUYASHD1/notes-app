@@ -128,6 +128,9 @@ export function renderHierarchyUI({
         e.stopPropagation();
         const newName = prompt(`Rename section "${sec.name}" to:`, sec.name);
         if (newName && newName.trim() && newName.trim() !== sec.name) {
+          if (state.hierarchy.isDuplicateSectionName && state.hierarchy.isDuplicateSectionName(state.activeNotebookId, newName.trim(), sec.id)) {
+            if (showToast) showToast(`⚠️ A section named "${newName.trim()}" already exists in this notebook`);
+          }
           state.hierarchy.renameSection(sec.id, newName.trim());
           saveHierarchy(state);
           renderHierarchyUI({ state, saveActivePageDocument, loadActivePageDocument, renderAll });
@@ -172,7 +175,7 @@ export function renderHierarchyUI({
 
       li.addEventListener('click', async () => {
         if (state.activeSectionId === sec.id) return;
-        saveActivePageDocument();
+        saveActivePageDocument(state.activePageId);
         state.activeSectionId = sec.id;
         const pages = state.hierarchy.getPagesForSection(sec.id);
         state.activePageId = pages.length ? pages[0].id : null;
@@ -215,6 +218,9 @@ export function renderHierarchyUI({
         e.stopPropagation();
         const newTitle = prompt(`Rename page "${p.title}" to:`, p.title);
         if (newTitle && newTitle.trim() && newTitle.trim() !== p.title) {
+          if (state.hierarchy.isDuplicatePageTitle && state.hierarchy.isDuplicatePageTitle(state.activeSectionId, newTitle.trim(), p.id)) {
+            if (showToast) showToast(`⚠️ A page named "${newTitle.trim()}" already exists in this section`);
+          }
           state.hierarchy.renamePage(p.id, newTitle.trim());
           saveHierarchy(state);
           renderHierarchyUI({ state, saveActivePageDocument, loadActivePageDocument, renderAll });
@@ -238,7 +244,7 @@ export function renderHierarchyUI({
 
       li.addEventListener('click', async () => {
         if (state.activePageId === p.id) return;
-        saveActivePageDocument();
+        saveActivePageDocument(state.activePageId);
         state.activePageId = p.id;
         renderHierarchyUI({ state, saveActivePageDocument, loadActivePageDocument, renderAll });
         await loadActivePageDocument();
@@ -269,13 +275,17 @@ export function setupSidebarControls({
 
   // Add New Notebook Button
   document.getElementById('btn-new-notebook')?.addEventListener('click', async () => {
-    const name = prompt('Enter New Notebook Name:', 'New Notebook');
+    saveActivePageDocument(state.activePageId);
+    const defaultName = state.hierarchy.generateUniqueNotebookName ? state.hierarchy.generateUniqueNotebookName('New Notebook') : 'New Notebook';
+    const name = prompt('Enter New Notebook Name:', defaultName);
     if (name && name.trim()) {
       const colors = ['#6366f1', '#3b82f6', '#10b981', '#f59e0b', '#ec4899'];
       const color = colors[Math.floor(Math.random() * colors.length)];
       const nb = state.hierarchy.addNotebook(name.trim(), color);
-      const sec = state.hierarchy.addSection(nb.id, 'General Notes', '#8b5cf6');
-      const page = state.hierarchy.addPage(sec.id, 'Untitled Page');
+      const secName = state.hierarchy.generateUniqueSectionName ? state.hierarchy.generateUniqueSectionName(nb.id, 'General Notes') : 'General Notes';
+      const sec = state.hierarchy.addSection(nb.id, secName, '#8b5cf6');
+      const pageTitle = state.hierarchy.generateUniquePageTitle ? state.hierarchy.generateUniquePageTitle(sec.id, 'Untitled Page') : 'Untitled Page';
+      const page = state.hierarchy.addPage(sec.id, pageTitle);
       state.activeNotebookId = nb.id;
       state.activeSectionId = sec.id;
       state.activePageId = page.id;
@@ -325,12 +335,18 @@ export function setupSidebarControls({
   });
 
   document.getElementById('btn-new-section')?.addEventListener('click', async () => {
-    const name = prompt('Enter New Section Name:', 'New Section');
+    saveActivePageDocument(state.activePageId);
+    const defaultSecName = state.hierarchy.generateUniqueSectionName ? state.hierarchy.generateUniqueSectionName(state.activeNotebookId, 'New Section') : 'New Section';
+    const name = prompt('Enter New Section Name:', defaultSecName);
     if (name && name.trim()) {
+      if (state.hierarchy.isDuplicateSectionName && state.hierarchy.isDuplicateSectionName(state.activeNotebookId, name.trim())) {
+        if (showToast) showToast(`⚠️ Note: A section named "${name.trim()}" already exists in this notebook`);
+      }
       const colors = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ec4899'];
       const color = colors[Math.floor(Math.random() * colors.length)];
       const sec = state.hierarchy.addSection(state.activeNotebookId, name.trim(), color);
-      const page = state.hierarchy.addPage(sec.id, 'Untitled Page');
+      const pageTitle = state.hierarchy.generateUniquePageTitle ? state.hierarchy.generateUniquePageTitle(sec.id, 'Untitled Page') : 'Untitled Page';
+      const page = state.hierarchy.addPage(sec.id, pageTitle);
       state.activeSectionId = sec.id;
       state.activePageId = page.id;
       saveHierarchy(state);
@@ -342,8 +358,13 @@ export function setupSidebarControls({
   });
 
   document.getElementById('btn-new-page')?.addEventListener('click', async () => {
-    const title = prompt('Enter New Page Title:', 'Untitled Page');
+    saveActivePageDocument(state.activePageId);
+    const defaultTitle = state.hierarchy.generateUniquePageTitle ? state.hierarchy.generateUniquePageTitle(state.activeSectionId, 'Untitled Page') : 'Untitled Page';
+    const title = prompt('Enter New Page Title:', defaultTitle);
     if (title && title.trim()) {
+      if (state.hierarchy.isDuplicatePageTitle && state.hierarchy.isDuplicatePageTitle(state.activeSectionId, title.trim())) {
+        if (showToast) showToast(`⚠️ Note: A page named "${title.trim()}" already exists in this section`);
+      }
       const page = state.hierarchy.addPage(state.activeSectionId, title.trim());
       state.activePageId = page.id;
       saveHierarchy(state);
@@ -355,7 +376,7 @@ export function setupSidebarControls({
   });
 
   document.getElementById('notebook-select')?.addEventListener('change', async (e) => {
-    saveActivePageDocument();
+    saveActivePageDocument(state.activePageId);
     state.activeNotebookId = e.target.value;
     const sections = state.hierarchy.getSectionsForNotebook(state.activeNotebookId);
     state.activeSectionId = sections.length ? sections[0].id : null;

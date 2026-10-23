@@ -79,3 +79,30 @@ test('Clean Blank Page Guarantee: New documents default to empty blocks and zero
   assert.equal(blankDoc.globalAnnotations.length, 0, 'New page must have 0 ink strokes by default');
   assert.equal(blankDoc.title, 'My Clean Page');
 });
+
+test('Smart Auto-Numbering & Duplicate Name Avoidance', () => {
+  const hm = new HierarchyManager();
+  const nb1 = hm.addNotebook('Notes', '#6366f1');
+
+  // Notebook auto-numbering
+  const nbName1 = hm.generateUniqueNotebookName('Notes');
+  assert.equal(nbName1, 'Notes 2');
+  hm.addNotebook(nbName1);
+  const nbName2 = hm.generateUniqueNotebookName('Notes');
+  assert.equal(nbName2, 'Notes 3');
+
+  // Section auto-numbering
+  const sec1 = hm.addSection(nb1.id, 'New Section');
+  const secName1 = hm.generateUniqueSectionName(nb1.id, 'New Section');
+  assert.equal(secName1, 'New Section 2');
+  assert.equal(hm.isDuplicateSectionName(nb1.id, 'New Section'), true);
+  assert.equal(hm.isDuplicateSectionName(nb1.id, 'Different Section'), false);
+
+  // Page auto-numbering
+  const p1 = hm.addPage(sec1.id, 'Untitled Page');
+  const pageTitle1 = hm.generateUniquePageTitle(sec1.id, 'Untitled Page');
+  assert.equal(pageTitle1, 'Untitled Page 2');
+  assert.equal(hm.isDuplicatePageTitle(sec1.id, 'Untitled Page'), true);
+  assert.equal(hm.isDuplicatePageTitle(sec1.id, 'Unique Page Title'), false);
+});
+
