@@ -735,7 +735,6 @@ function renderBlocks() {
         <button class="mini-tool-btn btn-add-sub-pdf" title="Insert PDF document from Computer">📑 PDF</button>
         <button class="mini-tool-btn btn-add-sub-tbl" title="Insert Table">⊞ Table</button>
         <button class="mini-tool-btn btn-add-sub-plot" title="Insert Math Plot">📈 Plot</button>
-        <button class="mini-tool-btn btn-toggle-raw" title="Toggle Raw Markdown Code / Visual View">&lt;/&gt; Code</button>
         <button class="block-delete-btn" title="Delete entire Note container" style="margin-left:4px; font-size:14px; font-weight:bold; color:#94a3b8; background:none; border:none; cursor:pointer;">&times;</button>
       </div>
     `;
@@ -1013,11 +1012,8 @@ async function vaultImagesInTextItem(textItem, textDiv) {
 function renderTextItem(parentEl, item, headerEl, containerBlock) {
   const textDiv = document.createElement('div');
   textDiv.className = 'note-item-text';
-  textDiv.setAttribute('data-placeholder', 'Type note here (Markdown / LaTeX supported)...');
+  textDiv.setAttribute('data-placeholder', 'Type note here...');
   textDiv.contentEditable = 'true';
-
-  let isRawCodeMode = false;
-  const toggleBtn = headerEl ? (headerEl.querySelector('.btn-toggle-raw') || headerEl.querySelector('.btn-toggle-edit')) : null;
 
   const serializeTextContent = (el) => {
     if (!el) return '';
@@ -1175,32 +1171,13 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
   }
 
   const renderVisual = () => {
-    textDiv.classList.remove('raw-code-mode');
     const content = item.content || '';
-    if (content.includes('<p') || content.includes('<h1') || content.includes('<h2') || content.includes('<h3') || content.includes('<div') || content.includes('<ul') || content.includes('<ol') || content.includes('<strong') || content.includes('<b>')) {
+    if (content.includes('<p') || content.includes('<h1') || content.includes('<h2') || content.includes('<h3') || content.includes('<h4') || content.includes('<div') || content.includes('<ul') || content.includes('<ol') || content.includes('<strong') || content.includes('<b>')) {
       textDiv.innerHTML = content;
     } else {
       textDiv.innerHTML = MarkdownLatexParser.renderToHtml(content);
     }
     bindEmbeddedImageControls();
-    if (toggleBtn) {
-      toggleBtn.innerHTML = '&lt;/&gt; Code';
-      toggleBtn.title = 'Switch to Raw Markdown Code';
-    }
-  };
-
-  const renderRawCode = () => {
-    textDiv.classList.add('raw-code-mode');
-    const content = item.content || '';
-    if (content.includes('<')) {
-      textDiv.innerText = MarkdownLatexParser.htmlToMarkdown(content) || content;
-    } else {
-      textDiv.innerText = content;
-    }
-    if (toggleBtn) {
-      toggleBtn.innerHTML = '👁 Visual';
-      toggleBtn.title = 'Switch back to visual formatting';
-    }
   };
 
   // Initially render visual view
@@ -1216,31 +1193,10 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
     }
   });
 
-  // Header button toggles Raw Markdown Code mode
-  if (toggleBtn) {
-    toggleBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      isRawCodeMode = !isRawCodeMode;
-      if (isRawCodeMode) {
-        item.content = serializeTextContent(textDiv);
-        renderRawCode();
-        textDiv.focus();
-      } else {
-        item.content = textDiv.innerText || '';
-        renderVisual();
-        saveActivePageDocument();
-      }
-    });
-  }
-
   const syncToItem = () => {
     if (!textDiv._dirty) return;
     textDiv._dirty = false;
-    if (isRawCodeMode) {
-      item.content = textDiv.innerText || '';
-    } else {
-      item.content = serializeTextContent(textDiv);
-    }
+    item.content = serializeTextContent(textDiv);
   };
   textDiv._syncContent = syncToItem;
 
@@ -1320,7 +1276,7 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
     }
   });
 
-  // Rich Paste Handling: Preserve formatting, headings, bullet lists, and embedded images
+  // Rich Paste Handling: Direct WYSIWYG transfer matching MS Word architecture
   textDiv.addEventListener('paste', (e) => {
     e.stopPropagation();
     const htmlData = e.clipboardData?.getData('text/html');
@@ -1338,15 +1294,10 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
           const dataUrl = loadEvt.target.result;
           await vaultExternalImage(dataUrl);
 
-          if (isRawCodeMode) {
-            document.execCommand('insertText', false, `\n![Pasted Image](${dataUrl})\n`);
-            item.content = textDiv.innerText || '';
-          } else {
-            const renderedHtml = MarkdownLatexParser.renderToHtml(`![Pasted Image](${dataUrl})`);
-            document.execCommand('insertHTML', false, renderedHtml);
-            item.content = serializeTextContent(textDiv);
-            bindEmbeddedImageControls();
-          }
+          const renderedHtml = MarkdownLatexParser.renderToHtml(`![Pasted Image](${dataUrl})`);
+          document.execCommand('insertHTML', false, renderedHtml);
+          item.content = serializeTextContent(textDiv);
+          bindEmbeddedImageControls();
           saveActivePageDocument();
         };
         reader.readAsDataURL(file);
@@ -1357,16 +1308,10 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
     // 2. Rich Text & Mixed HTML Paste from Web / Docs / MS Word
     if (htmlData && htmlData.trim()) {
       e.preventDefault();
-      if (isRawCodeMode) {
-        const convertedMd = MarkdownLatexParser.htmlToMarkdown(htmlData);
-        document.execCommand('insertText', false, convertedMd);
-        item.content = textDiv.innerText || '';
-      } else {
-        const cleanHtml = MarkdownLatexParser.sanitizeRichHtml(htmlData);
-        document.execCommand('insertHTML', false, cleanHtml);
-        item.content = serializeTextContent(textDiv);
-        bindEmbeddedImageControls();
-      }
+      const cleanHtml = MarkdownLatexParser.sanitizeRichHtml(htmlData);
+      document.execCommand('insertHTML', false, cleanHtml);
+      item.content = serializeTextContent(textDiv);
+      bindEmbeddedImageControls();
       saveActivePageDocument();
       // Asynchronously vault external web images in background
       vaultImagesInTextItem(item, textDiv);
@@ -1377,7 +1322,7 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
     if (plainText) {
       e.preventDefault();
       document.execCommand('insertText', false, plainText);
-      item.content = isRawCodeMode ? (textDiv.innerText || '') : serializeTextContent(textDiv);
+      item.content = serializeTextContent(textDiv);
       saveActivePageDocument();
       return;
     }

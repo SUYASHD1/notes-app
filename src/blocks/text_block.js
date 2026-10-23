@@ -275,9 +275,17 @@ export class MarkdownLatexParser {
   }
 
   /**
-   * Renders the tokenized structure into clean HTML string.
+   * Renders content into clean HTML string.
+   * If already rich HTML, it returns it directly without lossy markdown translation.
    */
   static renderToHtml(text) {
+    if (!text || typeof text !== 'string') return '';
+
+    // If the content is already HTML, return it directly
+    if (text.includes('<p') || text.includes('<h1') || text.includes('<h2') || text.includes('<h3') || text.includes('<div') || text.includes('<ul') || text.includes('<ol') || text.includes('<strong') || text.includes('<b>') || text.includes('<i>') || text.includes('<span') || text.includes('<img')) {
+      return text;
+    }
+
     const ast = this.parse(text);
     const htmlLines = [];
 
@@ -449,7 +457,21 @@ export class MarkdownLatexParser {
           }
         });
 
-        // 5. Image normalization: Wrap content images into note-image-container
+        // 5. Clean external styles from headings & paragraphs so note typography is preserved
+        doc.querySelectorAll('h1, h2, h3, h4, h5, h6, p, span').forEach(el => {
+          if (el.style) {
+            el.style.fontSize = '';
+            el.style.fontFamily = '';
+            el.style.lineHeight = '';
+            el.style.backgroundColor = '';
+            el.style.color = '';
+            if (el.getAttribute('style') && !el.getAttribute('style').trim()) {
+              el.removeAttribute('style');
+            }
+          }
+        });
+
+        // 6. Image normalization: Wrap content images into note-image-container
         doc.querySelectorAll('img').forEach(img => {
           const w = parseInt(img.getAttribute('width') || img.style?.width || '0', 10);
           const h = parseInt(img.getAttribute('height') || img.style?.height || '0', 10);

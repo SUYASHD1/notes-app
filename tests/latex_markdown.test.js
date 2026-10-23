@@ -177,3 +177,25 @@ test('sanitizeRichHtml faithfully cleans MS Word paste: retains headings, unwrap
   assert.ok(clean.includes('target="_blank"'));
 });
 
+test('Web paste with numbered headings and body paragraphs preserves heading tags and does not mutate into lists', () => {
+  const webHtml = `
+    <h2>2. Does UWB require line-of-sight?</h2>
+    <p>Unlike optical or infrared systems, <strong>Ultra-Wideband (UWB)</strong> signals can pass through everyday obstacles such as walls, clothing, and furniture without total signal loss.</p>
+    <h3>3. Key Takeaway</h3>
+    <p>Always calibrate the anchor nodes for optimal accuracy.</p>
+  `;
+
+  const clean = MarkdownLatexParser.sanitizeRichHtml(webHtml);
+  // Heading must stay h2 and NOT degrade into a numbered list item
+  assert.ok(clean.includes('<h2>2. Does UWB require line-of-sight?</h2>'), 'Numbered heading must remain an h2 tag');
+  assert.ok(!clean.includes('<li'), 'Numbered heading must not be transformed into a list item');
+  assert.ok(clean.includes('<strong>Ultra-Wideband (UWB)</strong>'), 'Inline bold inside paragraph must be preserved');
+  assert.ok(clean.includes('<h3>3. Key Takeaway</h3>'), 'Subheading must remain an h3 tag');
+
+  // renderToHtml should pass clean HTML through directly without translation loss
+  const rendered = MarkdownLatexParser.renderToHtml(clean);
+  assert.ok(rendered.includes('<h2>2. Does UWB require line-of-sight?</h2>'));
+  assert.ok(!rendered.includes('<li'));
+});
+
+
