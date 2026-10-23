@@ -18,7 +18,7 @@ To transition from our proven prototype into a world-class production system wit
 
 ## 🧩 2. Current Features Already Built & Verified
 
-The following capabilities have been engineered, integrated, and verified with **47 passing automated tests (100%)**:
+The following capabilities have been engineered, integrated, and verified with **53 passing automated tests (100%)**:
 
 ### ✍️ A. Inking & Apple Pencil Engine
 * **Zero Tap-Delay on iPad:** Solved the classic 300ms mobile Safari hesitation timer by intercepting non-passive touch events and disabling double-tap heuristics.
@@ -111,15 +111,18 @@ Every page is an independent digital document structured in clean, open JSON for
 
 ---
 
-### ✅ Phase 1: Permanent Device Storage (Local-First Engine) — [COMPLETED]
-* **Goal:** Ensure notes, notebook hierarchy, drawings, and heavy assets (PDFs, images) are permanently preserved on the device across browser reloads, system reboots, and offline sessions.
-* **Status:** ✅ Completed & Verified with 51/51 automated tests (100% pass).
+### ✅ Phase 1: Permanent Device Storage & Data Hub (Local-First Engine) — [COMPLETED]
+* **Goal:** Ensure notes, notebook hierarchy, drawings, and heavy assets (PDFs, images) are permanently preserved on the device across browser reloads, system reboots, and offline sessions, with complete user ownership and zero risk of accidental browser clearing.
+* **Status:** ✅ Completed & Verified with 53/53 automated tests (100% pass).
 * **Deliverables Implemented:**
   1. **IndexedDB Document Store (`LocalVault` in `src/storage/indexed_db.js`):** Dedicated asynchronous key-value storage across 4 stores (`pages`, `hierarchy`, `assets`, `settings`), with graceful in-memory fallback for headless and automated testing.
-  2. **Blob & Large Asset Vault:** High-resolution images and PDF binaries are isolated into the dedicated assets store to eliminate iOS Safari 5MB localStorage crash limits.
-  3. **Auto-Save Debouncer:** Automatically saves 500ms after the last stroke or keystroke, with immediate flush triggers on `beforeunload`, tab/app switch (`visibilitychange`), and window blur.
-  4. **Document Manager UI:** Smooth, asynchronous page switching with live status indicator (*"Saved locally"*).
-  5. **Safety Backup Ledger:** Full prototype ledger backed up in the `prototype/` directory.
+  2. **Storage Safe-Lock (`navigator.storage.persist()`):** Requests browser persistence so automatic disk cleaners never purge the app database.
+  3. **Hard Drive Folder Mirroring:** Supports choosing any hard drive folder on desktop; includes automatic safe migration so existing notes are copied over before switching locations.
+  4. **One-Click Backup & Restore:** Complete library export into a portable `.notes` file with seamless JSON import.
+  5. **Storage & Data Hub Flyout UI:** Native-feel settings drawer with frosted-glass backdrop, live breakdown metrics (Notebooks, Sections, Pages, Strokes, Images/PDFs, Total KB/MB), and drive status badge.
+  6. **Blob & Large Asset Vault:** Isolates images and PDF binaries into the assets store to eliminate 5MB storage limits.
+  7. **Auto-Save Debouncer:** Automatically saves 500ms after the last stroke or keystroke, with immediate flush triggers on `beforeunload`, `visibilitychange`, and window blur.
+  8. **Safety Backup Ledger:** Full prototype ledger backed up in the `prototype/` directory.
 
 ---
 

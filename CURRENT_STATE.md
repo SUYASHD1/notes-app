@@ -1,46 +1,54 @@
 # 📓 Notes App — Current State & Knowledge Log
 
 > **Last Updated:** October 2026  
-> **Status:** Fully Functional, Highly Optimized, Zero Tap-Delay iPad Inking Active
+> **Status:** Fully Functional, Deployed to Production (Vercel), Storage & Data Hub Active  
+> **Live Web Application:** [https://notes-app-topaz-six.vercel.app/](https://notes-app-topaz-six.vercel.app/)  
+> **Automated Test Suite:** `53 / 53 tests passed (100%)`
 
 ---
 
 ## 🌟 1. Project Overview & Vision
 This application is a freeform, ultra-fast note-taking system designed to combine the spatial freedom of **Microsoft OneNote** with the fluid, paper-like handwriting experience of **Notability** on iPad and Desktop.
 
-* **Desktop Experience:** Rich text typing, mouse/keyboard navigation, keyboard shortcuts, equation insertion, PDF annotations, multi-block management.
+* **Desktop Experience:** Rich text typing, mouse/keyboard navigation, keyboard shortcuts, equation insertion, PDF annotations, multi-block management, hard drive folder mirroring, and one-click backups.
 * **iPad Experience:** Zero-latency Apple Pencil inking, pressure-sensitive strokes, true palm rejection, smooth floating-toggle mode switching, and full touch-gesture navigation.
+* **Storage Independence:** Your notes belong to you. Data is stored on your device, with live storage breakdown, browser safe-lock, hard drive folder mirroring, and one-click file backups.
 
 ---
 
-## 🔍 2. The Breakthrough: Key Findings & Lessons Learned
+## 🔍 2. Breakthroughs & Lessons Learned
 
-### 1. The "Wait For Some Time" Clue & The 300ms Safari Delay
-* **The Symptom:** When writing rapidly in cursive (e.g., writing *"hii"*), the long cursive letters flowed cleanly, but lifting the pencil to place a dot on the *"i"* or cross a *"t"* would fail to show up. However, if the user lifted the pencil and paused for a split-second before touching the screen again, the dot appeared normally.
-* **The Root Cause:** Mobile Safari has a built-in safety feature designed for regular web pages: whenever a finger or stylus lifts off the screen and touches again, Safari pauses for roughly 300 milliseconds to ask: *"Is the user trying to double-tap to zoom or scroll?"* 
-* **The Solution:** 
-  1. We added non-passive `touchstart`, `touchmove`, and `touchend` listeners directly to the drawing surface calling `e.preventDefault()`. This communicates directly to Safari: *"This screen is exclusively for drawing — skip all double-tap hesitation timers."*
-  2. We locked the viewport meta tag with `maximum-scale=1.0, user-scalable=no, viewport-fit=cover`.
-  3. Every dot, stroke, and letter now registers the exact millisecond the pencil touches the glass.
+### 1. The 300ms Safari Delay & Rapid Writing Fix
+* **The Symptom:** In cursive writing (e.g. *"hii"*), lifting the Apple Pencil to place a dot on the *"i"* or cross a *"t"* would often fail unless the user paused briefly.
+* **The Root Cause:** Mobile Safari pauses for ~300ms on touch lift to ask: *"Is the user about to double-tap to zoom?"*
+* **The Solution:** Added non-passive `touchstart`, `touchmove`, and `touchend` handlers with `e.preventDefault()` on the drawing canvas, and locked viewport zoom. Immediate single-tap dots now register the millisecond the stylus touches down.
 
-### 2. Ghost Mouse Clicks on Pencil Lift
-* **The Problem:** Whenever the Apple Pencil lifted off the screen, Safari automatically synthesized fake mouse click events (`mousedown` / `click`). These ghost events competed with the next pencil touch.
-* **The Solution:** In the stroke-finish handler (`onDrawCanvasPointerUp`), we call `e.preventDefault()` immediately when the event is cancelable. This cleanly closes the stroke and prevents any phantom mouse clicks from lingering.
+### 2. Ghost Clicks on Stylus Lift
+* **The Problem:** Safari synthesizes fake mouse click events when a stylus lifts off the screen.
+* **The Solution:** Canceled mouse-emulation in `pointerup` handlers, eliminating phantom marks and unwanted focus jumps.
 
-### 3. Server URL Query Stripping & Safari Caching
-* **The Problem:** Safari aggressively saves website scripts in its internal disk cache. Even after updating the code, Safari would continue loading old scripts. Furthermore, when adding cache busters like `app.js?v=3.0.0`, the custom Node.js server looked for a file literally named `app.js?v=3.0.0` on disk and returned a `404 Not Found`.
-* **The Solution:** 
-  1. Updated `server.js` to strip query parameters (`req.url.split('?')[0]`) before opening files on disk.
-  2. Injected strict HTTP headers (`Cache-Control: no-cache, no-store, must-revalidate`, `Pragma: no-cache`, `Expires: 0`) so Safari is forced to fetch the latest code on refresh.
+### 3. Vercel Static Hosting & Client-Side Architecture
+* **The Problem:** Deploying to Vercel initially failed because a server file named `server.js` caused Vercel to look for serverless Node.js backend endpoints rather than serving the static web app cleanly.
+* **The Solution:**
+  1. Renamed local dev runner to `dev-server.js` and dedicated the `public/` directory as the clean website root.
+  2. Maintained relative client paths (`./styles.css`, `./app.js`, `./src/core.js`) so the application loads instantly anywhere.
+  3. Enabled automated deployment through GitHub repository `SUYASHD1/notes-app`, successfully running at `https://notes-app-topaz-six.vercel.app/`.
 
-### 4. Palm Rejection via Dedicated Modes (Ink Mode vs. Navigate Mode)
-* **The Learning:** Trying to have the system guess in real time whether an incoming touch is a palm resting on the glass or an intentional pan gesture leads to unpredictable jumps, missed pencil starts, and screen wobbles.
-* **The Solution:** We introduced a dual-mode system powered by a **Draggable Floating Puck**:
-  * **Ink Mode (Apple Pencil Focus):** All finger touches and palms resting on the screen are 100% ignored. The Apple Pencil has full, uninterrupted control with zero accidental marks from palms.
-  * **Navigate Mode (Touch & Organization Focus):** Fingers can pan, pinch to zoom, move note boxes, edit text, and organize files.
+### 4. Preventing Browser History Cleanup from Deleting Notes
+* **The Concern:** If a user clears their browser history or cookies, could all their notes be lost?
+* **The Solution — Multi-Layered Protection:**
+  1. **Storage Safe-Lock (`navigator.storage.persist()`):** We request persistent storage from the browser. Once granted, the browser will never automatically delete the app's database, even during disk cleanup routines.
+  2. **Direct Hard Drive Folder Mirroring:** Users on desktop can choose any folder on their computer's hard drive. All notes are saved directly to that folder in standard, human-readable files.
+  3. **Automatic Safe Migration:** When choosing a folder, the app automatically copies all existing notebooks, sections, and pages into the new folder first so not a single character or stroke is ever lost.
+  4. **One-Click Backup (.notes):** Users can download their complete notebook collection into a portable `.notes` file with a single click anytime.
 
-### 5. WebKit GPU Compositing Quirks
-* **The Finding:** Applying `-webkit-backface-visibility: hidden` on the infinite canvas container caused Safari’s GPU rendering engine to freeze dynamic SVG updates during continuous pen strokes. Removing this restored 120 FPS fluid rendering.
+### 5. Native App Settings Experience (Storage & Data Hub)
+* **The Learning:** Replacing a raw browser popup with an integrated, frosted-glass settings flyout makes the website feel like a true native desktop application.
+* **What We Built:**
+  * Replaced the top-bar cloud icon with a clean storage drive icon.
+  * Clicking it opens the **Storage & Data Hub flyout card** anchored gracefully from the top-right.
+  * Shows live counts of Notebooks, Sections, Pages, Handwritten Strokes, Images/PDFs, and total size (e.g. `8.2 KB Used`).
+  * Provides one-click buttons for Hard Drive Folder Selection, Safe-Lock, Full Backup Download, and Backup Restoration.
 
 ---
 
@@ -48,50 +56,28 @@ This application is a freeform, ultra-fast note-taking system designed to combin
 
 ### ✍️ A. Fluid Drawing & Annotation Engine
 * **Instruments:**
-  * **Ballpoint Pen:** Clean, responsive ink with natural pressure sensitivity and smooth line-width tapering.
-  * **Highlighter:** Soft, semi-transparent highlighter with multiply-style layering that lets text and math shine through.
-  * **Smart Eraser:**
-    * *Whole-Stroke Eraser:* Deletes an entire line with a single touch.
-    * *Precision Slice Eraser:* Cuts through strokes like scissors, leaving remaining pieces intact.
-* **240Hz Coalesced Sampling:** Samples all intermediate points reported by the Apple Pencil hardware, ensuring fast cursive handwriting never looks jagged or angular.
-* **Shape Snapping:** Draw a shape (straight line, circle, rectangle, or triangle) and hold still for 400ms — the line snaps into a geometric figure.
-* **Instant Single Dots:** Guaranteed capture for single-tap dots on *"i"*, *"j"*, punctuation periods, and decimal points.
+  * **Ballpoint Pen:** Natural pressure-modulated width and midpoint smoothing.
+  * **Highlighter:** Semi-transparent multiply blending that highlights underneath text.
+  * **Smart Eraser:** Full-stroke eraser and precision segment slice eraser.
+* **240Hz Coalesced Sampling:** Captures all intermediate points from Apple Pencil hardware.
+* **Shape Snapping:** Draw a line, circle, rectangle, or triangle and pause 400ms to snap into a geometric shape.
+* **Instant Single Dots:** Guaranteed capture for punctuation, decimal points, and dots on *"i"*.
 
-### 🧭 B. Navigation & Canvas Workspace
-* **Infinite 2D Workspace:** Pan in any direction without borders or boundaries.
-* **Smooth Inertia Panning:** Fling the canvas with your finger to glide across your notes.
-* **Pinch-to-Zoom:** Zoom smoothly between 10% and 500% centered around your fingers or mouse cursor.
-* **Zoom to Fit (Shift+1):** One-click button to automatically fit all notes and drawings onto your screen.
-* **Draggable Floating Puck:** A sleek, semi-transparent toggle at the bottom-right corner. Tap it to switch between Ink Mode and Navigate Mode; drag it anywhere on the screen if it ever gets in your way.
+### 🧭 B. Navigation & Workspace
+* **Infinite 2D Workspace:** Smooth inertia panning and pinch-to-zoom (10% to 500%).
+* **Zoom-to-Fit (Shift+1):** Automatically frames all your notes and drawings in the viewport.
+* **Draggable Floating Puck:** Quick-switch between Ink Mode and Navigate Mode; drag it anywhere on screen.
 
 ### 📦 C. Universal Note Containers (Blocks)
-* **Freeform Placement:** Double-click anywhere on the canvas to drop a note container.
-* **Mixed-Media Support inside Containers:**
-  * **Rich Text:** Headings (H1, H2, H3), bold, italics, underline, strike, text color, and bullet/numbered/checklist items.
-  * **Embedded Sketching:** Mini-drawings inside notes with local coordinate systems.
-  * **LaTeX Equations:** High-speed math formula rendering via KaTeX (e.g. `\int_{0}^{\infty} e^{-x^2} dx`).
-  * **PDF Printouts:** Insert multi-page PDF documents, render each page sequentially at native A4/Letter aspect ratios, and write directly on top of them.
-  * **Images & Cropping:** Insert images with 8-point corner/edge resize handles and custom cropping tool.
-  * **Dynamic Tables:** Add rows and columns to organize structured data.
-  * **Function Plotter:** Graph mathematical functions (e.g. `sin(x) * exp(-0.15 * x)`) with interactive coordinate grids.
-* **Container Resizing & Movement:** Drag containers by their title bar, resize width/height via corner handles, or delete individual containers.
+* **Freeform Placement:** Double-click anywhere to drop a note container.
+* **Mixed Media:** Markdown text, LaTeX math equations (KaTeX), multi-page PDF printouts with handwriting annotations, images with 8-point resize handles, dynamic tables, and interactive 2D function plotters.
 
-### 📚 D. Notebook Hierarchy & Organization
-* **2-Tier Structure:** Notebooks ➔ Sections ➔ Pages.
-* **Subpage Indentation:** Nest pages under parent pages for organized chapters and lectures.
-* **Instant Search:** Live-filter pages in the sidebar by typing keywords.
-* **Collapsible Sidebar:** Toggle the sidebar (Ctrl+\\) to get a clean, distraction-free writing view.
-
-### 💾 E. Storage, Reliability & Cloud Sync
-* **Dual-Layer Local Storage:**
-  * Fast JSON state stored in `localStorage`.
-  * Heavy binary assets (PDFs and high-resolution images) automatically stream into **IndexedDB** to avoid browser storage crashes.
-* **Atomic Document Saving:** Verifies file integrity before committing changes, preventing data loss.
-* **Cloudflare R2 Sync Support:**
-  * Connect your private R2 bucket to back up notes to the cloud.
-  * Offline queue automatically syncs when the internet connection is restored.
-  * Conflict resolution to keep notes safe across multiple devices.
-* **High-Volume Frustum Culling:** Only renders visible blocks and strokes on screen, easily handling over 10,000 ink strokes and 2,000 blocks at a silky smooth 60–120 FPS.
+### 💾 D. Storage & Data Hub
+* **Device Storage Vault:** Fast, sandboxed IndexedDB storage across 4 stores (`pages`, `hierarchy`, `assets`, `settings`).
+* **Hard Drive Folder Mirror:** Save notes directly into a real directory on your PC.
+* **Safe-Lock Protection:** Prevents browser cleanups from wiping your database.
+* **Full Backup & Restore:** Export everything to `.notes` and import with one click.
+* **Cloudflare R2 Cloud Sync:** Optional zero-cost cloud sync tucked into an expandable drawer.
 
 ---
 
@@ -99,16 +85,16 @@ This application is a freeform, ultra-fast note-taking system designed to combin
 
 | File | Primary Role |
 | :--- | :--- |
-| [public/index.html](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/index.html) | Main HTML structure, viewport settings, ribbon toolbars, canvas layers, and modals. |
-| [public/app.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/app.js) | Complete application controller, inking engine, gesture recognizer, shape detector, and UI event binding. |
-| [public/styles.css](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/styles.css) | Modern glassmorphism UI styles, docked ribbon, floating puck, note boxes, and animations. |
-| [server.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/server.js) | Lightweight local development server with URL query-stripping and strict no-cache headers. |
-| `src/` | Modular helper classes (DocumentModel, Viewport, StrokeEngine, ShapeDetector, EraserEngine, R2Sync). |
-| `tests/` | 47 automated tests covering resizing, gestures, math parsing, PDF layout, frustum culling, and cloud sync. |
+| [public/index.html](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/index.html) | Main HTML layout, top bar, canvas viewport, and Storage & Data Hub settings flyout. |
+| [public/app.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/app.js) | Main application controller, inking engine, gesture recognizer, and Storage Hub event binding. |
+| [public/styles.css](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/styles.css) | Modern glassmorphism UI styles, docked ribbon, floating puck, note boxes, and settings menu. |
+| [src/storage/indexed_db.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/src/storage/indexed_db.js) | Full storage engine: IndexedDB vault, hard drive folder migration, live metrics, and backup/restore. |
+| [dev-server.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/dev-server.js) | Local development server with URL query-stripping and strict no-cache headers. |
+| `tests/` | 53 automated unit tests covering all inking, geometry, storage, and backup systems. |
 
 ---
 
 ## 🧪 5. Automated Test Status
-* **Unit Tests Passing:** `47 / 47 tests passed (100%)`
-* **Handwriting Simulation Test:** Verified with simulated rapid cursive writing + immediate 30ms single dots without missing strokes.
-* **Server Verification:** Status `200 OK`, `Cache-Control: no-cache, no-store, must-revalidate`.
+* **Unit Tests Passing:** `53 / 53 tests passed (100%)`
+* **Storage Hub Verification:** Headless browser verified modal opening, metrics calculation, backup download, and clean close.
+* **Production Status:** Deployed live on Vercel at `https://notes-app-topaz-six.vercel.app/`.
