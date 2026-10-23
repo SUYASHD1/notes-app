@@ -86,8 +86,11 @@ This application is a freeform, ultra-fast note-taking system designed to combin
 | File | Primary Role |
 | :--- | :--- |
 | [public/index.html](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/index.html) | Main HTML layout, top bar, canvas viewport, and Storage & Data Hub settings flyout. |
-| [public/app.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/app.js) | Main application controller, inking engine, gesture recognizer, and Storage Hub event binding. |
+| [public/app.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/app.js) | Slim master application orchestrator importing modular UI, canvas, and block components. |
 | [public/styles.css](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/styles.css) | Modern glassmorphism UI styles, docked ribbon, floating puck, note boxes, and settings menu. |
+| `src/ui/` | Modular UI controllers: `toast.js`, `storage_settings_modal.js`, `sidebar.js`, `ink_palette.js`, `layout_puck.js`. |
+| `src/canvas/` | Math, viewport, stroke smoothing, gesture recognition, and eraser engines. |
+| `src/blocks/` | Universal note containers, text/latex, tables, math plots, and PDF printout managers. |
 | [src/storage/indexed_db.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/src/storage/indexed_db.js) | Full storage engine: IndexedDB vault, hard drive folder migration, live metrics, and backup/restore. |
 | [dev-server.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/dev-server.js) | Local development server with URL query-stripping and strict no-cache headers. |
 | `tests/` | 53 automated unit tests covering all inking, geometry, storage, and backup systems. |
