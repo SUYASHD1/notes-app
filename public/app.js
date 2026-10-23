@@ -4161,10 +4161,14 @@ function setupEdgeAutoScroll() {
 function setupRibbonTabs() {
   const homeTabBtn = document.getElementById('tab-btn-home');
   const insertTabBtn = document.getElementById('tab-btn-insert');
+  const ribbonBar = document.getElementById('ribbon-bar');
   const textGroup = document.getElementById('ribbon-text-group');
   const insertCluster = document.querySelector('.insert-cluster');
 
   const switchTab = (tab) => {
+    if (ribbonBar) {
+      ribbonBar.setAttribute('data-tab', tab);
+    }
     if (tab === 'home') {
       homeTabBtn?.classList.add('active');
       insertTabBtn?.classList.remove('active');
@@ -4178,8 +4182,23 @@ function setupRibbonTabs() {
     }
   };
 
-  homeTabBtn?.addEventListener('click', () => switchTab('home'));
-  insertTabBtn?.addEventListener('click', () => switchTab('insert'));
+  const onHomeClick = (e) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    switchTab('home');
+  };
+
+  const onInsertClick = (e) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    switchTab('insert');
+  };
+
+  homeTabBtn?.addEventListener('click', onHomeClick);
+  homeTabBtn?.addEventListener('pointerdown', (e) => e?.stopPropagation());
+
+  insertTabBtn?.addEventListener('click', onInsertClick);
+  insertTabBtn?.addEventListener('pointerdown', (e) => e?.stopPropagation());
 
   // Auto-switch to Home (Text Formatting) tab when typing in notes
   document.addEventListener('focusin', (e) => {

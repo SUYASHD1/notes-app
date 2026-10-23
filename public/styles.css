@@ -637,6 +637,21 @@ body, html {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
+/* Tab Switching Control */
+#ribbon-bar[data-tab="home"] #ribbon-text-group {
+  display: flex !important;
+}
+#ribbon-bar[data-tab="home"] .insert-cluster {
+  display: none !important;
+}
+
+#ribbon-bar[data-tab="insert"] #ribbon-text-group {
+  display: none !important;
+}
+#ribbon-bar[data-tab="insert"] .insert-cluster {
+  display: flex !important;
+}
+
 .ribbon-cluster {
   display: flex;
   align-items: center;
@@ -2350,15 +2365,30 @@ body[data-mode="ipad"] #ribbon-ink-group {
   display: flex !important;
 }
 
+body[data-mode="ipad"] .ribbon-tabs-nav {
+  display: none !important;
+}
+
 body[data-mode="windows"] #ribbon-ink-group {
   display: none !important;
 }
 
-body[data-mode="windows"] #ribbon-text-group {
+body[data-mode="windows"] .ribbon-tabs-nav {
   display: flex !important;
 }
 
-body[data-mode="windows"] .insert-cluster {
+/* In Windows mode, ribbon content depends on active Home vs Insert tab */
+body[data-mode="windows"] #ribbon-bar[data-tab="home"] #ribbon-text-group {
+  display: flex !important;
+}
+body[data-mode="windows"] #ribbon-bar[data-tab="home"] .insert-cluster {
+  display: none !important;
+}
+
+body[data-mode="windows"] #ribbon-bar[data-tab="insert"] #ribbon-text-group {
+  display: none !important;
+}
+body[data-mode="windows"] #ribbon-bar[data-tab="insert"] .insert-cluster {
   display: flex !important;
 }
 

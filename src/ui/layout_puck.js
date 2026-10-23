@@ -29,9 +29,9 @@ export function setMode({
     activeDrawCanvas?.classList.add('hidden');
     if (clearActiveDrawCanvas) clearActiveDrawCanvas();
     document.querySelectorAll('.note-item-text').forEach(t => t.contentEditable = 'true');
-    if (textGroup) textGroup.style.display = 'flex';
+    const ribbonTabsNav = document.querySelector('.ribbon-tabs-nav');
+    if (ribbonTabsNav) ribbonTabsNav.style.display = 'flex';
     if (inkGroup) inkGroup.style.display = 'none';
-    if (insertCluster) insertCluster.style.display = 'flex';
     if (selCluster) selCluster.style.display = 'flex';
 
     if (puck) {
@@ -62,9 +62,9 @@ export function setMode({
     // Strictly lock scrollbars in ink mode so stylus or hand never triggers scrolling
     document.querySelectorAll('.canvas-scrollbar').forEach(sb => sb.classList.add('locked'));
 
-    if (textGroup) textGroup.style.display = 'none';
+    const ribbonTabsNav = document.querySelector('.ribbon-tabs-nav');
+    if (ribbonTabsNav) ribbonTabsNav.style.display = 'none';
     if (inkGroup) inkGroup.style.display = 'flex';
-    if (insertCluster) insertCluster.style.display = 'none';
     if (selCluster) selCluster.style.display = 'none';
 
     if (puck) {
