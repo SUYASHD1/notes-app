@@ -30,7 +30,10 @@ import {
   initHierarchy,
   saveHierarchy,
   renderHierarchyUI,
-  setupSidebarControls
+  setupSidebarControls,
+  setupInkPaletteControls,
+  setupLayoutSwitcher,
+  setMode
 } from './src/core.js';
 
 // Global State
@@ -127,9 +130,28 @@ async function initApp() {
   await state.vault.init();
   await initHierarchy({ state, renderHierarchyUI: () => renderHierarchyUI({ state, saveActivePageDocument, loadActivePageDocument, renderAll }) });
   initTouchRecognizer();
-  setupLayoutSwitcher();
+  setupLayoutSwitcher({
+    state,
+    sidebar,
+    resizeActiveDrawCanvas,
+    updateWorldTransform,
+    switchMode: (mode, silent) => setMode({
+      state,
+      mode,
+      silent,
+      activeDrawCanvas,
+      clearActiveDrawCanvas,
+      resizeActiveDrawCanvas,
+      showToast
+    })
+  });
   setupRibbonControls();
-  setupInkPaletteControls();
+  setupInkPaletteControls({
+    state,
+    activeDrawCanvas,
+    clearActiveDrawCanvas,
+    showToast
+  });
   setupSidebarControls({
     state,
     saveActivePageDocument,
@@ -3151,306 +3173,7 @@ function setupKeyboardAndClipboard() {
 
 
 
-// --- Layout, Navigate vs Ink Modes & Floating Puck ---
-
-function setMode(mode, silent = false) {
-  state.mode = mode;
-  document.body.setAttribute('data-mode', mode);
-
-  const winBtn = document.getElementById('btn-mode-win');
-  const ipadBtn = document.getElementById('btn-mode-ipad');
-  const textGroup = document.getElementById('ribbon-text-group');
-  const inkGroup = document.getElementById('ribbon-ink-group');
-  const insertCluster = document.querySelector('.insert-cluster');
-  const selCluster = document.querySelector('.ml-auto');
-  const puck = document.getElementById('floating-mode-puck');
-  const puckIcon = document.getElementById('puck-icon');
-  const puckLabel = document.getElementById('puck-label');
-
-  if (mode === 'windows') {
-    // Navigate Mode (Keyboard / Touch Navigation)
-    winBtn?.classList.add('active');
-    ipadBtn?.classList.remove('active');
-    activeDrawCanvas.classList.add('hidden');
-    clearActiveDrawCanvas();
-    document.querySelectorAll('.note-item-text').forEach(t => t.contentEditable = 'true');
-    if (textGroup) textGroup.style.display = 'flex';
-    if (inkGroup) inkGroup.style.display = 'none';
-    if (insertCluster) insertCluster.style.display = 'flex';
-    if (selCluster) selCluster.style.display = 'flex';
-
-    if (puck) {
-      puck.classList.remove('mode-ink');
-      puck.classList.add('mode-navigate');
-      if (puckIcon) puckIcon.textContent = '✋';
-      if (puckLabel) puckLabel.textContent = 'Navigate';
-    }
-    if (!silent) showToast('💻 Navigate Mode: Smooth Touch Pan, Zoom & Typing Active');
-  } else {
-    // Ink Mode (Apple Pencil & Stylus writing)
-    ipadBtn?.classList.add('active');
-    winBtn?.classList.remove('active');
-    activeDrawCanvas.classList.remove('hidden');
-    resizeActiveDrawCanvas();
-    // Reset selections so user never accidentally drags a note box while handwriting
-    state.selectedBlockIds.clear();
-    state.activeContainerId = null;
-    document.querySelectorAll('.universal-note-container, .canvas-block').forEach(c => c.classList.remove('selected'));
-    document.querySelectorAll('.note-item-text').forEach(t => t.contentEditable = 'false');
-    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
-    if (window.getSelection) window.getSelection().removeAllRanges();
-
-    if (textGroup) textGroup.style.display = 'none';
-    if (inkGroup) inkGroup.style.display = 'flex';
-    if (insertCluster) insertCluster.style.display = 'none';
-    if (selCluster) selCluster.style.display = 'none';
-
-    if (puck) {
-      puck.classList.remove('mode-navigate');
-      puck.classList.add('mode-ink');
-      if (puckIcon) puckIcon.textContent = '✏️';
-      if (puckLabel) puckLabel.textContent = 'Ink Mode';
-    }
-    if (!silent) showToast('✏️ Ink Mode: Dedicated Apple Pencil Active');
-  }
-}
-
-function setupFloatingModePuck() {
-  const puck = document.getElementById('floating-mode-puck');
-  if (!puck) return;
-
-  // Restore saved position anywhere on left/right/edges
-  try {
-    const saved = JSON.parse(localStorage.getItem('notes_puck_pos') || 'null');
-    if (saved && typeof saved.x === 'number' && typeof saved.y === 'number') {
-      const maxX = Math.max(10, window.innerWidth - 130);
-      const maxY = Math.max(10, window.innerHeight - 50);
-      const clampedX = Math.min(maxX, Math.max(10, saved.x));
-      const clampedY = Math.min(maxY, Math.max(50, saved.y));
-      puck.style.left = `${clampedX}px`;
-      puck.style.top = `${clampedY}px`;
-      puck.style.right = 'auto';
-      puck.style.bottom = 'auto';
-    }
-  } catch (_) {}
-
-  let isDraggingPuck = false;
-  let hasMoved = false;
-  let puckStartPointer = { x: 0, y: 0 };
-  let puckStartRect = { left: 0, top: 0 };
-
-  const onPuckPointerDown = (e) => {
-    e.stopPropagation();
-    isDraggingPuck = true;
-    hasMoved = false;
-    puckStartPointer = { x: e.clientX, y: e.clientY };
-    const r = puck.getBoundingClientRect();
-    puckStartRect = { left: r.left, top: r.top };
-    puck.classList.add('dragging');
-    try { puck.setPointerCapture(e.pointerId); } catch (_) {}
-  };
-
-  const onPuckPointerMove = (e) => {
-    if (!isDraggingPuck) return;
-    e.stopPropagation();
-    const dx = e.clientX - puckStartPointer.x;
-    const dy = e.clientY - puckStartPointer.y;
-    if (Math.hypot(dx, dy) > 5) {
-      hasMoved = true;
-    }
-
-    let newX = puckStartRect.left + dx;
-    let newY = puckStartRect.top + dy;
-
-    // Clamp inside window boundaries with generous touch margin
-    const maxX = window.innerWidth - puck.offsetWidth - 8;
-    const maxY = window.innerHeight - puck.offsetHeight - 8;
-    newX = Math.min(maxX, Math.max(8, newX));
-    newY = Math.min(maxY, Math.max(48, newY));
-
-    puck.style.left = `${newX}px`;
-    puck.style.top = `${newY}px`;
-    puck.style.right = 'auto';
-    puck.style.bottom = 'auto';
-  };
-
-  const onPuckPointerUp = (e) => {
-    if (!isDraggingPuck) return;
-    e.stopPropagation();
-    isDraggingPuck = false;
-    puck.classList.remove('dragging');
-    try {
-      if (puck.hasPointerCapture && puck.hasPointerCapture(e.pointerId)) {
-        puck.releasePointerCapture(e.pointerId);
-      }
-    } catch (_) {}
-
-    if (hasMoved) {
-      // User parked it! Save position
-      const r = puck.getBoundingClientRect();
-      try {
-        localStorage.setItem('notes_puck_pos', JSON.stringify({ x: Math.round(r.left), y: Math.round(r.top) }));
-      } catch (_) {}
-    } else {
-      // Quick tap! Toggle between Navigate and Ink modes
-      const nextMode = state.mode === 'ipad' ? 'windows' : 'ipad';
-      setMode(nextMode);
-    }
-  };
-
-  puck.addEventListener('pointerdown', onPuckPointerDown);
-  window.addEventListener('pointermove', onPuckPointerMove);
-  window.addEventListener('pointerup', onPuckPointerUp);
-  window.addEventListener('pointercancel', onPuckPointerUp);
-}
-
-function setupLayoutSwitcher() {
-  state.layout = 'layout-a';
-  document.body.setAttribute('data-layout', 'layout-a');
-
-  document.getElementById('btn-toggle-sidebar').addEventListener('click', () => {
-    state.sidebarCollapsed = !state.sidebarCollapsed;
-    sidebar.classList.toggle('collapsed', state.sidebarCollapsed);
-    setTimeout(() => {
-      resizeActiveDrawCanvas();
-      updateWorldTransform();
-    }, 150);
-  });
-
-  const winBtn = document.getElementById('btn-mode-win');
-  const ipadBtn = document.getElementById('btn-mode-ipad');
-
-  winBtn?.addEventListener('click', () => setMode('windows'));
-  ipadBtn?.addEventListener('click', () => setMode('ipad'));
-
-  setupFloatingModePuck();
-  setMode(state.mode || 'windows', true);
-
-  window.addEventListener('resize', () => {
-    resizeActiveDrawCanvas();
-    updateWorldTransform();
-  });
-}
-
-// --- iPad Inking & Eraser Palette Controls ---
-
-function setupInkPaletteControls() {
-  const penBtn = document.getElementById('ink-tool-pen');
-  const highlighterBtn = document.getElementById('ink-tool-highlighter');
-  const eraserBtn = document.getElementById('ink-tool-eraser');
-  const penControls = document.getElementById('pen-controls-cluster');
-  const eraserControls = document.getElementById('eraser-controls-cluster');
-
-  const activatePen = () => {
-    state.inkTool = 'pen';
-    penBtn?.classList.add('active');
-    highlighterBtn?.classList.remove('active');
-    eraserBtn?.classList.remove('active');
-    if (penControls) penControls.style.display = 'flex';
-    if (eraserControls) eraserControls.style.display = 'none';
-    activeDrawCanvas.classList.remove('eraser-cursor');
-    clearActiveDrawCanvas();
-  };
-
-  const activateHighlighter = () => {
-    state.inkTool = 'highlighter';
-    highlighterBtn?.classList.add('active');
-    penBtn?.classList.remove('active');
-    eraserBtn?.classList.remove('active');
-    if (penControls) penControls.style.display = 'flex';
-    if (eraserControls) eraserControls.style.display = 'none';
-    activeDrawCanvas.classList.remove('eraser-cursor');
-    clearActiveDrawCanvas();
-  };
-
-  const activateEraser = () => {
-    state.inkTool = 'eraser';
-    eraserBtn?.classList.add('active');
-    penBtn?.classList.remove('active');
-    highlighterBtn?.classList.remove('active');
-    if (penControls) penControls.style.display = 'none';
-    if (eraserControls) eraserControls.style.display = 'flex';
-    activeDrawCanvas.classList.add('eraser-cursor');
-  };
-
-  penBtn?.addEventListener('click', () => {
-    activatePen();
-    showToast('🖊 Pen Tool Active');
-  });
-
-  highlighterBtn?.addEventListener('click', () => {
-    activateHighlighter();
-    showToast('🖍 Highlighter Tool Active');
-  });
-
-  eraserBtn?.addEventListener('click', () => {
-    activateEraser();
-    showToast(`🧹 Eraser Active (${state.eraserMode === 'full' ? 'Full Stroke' : 'Partial Stroke'})`);
-  });
-
-  // Pen Tip Size Buttons
-  document.querySelectorAll('.ink-size-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.ink-size-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.inkWidth = parseInt(btn.dataset.size, 10) || 3;
-      if (state.inkTool === 'eraser') activatePen();
-      showToast(`Tip Size: ${state.inkWidth}px`);
-    });
-  });
-
-  // Pen Color Swatches
-  document.querySelectorAll('.ink-swatch').forEach(swatch => {
-    swatch.addEventListener('click', () => {
-      document.querySelectorAll('.ink-swatch').forEach(s => s.classList.remove('active'));
-      swatch.classList.add('active');
-      state.inkColor = swatch.dataset.color;
-      if (state.inkTool === 'eraser') activatePen();
-      showToast(`🎨 Color: ${swatch.title}`);
-    });
-  });
-
-  // Custom Color Input
-  const customColor = document.getElementById('ink-color-custom');
-  if (customColor) {
-    customColor.addEventListener('input', (e) => {
-      document.querySelectorAll('.ink-swatch').forEach(s => s.classList.remove('active'));
-      state.inkColor = e.target.value;
-      if (state.inkTool === 'eraser') activatePen();
-    });
-  }
-
-  // Eraser Modes: Full vs Partial
-  const fullBtn = document.getElementById('eraser-mode-full');
-  const partBtn = document.getElementById('eraser-mode-partial');
-
-  fullBtn?.addEventListener('click', () => {
-    state.eraserMode = 'full';
-    fullBtn.classList.add('active');
-    partBtn?.classList.remove('active');
-    activateEraser();
-    showToast('⚡ OneNote-Style Full Stroke Eraser');
-  });
-
-  partBtn?.addEventListener('click', () => {
-    state.eraserMode = 'partial';
-    partBtn.classList.add('active');
-    fullBtn?.classList.remove('active');
-    activateEraser();
-    showToast('✂ Segment Partial Stroke Eraser');
-  });
-
-  // Eraser Sizes
-  document.querySelectorAll('.ink-eraser-size-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.ink-eraser-size-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.eraserSize = parseInt(btn.dataset.radius, 10) || 24;
-      activateEraser();
-      showToast(`Eraser Size: ${btn.textContent}`);
-    });
-  });
-}
+// --- Layout, Floating Puck & Inking Palette are now managed by src/ui/ modules ---
 
 
 

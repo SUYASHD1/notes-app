@@ -26,6 +26,8 @@ export { LocalVault } from './storage/indexed_db.js';
 export { showToast } from './ui/toast.js';
 export { setupStorageSettingsModal } from './ui/storage_settings_modal.js';
 export { initHierarchy, saveHierarchy, renderHierarchyUI, setupSidebarControls, createDefaultHierarchy } from './ui/sidebar.js';
+export { setupInkPaletteControls } from './ui/ink_palette.js';
+export { setupLayoutSwitcher, setMode, setupFloatingModePuck } from './ui/layout_puck.js';
 
 // Backward compatibility alias for StrokeEngine
 import { StrokeRenderer } from './canvas/stroke_renderer.js';
