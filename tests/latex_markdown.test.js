@@ -130,3 +130,22 @@ test('Wikipedia article paste cleans up image links, removes citation footnotes,
   assert.ok(rendered.includes('href="https://php.net"'), 'Link should retain destination href');
 });
 
+test('Wikipedia sidebar boxes, empty links, tiny UI icons, and [v][t][e] template buttons are stripped', () => {
+  const sidebarSnippet = `
+    <table class="sidebar">
+      <tr><td><img src="https://example.com/icon.png" width="20" height="20" alt="icon" /></td></tr>
+      <tr><td><a href="https://en.wikipedia.org/wiki/History_of_geography"></a></td></tr>
+      <tr><td><a href="https://en.wikipedia.org/wiki/Template:Sidebar">v</a></td></tr>
+    </table>
+    <p>This is the real article text.</p>
+    <a href="https://example.com/empty">   </a>
+  `;
+
+  const md = MarkdownLatexParser.htmlToMarkdown(sidebarSnippet);
+  assert.ok(!md.includes('https://en.wikipedia.org/wiki/History_of_geography'), 'Empty sidebar link must be stripped');
+  assert.ok(!md.includes('[v]'), 'Template [v] link must be stripped');
+  assert.ok(!md.includes('icon.png'), 'Tiny 20x20 icon must be skipped');
+  assert.ok(!md.includes('https://example.com/empty'), 'Whitespace-only link must be skipped');
+  assert.ok(md.includes('This is the real article text.'));
+});
+

@@ -373,6 +373,10 @@ export class MarkdownLatexParser {
       try {
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
+
+        // Strip non-content navigation sidebars, infoboxes, and template chrome
+        doc.querySelectorAll('table.sidebar, .sidebar, .navbox, .infobox, .mw-editsection, .mw-jump-link, .navbar, .magnify, .noprint, [role="navigation"], script, style').forEach(el => el.remove());
+
         const converted = this.nodeToMarkdown(doc.body).trim();
         if (converted) return converted;
       } catch (_) {}
@@ -380,14 +384,21 @@ export class MarkdownLatexParser {
 
     // RegEx based fallback for non-DOM environments
     return html
+      .replace(/<table[^>]*class=["'][^"']*(sidebar|infobox|navbox)[^"']*["'][^>]*>[\s\S]*?<\/table>/gi, '')
+      .replace(/<div[^>]*class=["'][^"']*(sidebar|infobox|navbox|mw-editsection|navbar|magnify|noprint)[^"']*["'][^>]*>[\s\S]*?<\/div>/gi, '')
       .replace(/<sup[^>]*class=["'][^"']*reference[^"']*["'][^>]*>[\s\S]*?<\/sup>/gi, '')
       .replace(/<a[^>]*href=["']#cite[^"']*["'][^>]*>[\s\S]*?<\/a>/gi, '')
       .replace(/<a[^>]*>\s*(<img[^>]*>)\s*<\/a>/gi, '$1')
       .replace(/<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, (_, href, text) => {
-        if (href.startsWith('#cite') || href.startsWith('#ref') || /^\[\d+\]$/.test(text.trim())) {
+        const trimmed = text.trim();
+        if (!trimmed) return '';
+        if (href.startsWith('#cite') || href.startsWith('#ref') || /^\[\d+\]$/.test(trimmed)) {
           return '';
         }
-        return `[${text}](${href})`;
+        if (['v', 't', 'e'].includes(trimmed.toLowerCase()) && (href.includes('Template') || href.includes('Special:EditPage'))) {
+          return '';
+        }
+        return `[${trimmed}](${href})`;
       })
       .replace(/<h1[^>]*>([\s\S]*?)<\/h1>/gi, '\n# $1\n')
       .replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, '\n## $1\n')
@@ -427,20 +438,28 @@ export class MarkdownLatexParser {
     if (tag === 'img') {
       const src = node.getAttribute('src') || '';
       if (!src) return '';
+
+      // Skip tiny UI icons, badges, and decorative pixels (<= 32px)
+      const width = parseInt(node.getAttribute('width') || node.style?.width || '0', 10);
+      const height = parseInt(node.getAttribute('height') || node.style?.height || '0', 10);
+      if ((width > 0 && width <= 32) || (height > 0 && height <= 32)) {
+        return '';
+      }
+
       const rawAlt = node.getAttribute('data-raw-alt') || node.getAttribute('alt') || 'Pasted Image';
       const container = node.closest ? node.closest('.note-image-container') : null;
       let wrap = '';
-      let width = '';
+      let widthProp = '';
       if (container) {
         wrap = container.getAttribute('data-wrap') || '';
-        width = container.getAttribute('data-width') || container.style.width || '';
+        widthProp = container.getAttribute('data-width') || container.style.width || '';
       }
       let finalAlt = rawAlt;
-      if (wrap || width) {
+      if (wrap || widthProp) {
         const baseAlt = rawAlt.split('|')[0].trim() || 'Pasted Image';
         const parts = [baseAlt];
         if (wrap && wrap !== 'center') parts.push(`wrap=${wrap}`);
-        if (width) parts.push(`width=${width}`);
+        if (widthProp) parts.push(`width=${widthProp}`);
         finalAlt = parts.join('|');
       }
       return `\n![${finalAlt}](${src})\n`;
@@ -479,15 +498,23 @@ export class MarkdownLatexParser {
         return `<sup>${childrenText}</sup>`;
       case 'a': {
         const href = node.getAttribute('href') || '';
+        const trimmed = childrenText.trim();
+        // Skip empty links without label
+        if (!trimmed) return '';
+
         // If anchor wraps an image, return just the image without link brackets
         if (node.querySelector && node.querySelector('img')) {
-          return childrenText.trim() + '\n';
+          return trimmed + '\n';
         }
         // If anchor is an internal footnote reference (#cite, #ref, mw-ref, or [287])
-        if (href.startsWith('#cite') || href.startsWith('#ref') || (node.classList && node.classList.contains('mw-ref')) || /^\[\d+\]$/.test(childrenText.trim())) {
+        if (href.startsWith('#cite') || href.startsWith('#ref') || (node.classList && node.classList.contains('mw-ref')) || /^\[\d+\]$/.test(trimmed)) {
           return '';
         }
-        return href ? `[${childrenText}](${href})` : childrenText;
+        // Skip template action links [v], [t], [e]
+        if (['v', 't', 'e'].includes(trimmed.toLowerCase()) && (href.includes('Template') || href.includes('Special:EditPage'))) {
+          return '';
+        }
+        return href ? `[${trimmed}](${href})` : trimmed;
       }
       default:
         return childrenText;
