@@ -82,6 +82,22 @@ This application is a freeform, ultra-fast note-taking system designed to combin
   3. **Decoupled Pinch-Zooming:** During pinch-to-zoom gestures, pan-drift vectors are suppressed. Zooming remains perfectly stationary centered right beneath the user's fingertips.
   4. **Multi-Touch Window Scroll Prevention:** Prevented browser background scrolling during multi-finger gestures on the canvas.
 
+### 10. Permanent Offline Image Vaulting, Text Wrapping, Pop-Out & Docking
+* **The Goal:**
+  1. Automatically download and cache pasted external web images into the local device vault (`LocalVault`) so images never break offline or if external websites go down.
+  2. Adapt pasted rich text (headings, bold, lists, quotes) so it matches the app's clean typography and color system without messy website background colors or strange fonts.
+  3. Interactive embedded image controls with 3 text wrapping modes: **Wrap Left** (`float: left`), **Wrap Right** (`float: right`), and **Block Center** (`clear: both`).
+  4. Interactive freeform resizing of embedded images inside notes.
+  5. **Pop Out / Detach to Canvas (🪟):** Detach an embedded image from a note box into an independent floating canvas card.
+  6. **Dock In (📥):** Drag a canvas image card and drop it onto any note container (or click the Dock button) to embed it back into the note.
+* **The Solution:**
+  1. **Permanent Offline Image Vaulting:** Added `vaultExternalImage(src)` and `vaultImagesInTextItem()` which asynchronously download external web images, store them inside IndexedDB (`state.vault.storeAsset()`), and replace external URLs with permanent local data URLs.
+  2. **Harmonious Formatting Adaptation:** In `MarkdownLatexParser.htmlToMarkdown()`, inline styles (such as website background colors, inline fonts, and fixed widths) are stripped away, cleanly mapping semantic HTML into standard markdown that inherits the app's native dark/light design system.
+  3. **Embedded Image Floating Toolbar & Wrapping:** Clicking any image inside a note selects it and displays a sleek glassmorphic mini-toolbar: `⬅️ Left`, `⏸️ Center`, `➡️ Right`, `🪟 Pop Out`, and `🗑️ Delete`.
+  4. **Corner Drag Handle for Resizing:** Embedded images feature an interactive bottom-right drag handle for smooth resizing.
+  5. **Pop Out to Canvas:** Clicking `🪟 Pop Out` removes the image from the note and creates an independent canvas note card right next to the original note.
+  6. **Docking (Drag & Drop + Button):** Canvas image cards have an `📥 Dock` toolbar button and can also be dragged and dropped onto any note container to embed them back in.
+
 ---
 
 ## 🚀 3. Features & Capabilities

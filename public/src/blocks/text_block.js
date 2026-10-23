@@ -53,12 +53,14 @@ export class MarkdownLatexParser {
         continue;
       }
 
-      // Check Markdown Images ![alt](url)
+      // Check Markdown Images ![alt](url) or ![alt|wrap|width](url)
       const imgMatch = trimmed.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
       if (imgMatch) {
+        const props = this.parseImageProps(imgMatch[1], imgMatch[2]);
         tokens.push({
           type: 'image',
           alt: imgMatch[1],
+          props,
           src: imgMatch[2]
         });
         continue;
@@ -237,6 +239,42 @@ export class MarkdownLatexParser {
   }
 
   /**
+   * Parses markdown image alt text with optional wrapping and sizing parameters.
+   * Formats supported:
+   * ![Alt](url) -> wrap: center
+   * ![Alt|left](url) or ![Alt|wrap=left](url) -> wrap: left
+   * ![Alt|right](url) or ![Alt|wrap=right](url) -> wrap: right
+   * ![Alt|wrap=left|width=280px](url) -> wrap: left, width: 280px
+   */
+  static parseImageProps(rawAlt = '', rawSrc = '') {
+    let alt = rawAlt || 'Pasted Image';
+    let wrap = 'center';
+    let width = '';
+
+    if (rawAlt && rawAlt.includes('|')) {
+      const parts = rawAlt.split('|');
+      alt = parts[0].trim();
+      for (let i = 1; i < parts.length; i++) {
+        const part = parts[i].trim().toLowerCase();
+        if (part === 'left' || part === 'wrap-left' || part === 'wrap=left') {
+          wrap = 'left';
+        } else if (part === 'right' || part === 'wrap-right' || part === 'wrap=right') {
+          wrap = 'right';
+        } else if (part === 'center' || part === 'wrap-center' || part === 'wrap=center') {
+          wrap = 'center';
+        } else if (part.startsWith('w=') || part.startsWith('width=')) {
+          width = part.split('=')[1].trim();
+          if (/^\d+$/.test(width)) width += 'px';
+        } else if (/^\d+(px|%)?$/.test(part)) {
+          width = part.endsWith('%') || part.endsWith('px') ? part : part + 'px';
+        }
+      }
+    }
+
+    return { alt, wrap, width, rawAlt, src: rawSrc };
+  }
+
+  /**
    * Renders the tokenized structure into clean HTML string.
    */
   static renderToHtml(text) {
@@ -255,9 +293,12 @@ export class MarkdownLatexParser {
         case 'heading':
           htmlLines.push(`<h${token.level}>${this.escapeHtml(token.content)}</h${token.level}>`);
           break;
-        case 'image':
-          htmlLines.push(`<div class="note-image-container"><img class="note-embedded-image" src="${token.src}" alt="${this.escapeHtml(token.alt || 'Pasted Image')}" loading="lazy" /></div>`);
+        case 'image': {
+          const props = token.props || this.parseImageProps(token.alt, token.src);
+          const styleAttr = props.width ? ` style="width: ${props.width}; max-width: 100%;"` : '';
+          htmlLines.push(`<div class="note-image-container wrap-${props.wrap}" data-raw-alt="${this.escapeHtml(token.alt || '')}" data-alt="${this.escapeHtml(props.alt)}" data-wrap="${props.wrap}" data-width="${props.width}" data-src="${token.src}"${styleAttr}><img class="note-embedded-image" src="${token.src}" alt="${this.escapeHtml(props.alt)}" loading="lazy" /></div>`);
           break;
+        }
         case 'list_item':
           htmlLines.push(`<li class="note-bullet-item">${this.escapeHtml(token.content).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>')}</li>`);
           break;
@@ -280,7 +321,11 @@ export class MarkdownLatexParser {
               .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
               .replace(/\*(.*?)\*/g, '<em>$1</em>')
               .replace(/~~(.*?)~~/g, '<del>$1</del>')
-              .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img class="note-embedded-image" src="$2" alt="$1" />');
+              .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, rawAlt, src) => {
+                const props = this.parseImageProps(rawAlt, src);
+                const styleAttr = props.width ? ` style="width: ${props.width}; max-width: 100%;"` : '';
+                return `<div class="note-image-container wrap-${props.wrap}" data-raw-alt="${this.escapeHtml(rawAlt)}" data-alt="${this.escapeHtml(props.alt)}" data-wrap="${props.wrap}" data-width="${props.width}" data-src="${src}"${styleAttr}><img class="note-embedded-image" src="${src}" alt="${this.escapeHtml(props.alt)}" loading="lazy" /></div>`;
+              });
           }).join('');
           htmlLines.push(`<p>${renderedInlines}</p>`);
           break;
@@ -343,10 +388,32 @@ export class MarkdownLatexParser {
 
     const tag = node.tagName.toLowerCase();
 
+    // Check if node is an embedded image container
+    if (tag === 'div' && node.classList && node.classList.contains('note-image-container')) {
+      const img = node.querySelector('img');
+      if (img) return this.nodeToMarkdown(img);
+    }
+
     if (tag === 'img') {
       const src = node.getAttribute('src') || '';
-      const alt = node.getAttribute('alt') || 'Pasted Image';
-      return src ? `\n![${alt}](${src})\n` : '';
+      if (!src) return '';
+      const rawAlt = node.getAttribute('data-raw-alt') || node.getAttribute('alt') || 'Pasted Image';
+      const container = node.closest ? node.closest('.note-image-container') : null;
+      let wrap = '';
+      let width = '';
+      if (container) {
+        wrap = container.getAttribute('data-wrap') || '';
+        width = container.getAttribute('data-width') || container.style.width || '';
+      }
+      let finalAlt = rawAlt;
+      if (wrap || width) {
+        const baseAlt = rawAlt.split('|')[0].trim() || 'Pasted Image';
+        const parts = [baseAlt];
+        if (wrap && wrap !== 'center') parts.push(`wrap=${wrap}`);
+        if (width) parts.push(`width=${width}`);
+        finalAlt = parts.join('|');
+      }
+      return `\n![${finalAlt}](${src})\n`;
     }
 
     let childrenText = '';
@@ -367,6 +434,9 @@ export class MarkdownLatexParser {
       case 'i': return `*${childrenText}*`;
       case 'del':
       case 's': return `~~${childrenText}~~`;
+      case 'blockquote': return `\n> ${childrenText.trim()}\n`;
+      case 'code': return `\`${childrenText}\``;
+      case 'pre': return `\n\`\`\`\n${childrenText}\n\`\`\`\n`;
       case 'li': return `\n- ${childrenText.trim()}`;
       case 'p': return `\n${childrenText}\n`;
       case 'br': return '\n';

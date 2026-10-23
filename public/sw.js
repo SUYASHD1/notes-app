@@ -1,10 +1,10 @@
 // Service Worker for Notes App (Offline-First PWA)
-const CACHE_NAME = 'notes-app-cache-v1.5';
+const CACHE_NAME = 'notes-app-cache-v1.6';
 
 const PRECACHE_ASSETS = [
   './',
   './index.html',
-  './styles.css?v=3.0.7',
+  './styles.css?v=3.0.8',
   './app.js',
   './manifest.json',
   './src/core.js',

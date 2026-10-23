@@ -84,3 +84,23 @@ test('Rich HTML paste to Markdown conversion preserves headings, bold, lists, an
   assert.ok(renderedHtml.includes('note-bullet-item'));
 });
 
+test('Image wrapping modes (left, right, center) and width attributes parse and render properly', () => {
+  const leftImgMd = `![Force Diagram|wrap=left|width=280px](https://example.com/diagram.png)`;
+  const parsed = MarkdownLatexParser.parse(leftImgMd);
+  assert.equal(parsed.tokens.length, 1);
+  assert.equal(parsed.tokens[0].type, 'image');
+  assert.equal(parsed.tokens[0].props.wrap, 'left');
+  assert.equal(parsed.tokens[0].props.width, '280px');
+
+  const html = MarkdownLatexParser.renderToHtml(leftImgMd);
+  assert.ok(html.includes('wrap-left'), 'Should contain wrap-left class');
+  assert.ok(html.includes('width: 280px'), 'Should contain inline width style');
+  assert.ok(html.includes('data-wrap="left"'), 'Should store data-wrap');
+
+  // Test inline image with wrap right
+  const inlineMd = `Text before ![Chart|right|320px](https://example.com/chart.png) text after`;
+  const inlineHtml = MarkdownLatexParser.renderToHtml(inlineMd);
+  assert.ok(inlineHtml.includes('wrap-right'), 'Inline image should have wrap-right class');
+  assert.ok(inlineHtml.includes('width: 320px'), 'Inline image should have 320px width');
+});
+

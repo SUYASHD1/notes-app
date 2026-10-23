@@ -1564,11 +1564,55 @@ body[data-mode="ipad"] #status-bar .zoom-pill {
 }
 
 /* Embedded images and lists inside text notes */
+.note-item-text {
+  overflow: visible;
+}
+.note-item-text::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
 .note-image-container {
+  position: relative;
   max-width: 100%;
-  margin: 10px 0;
-  display: flex;
-  justify-content: center;
+  box-sizing: border-box;
+  margin: 12px auto;
+  display: block;
+  user-select: none;
+  transition: box-shadow 0.2s ease, outline 0.15s ease;
+  border-radius: 8px;
+}
+
+.note-image-container.wrap-center {
+  display: block;
+  margin: 12px auto;
+  clear: both;
+  text-align: center;
+}
+
+.note-image-container.wrap-center img {
+  margin: 0 auto;
+}
+
+.note-image-container.wrap-left {
+  float: left;
+  margin: 6px 16px 12px 0;
+  clear: left;
+  display: block;
+}
+
+.note-image-container.wrap-right {
+  float: right;
+  margin: 6px 0 12px 16px;
+  clear: right;
+  display: block;
+}
+
+.note-image-container.selected-image {
+  outline: 2px solid #6366f1;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
 }
 
 .note-embedded-image,
@@ -1580,6 +1624,90 @@ body[data-mode="ipad"] #status-bar .zoom-pill {
   display: block;
   object-fit: contain;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* Floating Toolbar for Embedded Images */
+.embedded-img-toolbar {
+  position: absolute;
+  top: -42px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 4px 6px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  z-index: 100;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.img-tool-btn {
+  background: transparent;
+  color: #f1f5f9;
+  border: none;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.img-tool-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.img-tool-btn.active {
+  background: #6366f1;
+  color: #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.img-tool-btn.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.8);
+  color: #ffffff;
+}
+
+.img-tool-divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 0 2px;
+}
+
+/* Resize Handle for Embedded Images */
+.embedded-img-resize-handle {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  width: 14px;
+  height: 14px;
+  background: #6366f1;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  cursor: se-resize;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  z-index: 101;
+  user-select: none;
+}
+
+/* Note container drop highlight */
+.universal-note-container.drop-target-active {
+  border: 2px dashed #6366f1 !important;
+  box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.2) !important;
+  background: rgba(99, 102, 241, 0.04) !important;
 }
 
 .note-bullet-item {

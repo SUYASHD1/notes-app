@@ -654,6 +654,44 @@ function renderBlocks() {
       }
     });
 
+    // Drag-and-Drop Docking Support (docking images from canvas into this note)
+    el.addEventListener('dragover', (e) => {
+      if (e.dataTransfer && e.dataTransfer.types && Array.from(e.dataTransfer.types).includes('application/notes-dock-img')) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        el.classList.add('drop-target-active');
+      }
+    });
+
+    el.addEventListener('dragleave', (e) => {
+      if (!el.contains(e.relatedTarget)) {
+        el.classList.remove('drop-target-active');
+      }
+    });
+
+    el.addEventListener('drop', (e) => {
+      el.classList.remove('drop-target-active');
+      const dockDataRaw = e.dataTransfer ? e.dataTransfer.getData('application/notes-dock-img') : null;
+      if (dockDataRaw) {
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+          const dockData = JSON.parse(dockDataRaw);
+          const sourceBlock = (state.doc.blocks || []).find(b => b.id === dockData.blockId);
+          if (sourceBlock && sourceBlock.id !== block.id) {
+            const imgItem = (sourceBlock.items || []).find(it => it.id === dockData.itemId) || {
+              src: dockData.src,
+              caption: dockData.caption,
+              width: dockData.width
+            };
+            dockImageIntoContainer(imgItem, sourceBlock, block);
+          }
+        } catch (err) {
+          console.warn('Dock drop failed:', err);
+        }
+      }
+    });
+
     // 8-Point Resize Handles
     const handles = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
     handles.forEach(dir => {
@@ -821,7 +859,7 @@ function renderBlocks() {
           break;
         case 'image':
         case 'media':
-          renderMediaItem(itemEl, item);
+          renderMediaItem(itemEl, item, block);
           break;
         case 'table':
           renderTableItem(itemEl, item, block);
@@ -854,7 +892,99 @@ function renderBlocks() {
   });
 }
 
-// 1. Mixed Text & LaTeX Item
+// Helper to permanently vault external images offline in IndexedDB
+async function vaultExternalImage(src) {
+  if (!src) return src;
+  if (src.startsWith('data:image/')) {
+    const assetId = 'asset_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+    await state.vault.storeAsset(assetId, src).catch(() => {});
+    return src;
+  }
+  if (!src.startsWith('http://') && !src.startsWith('https://')) {
+    return src;
+  }
+
+  try {
+    const resp = await fetch(src, { mode: 'cors' });
+    if (!resp.ok) throw new Error('Fetch failed');
+    const blob = await resp.blob();
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+    const assetId = 'asset_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+    await state.vault.storeAsset(assetId, dataUrl).catch(() => {});
+    return dataUrl;
+  } catch (err) {
+    try {
+      const dataUrl = await new Promise((resolve, reject) => {
+        const tempImg = new Image();
+        tempImg.crossOrigin = 'anonymous';
+        tempImg.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = tempImg.naturalWidth || 400;
+            canvas.height = tempImg.naturalHeight || 300;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(tempImg, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+          } catch (cErr) {
+            reject(cErr);
+          }
+        };
+        tempImg.onerror = reject;
+        tempImg.src = src;
+      });
+      const assetId = 'asset_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+      await state.vault.storeAsset(assetId, dataUrl).catch(() => {});
+      return dataUrl;
+    } catch (_) {
+      return src;
+    }
+  }
+}
+
+async function vaultImagesInTextItem(textItem, textDiv) {
+  if (!textItem || !textItem.content) return;
+  const imgRegex = /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g;
+  const matches = [...textItem.content.matchAll(imgRegex)];
+  if (matches.length === 0) return;
+
+  let changed = false;
+  for (const m of matches) {
+    const fullMatch = m[0];
+    const rawAlt = m[1];
+    const webUrl = m[2];
+    try {
+      const offlineDataUrl = await vaultExternalImage(webUrl);
+      if (offlineDataUrl && offlineDataUrl !== webUrl) {
+        textItem.content = textItem.content.replace(fullMatch, `![${rawAlt}](${offlineDataUrl})`);
+        changed = true;
+      }
+    } catch (e) {
+      console.warn('Could not vault image:', webUrl, e);
+    }
+  }
+
+  if (changed) {
+    saveActivePageDocument();
+    if (textDiv) {
+      const imgs = textDiv.querySelectorAll('img.note-embedded-image');
+      imgs.forEach(img => {
+        if (img.src && (img.src.startsWith('http://') || img.src.startsWith('https://'))) {
+          const parsed = MarkdownLatexParser.parse(textItem.content);
+          const found = (parsed.tokens || []).find(t => t.type === 'image' && t.src && t.src.startsWith('data:'));
+          if (found) img.src = found.src;
+        }
+      });
+    }
+    showToast('💾 Images permanently saved to local offline vault');
+  }
+}
+
+// 1. Mixed Text & LaTeX Item with Interactive Image Controls & Text Wrapping
 function renderTextItem(parentEl, item, headerEl, containerBlock) {
   const textDiv = document.createElement('div');
   textDiv.className = 'note-item-text';
@@ -866,16 +996,158 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
 
   const serializeTextContent = (el) => {
     if (!el) return '';
-    // If the element has embedded <img> elements or rich formatting from a direct paste
-    if (el.querySelector('img')) {
+    if (el.querySelector('img') || el.querySelector('.note-image-container')) {
       return MarkdownLatexParser.nodeToMarkdown(el).trim();
     }
     return el.innerText || el.textContent || '';
   };
 
+  // Binds floating toolbar and corner resize handle to embedded images
+  function bindEmbeddedImageControls() {
+    const containers = textDiv.querySelectorAll('.note-image-container');
+    containers.forEach(imgContainer => {
+      imgContainer.querySelectorAll('.embedded-img-toolbar, .embedded-img-resize-handle').forEach(el => el.remove());
+
+      imgContainer.addEventListener('click', (e) => {
+        if (e.target.closest('.embedded-img-toolbar') || e.target.classList.contains('embedded-img-resize-handle')) {
+          return;
+        }
+        e.stopPropagation();
+
+        textDiv.querySelectorAll('.note-image-container.selected-image').forEach(c => {
+          if (c !== imgContainer) {
+            c.classList.remove('selected-image');
+            c.querySelectorAll('.embedded-img-toolbar, .embedded-img-resize-handle').forEach(el => el.remove());
+          }
+        });
+
+        imgContainer.classList.add('selected-image');
+
+        if (!imgContainer.querySelector('.embedded-img-toolbar')) {
+          const rawWrap = imgContainer.getAttribute('data-wrap') || 'center';
+          const toolbar = document.createElement('div');
+          toolbar.className = 'embedded-img-toolbar';
+          toolbar.contentEditable = 'false';
+          toolbar.innerHTML = `
+            <button class="img-tool-btn ${rawWrap === 'left' ? 'active' : ''}" data-action="wrap-left" title="Wrap text around left side of image">⬅️ Left</button>
+            <button class="img-tool-btn ${rawWrap === 'center' ? 'active' : ''}" data-action="wrap-center" title="Center image between text blocks">⏸️ Center</button>
+            <button class="img-tool-btn ${rawWrap === 'right' ? 'active' : ''}" data-action="wrap-right" title="Wrap text around right side of image">➡️ Right</button>
+            <div class="img-tool-divider"></div>
+            <button class="img-tool-btn btn-popout" data-action="pop-out" title="Take image out of box and place on canvas as independent card">🪟 Pop Out</button>
+            <button class="img-tool-btn btn-danger" data-action="delete" title="Remove image">🗑️</button>
+          `;
+
+          toolbar.addEventListener('click', (btnEvt) => {
+            btnEvt.stopPropagation();
+            btnEvt.preventDefault();
+            const btn = btnEvt.target.closest('button');
+            if (!btn) return;
+            const action = btn.getAttribute('data-action');
+
+            if (action === 'wrap-left') {
+              imgContainer.setAttribute('data-wrap', 'left');
+              imgContainer.classList.remove('wrap-center', 'wrap-right');
+              imgContainer.classList.add('wrap-left');
+              toolbar.querySelectorAll('.img-tool-btn').forEach(b => b.classList.remove('active'));
+              btn.classList.add('active');
+              item.content = serializeTextContent(textDiv);
+              saveActivePageDocument();
+            } else if (action === 'wrap-center') {
+              imgContainer.setAttribute('data-wrap', 'center');
+              imgContainer.classList.remove('wrap-left', 'wrap-right');
+              imgContainer.classList.add('wrap-center');
+              toolbar.querySelectorAll('.img-tool-btn').forEach(b => b.classList.remove('active'));
+              btn.classList.add('active');
+              item.content = serializeTextContent(textDiv);
+              saveActivePageDocument();
+            } else if (action === 'wrap-right') {
+              imgContainer.setAttribute('data-wrap', 'right');
+              imgContainer.classList.remove('wrap-left', 'wrap-center');
+              imgContainer.classList.add('wrap-right');
+              toolbar.querySelectorAll('.img-tool-btn').forEach(b => b.classList.remove('active'));
+              btn.classList.add('active');
+              item.content = serializeTextContent(textDiv);
+              saveActivePageDocument();
+            } else if (action === 'delete') {
+              imgContainer.remove();
+              item.content = serializeTextContent(textDiv);
+              saveActivePageDocument();
+              showToast('🗑️ Image removed');
+            } else if (action === 'pop-out') {
+              const imgEl = imgContainer.querySelector('img');
+              const src = imgContainer.getAttribute('data-src') || (imgEl ? imgEl.src : '');
+              const alt = imgContainer.getAttribute('data-alt') || (imgEl ? imgEl.alt : 'Detached Image');
+              const width = imgContainer.offsetWidth || 400;
+
+              imgContainer.remove();
+              item.content = serializeTextContent(textDiv);
+              saveActivePageDocument();
+
+              const newNote = {
+                id: 'block_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+                type: 'note_container',
+                x: (containerBlock ? containerBlock.x : 100) + (containerBlock ? (containerBlock.width || 520) : 520) + 40,
+                y: containerBlock ? containerBlock.y : 100,
+                width: Math.min(Math.max(width, 320), 720),
+                title: alt || 'Detached Image',
+                items: [{
+                  id: 'item_img_' + Date.now(),
+                  type: 'image',
+                  src: src,
+                  caption: alt || 'Detached Image',
+                  width: width
+                }]
+              };
+              state.history.execute(new AddBlockCommand(state.doc, newNote));
+              saveActivePageDocument();
+              renderAll();
+              showToast('🪟 Detached image as an independent canvas unit');
+            }
+          });
+
+          imgContainer.appendChild(toolbar);
+
+          // Corner resize handle
+          const handle = document.createElement('div');
+          handle.className = 'embedded-img-resize-handle';
+          handle.contentEditable = 'false';
+          handle.title = 'Drag to resize image';
+
+          handle.addEventListener('mousedown', (hEvt) => {
+            hEvt.stopPropagation();
+            hEvt.preventDefault();
+            const startX = hEvt.clientX;
+            const startWidth = imgContainer.offsetWidth;
+            const maxAllowedWidth = textDiv.offsetWidth || 500;
+
+            const onMouseMove = (moveEvt) => {
+              const dx = (moveEvt.clientX - startX) / state.viewport.zoom;
+              const newWidth = Math.max(100, Math.min(maxAllowedWidth, Math.round(startWidth + dx)));
+              imgContainer.style.width = `${newWidth}px`;
+              imgContainer.setAttribute('data-width', `${newWidth}px`);
+            };
+
+            const onMouseUp = () => {
+              window.removeEventListener('mousemove', onMouseMove);
+              window.removeEventListener('mouseup', onMouseUp);
+              item.content = serializeTextContent(textDiv);
+              saveActivePageDocument();
+            };
+
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('mouseup', onMouseUp);
+          });
+
+          imgContainer.appendChild(handle);
+        }
+      });
+    });
+  }
+
   const renderVisual = () => {
     textDiv.classList.remove('raw-code-mode');
     textDiv.innerHTML = MarkdownLatexParser.renderToHtml(item.content || '');
+    bindEmbeddedImageControls();
     if (toggleBtn) {
       toggleBtn.innerHTML = '&lt;/&gt; Code';
       toggleBtn.title = 'Switch to Raw Markdown Code';
@@ -893,6 +1165,16 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
 
   // Initially render visual view
   renderVisual();
+
+  // Deselect active images on outside click
+  textDiv.addEventListener('click', (e) => {
+    if (!e.target.closest('.note-image-container')) {
+      textDiv.querySelectorAll('.note-image-container.selected-image').forEach(c => {
+        c.classList.remove('selected-image');
+        c.querySelectorAll('.embedded-img-toolbar, .embedded-img-resize-handle').forEach(el => el.remove());
+      });
+    }
+  });
 
   // Header button toggles Raw Markdown Code mode
   if (toggleBtn) {
@@ -952,24 +1234,18 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
       const file = imageItem.getAsFile();
       if (file) {
         const reader = new FileReader();
-        reader.onload = (loadEvt) => {
+        reader.onload = async (loadEvt) => {
+          const dataUrl = loadEvt.target.result;
+          await vaultExternalImage(dataUrl);
+
           if (isRawCodeMode) {
-            document.execCommand('insertText', false, `\n![Pasted Image](${loadEvt.target.result})\n`);
+            document.execCommand('insertText', false, `\n![Pasted Image](${dataUrl})\n`);
             item.content = textDiv.innerText || '';
           } else {
-            const img = document.createElement('img');
-            img.className = 'note-embedded-image';
-            img.src = loadEvt.target.result;
-            img.alt = 'Pasted Image';
-            const sel = window.getSelection();
-            if (sel && sel.rangeCount > 0) {
-              const range = sel.getRangeAt(0);
-              range.insertNode(img);
-              range.collapse(false);
-            } else {
-              textDiv.appendChild(img);
-            }
+            const renderedHtml = MarkdownLatexParser.renderToHtml(`![Pasted Image](${dataUrl})`);
+            document.execCommand('insertHTML', false, renderedHtml);
             item.content = serializeTextContent(textDiv);
+            bindEmbeddedImageControls();
           }
           saveActivePageDocument();
         };
@@ -987,12 +1263,14 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
           document.execCommand('insertText', false, convertedMd);
           item.content = textDiv.innerText || '';
         } else {
-          // In visual mode: insert the rendered HTML so formatting appears instantly
           const renderedHtml = MarkdownLatexParser.renderToHtml(convertedMd);
           document.execCommand('insertHTML', false, renderedHtml);
           item.content = serializeTextContent(textDiv);
+          bindEmbeddedImageControls();
         }
         saveActivePageDocument();
+        // Asynchronously vault external web images in background
+        vaultImagesInTextItem(item, textDiv);
         return;
       }
     }
@@ -1034,6 +1312,42 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
   }
 }
 
+// Helper to dock a standalone canvas image card into a target note container
+function dockImageIntoContainer(imageItem, sourceBlock, targetContainer) {
+  if (!targetContainer.items) targetContainer.items = [];
+  let textItem = targetContainer.items.find(it => it.type === 'text' || !it.type);
+  if (!textItem) {
+    textItem = { id: 'item_text_' + Date.now(), type: 'text', content: '' };
+    targetContainer.items.push(textItem);
+  }
+
+  const src = imageItem.src || imageItem.url;
+  const caption = imageItem.caption || 'Docked Image';
+  const widthAttr = imageItem.width ? `|width=${imageItem.width}px` : '';
+  const markdownImg = `\n\n![${caption}${widthAttr}](${src})\n`;
+  textItem.content = (textItem.content || '').trim() + markdownImg;
+
+  if (sourceBlock) {
+    if ((sourceBlock.items || []).length <= 1) {
+      const idx = (state.doc.blocks || []).indexOf(sourceBlock);
+      if (idx !== -1) {
+        state.doc.blocks.splice(idx, 1);
+      }
+    } else {
+      const itIdx = sourceBlock.items.indexOf(imageItem);
+      if (itIdx !== -1) sourceBlock.items.splice(itIdx, 1);
+    }
+  }
+
+  state.activeContainerId = targetContainer.id;
+  state.selectedBlockIds.clear();
+  state.selectedBlockIds.add(targetContainer.id);
+
+  saveActivePageDocument();
+  renderAll();
+  showToast('📥 Image docked into note box');
+}
+
 // 2. Mixed Media / Local Image Item with Freeform Resizing & Cropping
 function renderMediaItem(parentEl, item, containerBlock) {
   const mediaDiv = document.createElement('div');
@@ -1049,9 +1363,51 @@ function renderMediaItem(parentEl, item, containerBlock) {
   const toolbar = document.createElement('div');
   toolbar.className = 'media-toolbar';
   toolbar.innerHTML = `
+    <button class="media-tool-btn btn-dock" title="Dock this image back into a note box">📥 Dock</button>
     <button class="media-tool-btn btn-crop" title="Crop image">✂ Crop</button>
     ${item.originalSrc ? '<button class="media-tool-btn btn-reset-crop" title="Restore original uncropped image">↺ Reset</button>' : ''}
   `;
+
+  // Dock button click
+  const dockBtn = toolbar.querySelector('.btn-dock');
+  if (dockBtn) {
+    dockBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const otherContainers = (state.doc.blocks || []).filter(b => b.id !== (containerBlock ? containerBlock.id : ''));
+      if (otherContainers.length === 0) {
+        showToast('ℹ️ Create or click another note box first to dock this image into');
+        return;
+      }
+      let targetContainer = otherContainers.find(b => b.id === state.activeContainerId);
+      if (!targetContainer) {
+        let minDist = Infinity;
+        for (const b of otherContainers) {
+          const dist = Math.hypot((b.x || 0) - ((containerBlock ? containerBlock.x : 0) || 0), (b.y || 0) - ((containerBlock ? containerBlock.y : 0) || 0));
+          if (dist < minDist) {
+            minDist = dist;
+            targetContainer = b;
+          }
+        }
+      }
+      if (targetContainer) {
+        dockImageIntoContainer(item, containerBlock, targetContainer);
+      }
+    });
+  }
+
+  // Drag-and-drop docking support
+  wrapper.draggable = true;
+  wrapper.title = 'Drag onto any note box to dock it in!';
+  wrapper.addEventListener('dragstart', (e) => {
+    e.dataTransfer.setData('application/notes-dock-img', JSON.stringify({
+      blockId: containerBlock ? containerBlock.id : null,
+      itemId: item.id,
+      src: item.src || item.url,
+      caption: item.caption || 'Docked Image',
+      width: item.width || 320
+    }));
+    e.dataTransfer.effectAllowed = 'move';
+  });
 
   const img = document.createElement('img');
   img.src = item.src || item.url;
