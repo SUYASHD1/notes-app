@@ -424,10 +424,12 @@ function initTouchRecognizer() {
       const originY = center.y - rect.top;
 
       // Determine if the user is actively pinching to zoom in or out
-      const isPinchZooming = scaleFactor && scaleFactor > 0 && Math.abs(scaleFactor - 1.0) > 0.006;
+      const isPinchZooming = scaleFactor && scaleFactor > 0 && Math.abs(scaleFactor - 1.0) > 0.003;
       if (isPinchZooming) {
-        // Smooth anchored pinch-to-zoom centered right between the user's fingers without scroll drift
-        state.viewport.zoomAt(originX, originY, scaleFactor);
+        // Boost pinch delta for responsive touchscreen/tablet zooming (natural OneNote / iPad parity)
+        const delta = scaleFactor - 1.0;
+        const boostedFactor = 1.0 + delta * 2.2;
+        state.viewport.zoomAt(originX, originY, Math.max(0.6, Math.min(1.6, boostedFactor)));
       } else if (panDelta && (Math.abs(panDelta.dx) > 0.5 || Math.abs(panDelta.dy) > 0.5)) {
         // Two fingers gliding together without pinching: smooth scroll / pan
         state.viewport.pan(panDelta.dx, panDelta.dy);
@@ -651,9 +653,11 @@ function renderBlocks() {
     el.id = block.id;
     el.style.left = `${block.x}px`;
     el.style.top = `${block.y}px`;
-    el.style.width = `${block.width || 520}px`;
-    if (block.height && typeof block.height === 'number') {
+    el.style.width = `${block.width || 560}px`;
+    if (block.height && typeof block.height === 'number' && block.height > 0) {
       el.style.minHeight = `${block.height}px`;
+    } else {
+      el.style.minHeight = '';
     }
 
     el.addEventListener('mousedown', (e) => {
@@ -1228,6 +1232,17 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
   // Live in-place typing: 0ms keystroke latency (no recursive serialization on every keypress)
   textDiv.addEventListener('input', () => {
     textDiv._dirty = true;
+    const hasText = (textDiv.innerText || textDiv.textContent || '').trim().length > 0;
+    const hasMedia = textDiv.querySelector('img, .note-image-container, canvas, table') !== null;
+    if (!hasText && !hasMedia && containerBlock) {
+      if (containerBlock.height) {
+        delete containerBlock.height;
+      }
+      const parentContainer = textDiv.closest('.universal-note-container');
+      if (parentContainer) {
+        parentContainer.style.minHeight = '';
+      }
+    }
     debouncedSave(800);
   });
 
@@ -2374,6 +2389,18 @@ function renderSketchItem(parentEl, item, containerBlock) {
 // --- 8-Point Bounding Box Resizing ---
 
 function attachResizeHandle(handleEl, block, blockEl, dir) {
+  const isVertical = dir.includes('n') || dir.includes('s');
+
+  // Double click on boundary resets height back to auto-fit content
+  handleEl.addEventListener('dblclick', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    delete block.height;
+    blockEl.style.minHeight = '';
+    saveActivePageDocument();
+    showToast('↕ Reset height to content');
+  });
+
   const onPointerDown = (e) => {
     e.stopPropagation();
     if (e.cancelable) e.preventDefault();
@@ -2401,12 +2428,16 @@ function attachResizeHandle(handleEl, block, blockEl, dir) {
       block.x = Math.round(newBox.x);
       block.y = Math.round(newBox.y);
       block.width = Math.round(newBox.width);
-      block.height = Math.round(newBox.height);
 
       blockEl.style.left = `${block.x}px`;
       blockEl.style.top = `${block.y}px`;
       blockEl.style.width = `${block.width}px`;
-      blockEl.style.minHeight = `${block.height}px`;
+
+      // Only lock height if the user is resizing vertically (n, s, or corners)
+      if (isVertical) {
+        block.height = Math.round(newBox.height);
+        blockEl.style.minHeight = `${block.height}px`;
+      }
     };
 
     const onPointerUp = (upEvent) => {
@@ -2598,8 +2629,8 @@ function setupCanvasInteractions() {
       const cursorY = e.clientY - rect.top;
 
       // Continuous exponential zoom scaling (smooth on both precision touchpads and notched wheels)
-      const zoomSensitivity = e.deltaMode === 1 ? 0.04 : 0.0025;
-      const factor = Math.min(1.25, Math.max(0.8, Math.exp(-e.deltaY * zoomSensitivity)));
+      const zoomSensitivity = e.deltaMode === 1 ? 0.04 : 0.0065;
+      const factor = Math.min(1.38, Math.max(0.72, Math.exp(-e.deltaY * zoomSensitivity)));
 
       pendingWheelZoomFactor *= factor;
       pendingWheelCursorX = cursorX;
@@ -3368,7 +3399,7 @@ function getOrCreateActiveContainer() {
   }
   if (!target) {
     const center = state.viewport.screenToWorld(container.clientWidth / 2, container.clientHeight / 2);
-    target = createNewNoteContainer(center.x - 260, center.y - 120);
+    target = createNewNoteContainer(center.x - 290, center.y - 120);
     state.history.execute(new AddBlockCommand(state.doc, target));
   }
   state.activeContainerId = target.id;
@@ -3383,7 +3414,7 @@ function createNewNoteContainer(x, y, title = 'Note') {
     type: 'note_container',
     x: Math.round(x),
     y: Math.round(y),
-    width: 540,
+    width: 580,
     title,
     items: [
       { id: 'item_' + Date.now(), type: 'text', content: '# Heading\nType notes here with $inline$ or $$block$$ math...' }
@@ -3394,7 +3425,7 @@ function createNewNoteContainer(x, y, title = 'Note') {
 // --- Unified Container Actions ---
 function actionAddNote() {
   const center = state.viewport.screenToWorld(container.clientWidth / 2, container.clientHeight / 2);
-  const newNote = createNewNoteContainer(center.x - 260, center.y - 120);
+  const newNote = createNewNoteContainer(center.x - 290, center.y - 120);
   state.history.execute(new AddBlockCommand(state.doc, newNote));
   state.selectedBlockIds.clear();
   state.selectedBlockIds.add(newNote.id);

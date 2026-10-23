@@ -104,3 +104,44 @@ test('Universal Note Container supports embedded sketch canvas with local coordi
   assert.equal(reloadedContainer.items[1].strokes[0].points[0].y, 15);
 });
 
+test('Horizontal resize (E/W) adjusts width independently without altering vertical bounds', () => {
+  const origBox = { x: 50, y: 80, width: 500, height: 350 };
+
+  // Dragging East handle right by 100px
+  const resizedE = ResizeHandleEngine.applyResize(ResizeHandleType.E, origBox, 100, 50, 260, 80);
+  assert.equal(resizedE.x, 50);
+  assert.equal(resizedE.y, 80);
+  assert.equal(resizedE.width, 600);
+  assert.equal(resizedE.height, 350); // Vertical height untouched by dy in E mode
+
+  // Dragging West handle left by 50px
+  const resizedW = ResizeHandleEngine.applyResize(ResizeHandleType.W, origBox, -50, 50, 260, 80);
+  assert.equal(resizedW.x, 0);
+  assert.equal(resizedW.y, 80);
+  assert.equal(resizedW.width, 550);
+  assert.equal(resizedW.height, 350); // Vertical height untouched by dy in W mode
+});
+
+test('Universal Note Container allows resetting custom height for natural content collapse', () => {
+  const doc = new DocumentModel({ title: 'Dynamic Height Note' });
+  const container = createNoteContainer({
+    x: 100,
+    y: 100,
+    width: 580,
+    height: 1200, // Manually stretched or tall pasted content
+    items: [{ id: 'item_1', type: 'text', content: 'Long pasted content' }]
+  });
+  const added = doc.addBlock(container);
+
+  // User deletes all content from note: height lock is removed to allow collapse
+  delete added.height;
+  added.items[0].content = '';
+  doc.touch();
+
+  const saved = doc.toJSON();
+  const reloaded = DocumentModel.fromJSON(saved).getBlock(container.id);
+
+  assert.equal(reloaded.height, undefined);
+  assert.equal(reloaded.items[0].content, '');
+});
+
