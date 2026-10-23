@@ -679,7 +679,7 @@ function renderBlocks() {
         <button class="mini-tool-btn btn-add-sub-pdf" title="Insert PDF document from Computer">📑 PDF</button>
         <button class="mini-tool-btn btn-add-sub-tbl" title="Insert Table">⊞ Table</button>
         <button class="mini-tool-btn btn-add-sub-plot" title="Insert Math Plot">📈 Plot</button>
-        <button class="mini-tool-btn btn-toggle-edit" title="Toggle LaTeX Math Render / Edit">Render</button>
+        <button class="mini-tool-btn btn-toggle-raw" title="Toggle Raw Markdown Code / Visual View">&lt;/&gt; Code</button>
         <button class="block-delete-btn" title="Delete entire Note container" style="margin-left:4px; font-size:14px; font-weight:bold; color:#94a3b8; background:none; border:none; cursor:pointer;">&times;</button>
       </div>
     `;
@@ -859,12 +859,10 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
   const textDiv = document.createElement('div');
   textDiv.className = 'note-item-text';
   textDiv.setAttribute('data-placeholder', 'Type note here (Markdown / LaTeX supported)...');
+  textDiv.contentEditable = 'true';
 
-  let isEditing = (state.focusItemId === item.id);
-  if (state.focusItemId === item.id) {
-    state.focusItemId = null;
-  }
-  const toggleBtn = headerEl ? headerEl.querySelector('.btn-toggle-edit') : null;
+  let isRawCodeMode = false;
+  const toggleBtn = headerEl ? (headerEl.querySelector('.btn-toggle-raw') || headerEl.querySelector('.btn-toggle-edit')) : null;
 
   const serializeTextContent = (el) => {
     if (!el) return '';
@@ -875,19 +873,70 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
     return el.innerText || el.textContent || '';
   };
 
-  const updateView = () => {
-    if (isEditing) {
-      textDiv.contentEditable = 'true';
-      textDiv.innerText = item.content || '';
-      if (toggleBtn) toggleBtn.textContent = 'Render';
-    } else {
-      textDiv.contentEditable = 'false';
-      textDiv.innerHTML = MarkdownLatexParser.renderToHtml(item.content || '');
-      if (toggleBtn) toggleBtn.textContent = 'Edit';
+  const renderVisual = () => {
+    textDiv.classList.remove('raw-code-mode');
+    textDiv.innerHTML = MarkdownLatexParser.renderToHtml(item.content || '');
+    if (toggleBtn) {
+      toggleBtn.innerHTML = '&lt;/&gt; Code';
+      toggleBtn.title = 'Switch to Raw Markdown Code';
     }
   };
 
-  updateView();
+  const renderRawCode = () => {
+    textDiv.classList.add('raw-code-mode');
+    textDiv.innerText = item.content || '';
+    if (toggleBtn) {
+      toggleBtn.innerHTML = '👁 Visual';
+      toggleBtn.title = 'Switch back to visual formatting';
+    }
+  };
+
+  // Initially render visual view
+  renderVisual();
+
+  // Header button toggles Raw Markdown Code mode
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      isRawCodeMode = !isRawCodeMode;
+      if (isRawCodeMode) {
+        item.content = serializeTextContent(textDiv);
+        renderRawCode();
+        textDiv.focus();
+      } else {
+        item.content = textDiv.innerText || '';
+        renderVisual();
+        saveActivePageDocument();
+      }
+    });
+  }
+
+  // Live in-place typing auto-save without destroying visual formatting
+  textDiv.addEventListener('input', () => {
+    if (isRawCodeMode) {
+      item.content = textDiv.innerText || '';
+    } else {
+      item.content = serializeTextContent(textDiv);
+    }
+    debouncedSave(800);
+  });
+
+  // Interactive Checklists in visual mode
+  textDiv.addEventListener('click', (e) => {
+    if (e.target.tagName === 'INPUT' && e.target.type === 'checkbox') {
+      const checkbox = e.target;
+      const label = checkbox.closest('label');
+      const labelText = label ? label.textContent.trim() : '';
+      if (labelText) {
+        const oldPrefix = checkbox.checked ? '- [ ] ' : '- [x] ';
+        const newPrefix = checkbox.checked ? '- [x] ' : '- [ ] ';
+        if (item.content.includes(oldPrefix + labelText)) {
+          item.content = item.content.replace(oldPrefix + labelText, newPrefix + labelText);
+        }
+      }
+      saveActivePageDocument();
+    }
+  });
 
   // Rich Paste Handling: Preserve formatting, headings, bullet lists, and embedded images
   textDiv.addEventListener('paste', (e) => {
@@ -904,8 +953,25 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
       if (file) {
         const reader = new FileReader();
         reader.onload = (loadEvt) => {
-          const imgMd = `\n![Pasted Image](${loadEvt.target.result})\n`;
-          document.execCommand('insertText', false, imgMd);
+          if (isRawCodeMode) {
+            document.execCommand('insertText', false, `\n![Pasted Image](${loadEvt.target.result})\n`);
+            item.content = textDiv.innerText || '';
+          } else {
+            const img = document.createElement('img');
+            img.className = 'note-embedded-image';
+            img.src = loadEvt.target.result;
+            img.alt = 'Pasted Image';
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0) {
+              const range = sel.getRangeAt(0);
+              range.insertNode(img);
+              range.collapse(false);
+            } else {
+              textDiv.appendChild(img);
+            }
+            item.content = serializeTextContent(textDiv);
+          }
+          saveActivePageDocument();
         };
         reader.readAsDataURL(file);
         return;
@@ -917,7 +983,16 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
       e.preventDefault();
       const convertedMd = MarkdownLatexParser.htmlToMarkdown(htmlData);
       if (convertedMd) {
-        document.execCommand('insertText', false, convertedMd);
+        if (isRawCodeMode) {
+          document.execCommand('insertText', false, convertedMd);
+          item.content = textDiv.innerText || '';
+        } else {
+          // In visual mode: insert the rendered HTML so formatting appears instantly
+          const renderedHtml = MarkdownLatexParser.renderToHtml(convertedMd);
+          document.execCommand('insertHTML', false, renderedHtml);
+          item.content = serializeTextContent(textDiv);
+        }
+        saveActivePageDocument();
         return;
       }
     }
@@ -926,46 +1001,25 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
     if (plainText) {
       e.preventDefault();
       document.execCommand('insertText', false, plainText);
+      item.content = isRawCodeMode ? (textDiv.innerText || '') : serializeTextContent(textDiv);
+      saveActivePageDocument();
       return;
     }
   });
 
-  if (toggleBtn) {
-    toggleBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (isEditing) {
-        item.content = serializeTextContent(textDiv);
-        isEditing = false;
-        updateView();
-        saveActivePageDocument();
-      } else {
-        isEditing = true;
-        updateView();
-        textDiv.focus();
-      }
-    });
-  }
-
-  textDiv.addEventListener('click', (e) => {
-    if (!isEditing && e.target.tagName !== 'INPUT') {
-      isEditing = true;
-      updateView();
-      textDiv.focus();
-    }
-  });
-
   textDiv.addEventListener('blur', () => {
-    if (isEditing) {
+    if (isRawCodeMode) {
+      item.content = textDiv.innerText || '';
+    } else {
       item.content = serializeTextContent(textDiv);
-      isEditing = false;
-      updateView();
-      saveActivePageDocument();
     }
+    saveActivePageDocument();
   });
 
   parentEl.appendChild(textDiv);
 
-  if (isEditing) {
+  if (state.focusItemId === item.id) {
+    state.focusItemId = null;
     setTimeout(() => {
       textDiv.focus();
       const range = document.createRange();

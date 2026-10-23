@@ -1594,6 +1594,18 @@ body[data-mode="ipad"] #status-bar .zoom-pill {
   margin-bottom: 4px;
 }
 
+.note-item-text.raw-code-mode {
+  font-family: 'Consolas', 'Fira Code', 'Monaco', monospace !important;
+  font-size: 13.5px !important;
+  line-height: 1.5 !important;
+  color: #0f172a !important;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  padding: 8px 10px;
+  white-space: pre-wrap;
+}
+
 .note-item-media {
   display: flex;
   flex-direction: column;
