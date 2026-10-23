@@ -40,6 +40,8 @@ export function setMode({
       if (puckIcon) puckIcon.textContent = '✋';
       if (puckLabel) puckLabel.textContent = 'Navigate';
     }
+    // Unlock spatial scrollbars in navigate mode
+    document.querySelectorAll('.canvas-scrollbar').forEach(sb => sb.classList.remove('locked'));
     if (!silent && showToast) showToast('💻 Navigate Mode: Smooth Touch Pan, Zoom & Typing Active');
   } else {
     // Ink Mode (Apple Pencil & Stylus writing)
@@ -56,6 +58,9 @@ export function setMode({
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     if (window.getSelection) window.getSelection().removeAllRanges();
     document.getElementById('zoom-flyout')?.classList.add('hidden');
+
+    // Strictly lock scrollbars in ink mode so stylus or hand never triggers scrolling
+    document.querySelectorAll('.canvas-scrollbar').forEach(sb => sb.classList.add('locked'));
 
     if (textGroup) textGroup.style.display = 'none';
     if (inkGroup) inkGroup.style.display = 'flex';

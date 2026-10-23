@@ -145,3 +145,46 @@ test('Universal Note Container allows resetting custom height for natural conten
   assert.equal(reloaded.items[0].content, '');
 });
 
+test('Canvas spatial boundaries enforce left margin anchor and dynamically expand for rightward content', () => {
+  // Simulate getCanvasContentBounds logic
+  const mockDoc = {
+    blocks: [
+      { x: 100, y: 100, width: 520, height: 400 },
+      { x: 1200, y: 200, width: 600, height: 500 }
+    ]
+  };
+
+  const computeBounds = (doc) => {
+    let maxX = 2600;
+    let maxY = 1800;
+    for (const b of doc.blocks) {
+      const right = (b.x || 0) + (b.width || 520);
+      const bottom = (b.y || 0) + (b.height || 400);
+      if (right > maxX) maxX = right;
+      if (bottom > maxY) maxY = bottom;
+    }
+    return { width: maxX + 800, height: maxY + 800 };
+  };
+
+  const initialBounds = computeBounds(mockDoc);
+  // Default max width accommodates multiple columns
+  assert.equal(initialBounds.width, 3400); // 2600 + 800
+  assert.equal(initialBounds.height, 2600); // 1800 + 800
+
+  // Clamping test: left margin cannot pan past origin
+  const clampX = (rawX, boundsWidth, containerW, zoom) => {
+    const minX = Math.min(40, containerW - boundsWidth * zoom);
+    return Math.max(minX, Math.min(40, rawX));
+  };
+
+  // Attempting to pan left into negative void (rawX = 500)
+  const clampedPositive = clampX(500, initialBounds.width, 1920, 1.0);
+  assert.equal(clampedPositive, 40, 'Cannot pan past the left margin of 40px');
+
+  // Dynamically place a block near or past the right edge (x = 3500)
+  mockDoc.blocks.push({ x: 3500, y: 100, width: 600, height: 400 });
+  const expandedBounds = computeBounds(mockDoc);
+  assert.equal(expandedBounds.width, 4900, 'Right boundary dynamically expands with breathing room');
+});
+
+

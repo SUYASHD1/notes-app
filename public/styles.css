@@ -3322,3 +3322,204 @@ body[data-mode="ipad"] .marquee-box {
   border: 2px dashed #6366f1 !important;
 }
 
+/* --- Polished Bounded Top Menu Bar --- */
+#top-bar .icon-btn {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  padding: 6px;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #475569;
+  transition: all 0.16s ease;
+}
+
+#top-bar .icon-btn:hover {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #94a3b8;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.notebook-dropdown-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  padding: 4px 10px;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.notebook-quick-actions {
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  padding: 2px 4px;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  gap: 3px;
+}
+
+.notebook-quick-actions .icon-btn-sm {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.notebook-quick-actions .icon-btn-sm:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.notebook-quick-actions .text-danger:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+#storage-status {
+  border: 1px solid #86efac;
+  box-shadow: 0 1px 2px rgba(22, 163, 74, 0.08);
+}
+
+/* --- Canvas Position Scrollbars / Spatial Trackers --- */
+.canvas-scrollbar {
+  position: absolute;
+  z-index: 50;
+  background: rgba(241, 245, 249, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(203, 213, 225, 0.7);
+  border-radius: 8px;
+  user-select: none;
+  opacity: 0.85;
+  transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.canvas-scrollbar.horizontal {
+  bottom: 8px;
+  left: 24px;
+  right: 36px;
+  height: 10px;
+}
+
+.canvas-scrollbar.vertical {
+  top: 14px;
+  right: 8px;
+  bottom: 26px;
+  width: 10px;
+}
+
+.canvas-scrollbar:hover {
+  opacity: 1;
+  background: rgba(241, 245, 249, 0.95);
+  border-color: #94a3b8;
+}
+
+.canvas-scroll-thumb {
+  position: absolute;
+  background: #94a3b8;
+  border-radius: 6px;
+  cursor: grab;
+  transition: background 0.15s ease;
+}
+
+.canvas-scroll-thumb:hover, .canvas-scroll-thumb.active {
+  background: #475569;
+  cursor: grabbing;
+}
+
+/* Completely locked and disabled during Ink Mode */
+.canvas-scrollbar.locked {
+  pointer-events: none !important;
+  opacity: 0.1 !important;
+  cursor: default !important;
+}
+
+.canvas-scrollbar.locked .canvas-scroll-thumb {
+  pointer-events: none !important;
+  cursor: default !important;
+}
+
+/* --- Word-Style Formatting Ribbon Clusters --- */
+.ribbon-font-cluster select {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  color: #1e293b;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.15s ease;
+}
+
+.ribbon-font-cluster select:hover {
+  border-color: #94a3b8;
+}
+
+.ribbon-style-cluster, .ribbon-align-cluster {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  padding: 3px 6px;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.color-picker-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.color-picker-wrapper:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+.color-picker-wrapper input[type="color"] {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.color-picker-label {
+  font-weight: 700;
+  font-size: 0.95rem;
+  border-bottom: 3px solid #2563eb;
+  line-height: 1;
+}
+
+.v-divider-sm {
+  width: 1px;
+  height: 18px;
+  background: #cbd5e1;
+  margin: 0 4px;
+}
+
+

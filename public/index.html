@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Notes">
   <link rel="apple-touch-icon" href="./icons/icon-180.png">
-  <link rel="stylesheet" href="./styles.css?v=4.0.0">
+  <link rel="stylesheet" href="./styles.css?v=4.1.0">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -101,18 +101,20 @@
         </div>
 
         <!-- Font Family & Size Cluster -->
-        <div class="ribbon-cluster">
+        <div class="ribbon-cluster ribbon-font-cluster">
           <select id="ribbon-font" title="Font Family">
-            <option value="-apple-system, Segoe UI, sans-serif">Segoe UI</option>
-            <option value="'Calibri', sans-serif">Calibri</option>
-            <option value="'Georgia', serif">Georgia</option>
-            <option value="'Fira Code', monospace">Fira Code</option>
+            <option value="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">Segoe UI</option>
+            <option value="'Calibri', 'Segoe UI', sans-serif">Calibri</option>
+            <option value="'Georgia', 'Times New Roman', serif">Georgia</option>
+            <option value="'Fira Code', 'Consolas', monospace">Monospace</option>
+            <option value="'Caveat', cursive, sans-serif">Handwriting</option>
           </select>
           <select id="ribbon-font-size" title="Font Size">
             <option value="12px">12pt</option>
             <option value="14px">14pt</option>
             <option value="16px" selected>16pt</option>
             <option value="18px">18pt</option>
+            <option value="20px">20pt</option>
             <option value="24px">24pt</option>
             <option value="32px">32pt</option>
           </select>
@@ -124,18 +126,25 @@
           </select>
         </div>
 
-        <!-- Formatting cluster -->
-        <div class="ribbon-cluster">
+        <!-- Formatting cluster (Bold, Italic, Underline, Strikethrough, Color, Highlight) -->
+        <div class="ribbon-cluster ribbon-style-cluster">
           <button id="ribbon-bold" class="fmt-btn" title="Bold (Ctrl+B)"><b>B</b></button>
           <button id="ribbon-italic" class="fmt-btn" title="Italic (Ctrl+I)"><i>I</i></button>
           <button id="ribbon-underline" class="fmt-btn" title="Underline (Ctrl+U)"><u>U</u></button>
           <button id="ribbon-strike" class="fmt-btn" title="Strikethrough"><s>S</s></button>
-          <input type="color" id="ribbon-color" value="#0f172a" title="Text Color">
+          <div class="color-picker-wrapper" title="Font Color">
+            <span class="color-picker-label">A</span>
+            <input type="color" id="ribbon-color" value="#0f172a" title="Font Color">
+          </div>
           <button id="ribbon-highlight" class="fmt-btn" title="Highlight">🖍</button>
         </div>
 
-        <!-- Lists & Structure Cluster -->
-        <div class="ribbon-cluster">
+        <!-- Paragraph Alignment & Lists Cluster -->
+        <div class="ribbon-cluster ribbon-align-cluster">
+          <button id="ribbon-align-left" class="fmt-btn" title="Align Left">≡</button>
+          <button id="ribbon-align-center" class="fmt-btn" title="Center">≍</button>
+          <button id="ribbon-align-right" class="fmt-btn" title="Align Right">⊦</button>
+          <div class="v-divider-sm"></div>
           <button id="ribbon-bullet" class="fmt-btn" title="Bullet List">•≡</button>
           <button id="ribbon-num" class="fmt-btn" title="Numbered List">1≡</button>
           <button id="ribbon-task" class="fmt-btn" title="Task Checkbox">☑</button>
@@ -271,6 +280,14 @@
 
         <!-- Active iPad Ink Simulation Overlay Canvas -->
         <canvas id="active-draw-canvas" class="hidden"></canvas>
+
+        <!-- Canvas Position Scrollbars / Spatial Trackers (Locked in Ink Mode) -->
+        <div id="canvas-scrollbar-h" class="canvas-scrollbar horizontal" title="Horizontal Canvas Position">
+          <div id="canvas-scroll-thumb-h" class="canvas-scroll-thumb"></div>
+        </div>
+        <div id="canvas-scrollbar-v" class="canvas-scrollbar vertical" title="Vertical Canvas Position">
+          <div id="canvas-scroll-thumb-v" class="canvas-scroll-thumb"></div>
+        </div>
       </main>
     </div>
 
@@ -528,6 +545,6 @@
 
   </div>
 
-  <script type="module" src="./app.js?v=4.0.0"></script>
+  <script type="module" src="./app.js?v=4.1.0"></script>
 </body>
 </html>

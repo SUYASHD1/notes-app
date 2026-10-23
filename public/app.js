@@ -608,8 +608,75 @@ function stopMomentum() {
   panVelocity = { vx: 0, vy: 0 };
 }
 
+// --- Canvas Boundary Clamping & Dynamic Spatial Extension ---
+function getCanvasContentBounds() {
+  let maxX = 2600; // comfortable multi-column initial width
+  let maxY = 1800; // comfortable initial height
+  if (state.doc && state.doc.blocks) {
+    for (const b of state.doc.blocks) {
+      const right = (b.x || 0) + (b.width || 520);
+      const bottom = (b.y || 0) + (b.height || 400);
+      if (right > maxX) maxX = right;
+      if (bottom > maxY) maxY = bottom;
+    }
+  }
+  return {
+    width: maxX + 800, // Generous 800px breathing room
+    height: maxY + 800
+  };
+}
+
+function clampViewportBounds() {
+  const bounds = getCanvasContentBounds();
+  const containerW = container.offsetWidth || window.innerWidth;
+  const containerH = container.offsetHeight || window.innerHeight;
+
+  // Fixed left boundary at margin x = 40 (cannot pan past left origin)
+  // Right boundary limit so right edge doesn't pan past bounds.width
+  const minX = Math.min(40, containerW - bounds.width * state.viewport.zoom);
+  const minY = Math.min(40, containerH - bounds.height * state.viewport.zoom);
+
+  state.viewport.x = Math.max(minX, Math.min(40, state.viewport.x));
+  state.viewport.y = Math.max(minY, Math.min(40, state.viewport.y));
+}
+
+function updateScrollbars() {
+  const sbH = document.getElementById('canvas-scrollbar-h');
+  const sbV = document.getElementById('canvas-scrollbar-v');
+  const thumbH = document.getElementById('canvas-scroll-thumb-h');
+  const thumbV = document.getElementById('canvas-scroll-thumb-v');
+  if (!sbH || !sbV || !thumbH || !thumbV) return;
+
+  const bounds = getCanvasContentBounds();
+  const containerW = container.offsetWidth || window.innerWidth;
+  const containerH = container.offsetHeight || window.innerHeight;
+
+  // Horizontal scrollbar
+  const trackW = sbH.offsetWidth || 200;
+  const visibleW = containerW / state.viewport.zoom;
+  const thumbW = Math.max(30, Math.min(trackW, Math.round((visibleW / bounds.width) * trackW)));
+  thumbH.style.width = `${thumbW}px`;
+
+  const maxScrollX = Math.max(1, bounds.width * state.viewport.zoom - containerW + 40);
+  const currentScrollX = Math.max(0, 40 - state.viewport.x);
+  const scrollRatioX = Math.min(1, Math.max(0, currentScrollX / maxScrollX));
+  thumbH.style.left = `${Math.round(scrollRatioX * (trackW - thumbW))}px`;
+
+  // Vertical scrollbar
+  const trackH = sbV.offsetHeight || 200;
+  const visibleH = containerH / state.viewport.zoom;
+  const thumbHHeight = Math.max(30, Math.min(trackH, Math.round((visibleH / bounds.height) * trackH)));
+  thumbV.style.height = `${thumbHHeight}px`;
+
+  const maxScrollY = Math.max(1, bounds.height * state.viewport.zoom - containerH + 40);
+  const currentScrollY = Math.max(0, 40 - state.viewport.y);
+  const scrollRatioY = Math.min(1, Math.max(0, currentScrollY / maxScrollY));
+  thumbV.style.top = `${Math.round(scrollRatioY * (trackH - thumbHHeight))}px`;
+}
+
 let lastRenderedZoom = -1;
 function updateWorldTransform() {
+  clampViewportBounds();
   world.style.transform = `translate3d(${state.viewport.x}px, ${state.viewport.y}px, 0px) scale(${state.viewport.zoom})`;
   
   const currentZoomPercent = Math.round(state.viewport.zoom * 100);
@@ -617,6 +684,8 @@ function updateWorldTransform() {
     lastRenderedZoom = currentZoomPercent;
     zoomIndicator.textContent = currentZoomPercent + '%';
   }
+
+  updateScrollbars();
 }
 
 function renderAll() {
@@ -3488,7 +3557,8 @@ function setupRibbonControls() {
   // Prevent focus theft on format buttons so contentEditable stays active
   const fmtButtons = [
     'ribbon-bold', 'ribbon-italic', 'ribbon-underline', 'ribbon-strike',
-    'ribbon-highlight', 'ribbon-bullet', 'ribbon-num'
+    'ribbon-highlight', 'ribbon-bullet', 'ribbon-num', 'ribbon-task',
+    'ribbon-align-left', 'ribbon-align-center', 'ribbon-align-right'
   ];
   fmtButtons.forEach(id => {
     const el = document.getElementById(id);
@@ -3496,14 +3566,51 @@ function setupRibbonControls() {
   });
 
   // Typography buttons
-  document.getElementById('ribbon-bold')?.addEventListener('click', () => document.execCommand('bold'));
-  document.getElementById('ribbon-italic')?.addEventListener('click', () => document.execCommand('italic'));
-  document.getElementById('ribbon-underline')?.addEventListener('click', () => document.execCommand('underline'));
-  document.getElementById('ribbon-strike')?.addEventListener('click', () => document.execCommand('strikeThrough'));
-  document.getElementById('ribbon-highlight')?.addEventListener('click', () => document.execCommand('hiliteColor', false, '#fef08a'));
-  document.getElementById('ribbon-bullet')?.addEventListener('click', () => document.execCommand('insertUnorderedList'));
-  document.getElementById('ribbon-num')?.addEventListener('click', () => document.execCommand('insertOrderedList'));
-  document.getElementById('ribbon-color')?.addEventListener('input', (e) => document.execCommand('foreColor', false, e.target.value));
+  document.getElementById('ribbon-bold')?.addEventListener('click', () => {
+    document.execCommand('bold');
+    syncRibbonActiveStates();
+  });
+  document.getElementById('ribbon-italic')?.addEventListener('click', () => {
+    document.execCommand('italic');
+    syncRibbonActiveStates();
+  });
+  document.getElementById('ribbon-underline')?.addEventListener('click', () => {
+    document.execCommand('underline');
+    syncRibbonActiveStates();
+  });
+  document.getElementById('ribbon-strike')?.addEventListener('click', () => {
+    document.execCommand('strikeThrough');
+    syncRibbonActiveStates();
+  });
+  document.getElementById('ribbon-highlight')?.addEventListener('click', () => {
+    document.execCommand('hiliteColor', false, '#fef08a');
+    syncRibbonActiveStates();
+  });
+  document.getElementById('ribbon-color')?.addEventListener('input', (e) => {
+    document.execCommand('foreColor', false, e.target.value);
+  });
+
+  // Alignment buttons
+  document.getElementById('ribbon-align-left')?.addEventListener('click', () => {
+    document.execCommand('justifyLeft');
+  });
+  document.getElementById('ribbon-align-center')?.addEventListener('click', () => {
+    document.execCommand('justifyCenter');
+  });
+  document.getElementById('ribbon-align-right')?.addEventListener('click', () => {
+    document.execCommand('justifyRight');
+  });
+
+  // Lists & Checkboxes
+  document.getElementById('ribbon-bullet')?.addEventListener('click', () => {
+    document.execCommand('insertUnorderedList');
+  });
+  document.getElementById('ribbon-num')?.addEventListener('click', () => {
+    document.execCommand('insertOrderedList');
+  });
+  document.getElementById('ribbon-task')?.addEventListener('click', () => {
+    document.execCommand('insertHTML', false, '<label class="checklist-item"><input type="checkbox"> &nbsp;</label>');
+  });
 
   // Font Family, Font Size, Heading Style
   document.getElementById('ribbon-font')?.addEventListener('change', (e) => {
@@ -3522,6 +3629,47 @@ function setupRibbonControls() {
   document.getElementById('ribbon-heading')?.addEventListener('change', (e) => {
     document.execCommand('formatBlock', false, `<${e.target.value}>`);
   });
+
+  // Live Ribbon Active State Synchronization (like MS Word Home Tab)
+  function syncRibbonActiveStates() {
+    const boldBtn = document.getElementById('ribbon-bold');
+    const italicBtn = document.getElementById('ribbon-italic');
+    const underBtn = document.getElementById('ribbon-underline');
+    const strikeBtn = document.getElementById('ribbon-strike');
+    const headingSelect = document.getElementById('ribbon-heading');
+
+    try {
+      if (boldBtn) boldBtn.classList.toggle('active', document.queryCommandState('bold'));
+      if (italicBtn) italicBtn.classList.toggle('active', document.queryCommandState('italic'));
+      if (underBtn) underBtn.classList.toggle('active', document.queryCommandState('underline'));
+      if (strikeBtn) strikeBtn.classList.toggle('active', document.queryCommandState('strikeThrough'));
+    } catch (_) {}
+
+    // Check heading level
+    const sel = window.getSelection();
+    if (sel && sel.anchorNode && headingSelect) {
+      const parentBlock = sel.anchorNode.nodeType === Node.ELEMENT_NODE ? sel.anchorNode : sel.anchorNode.parentElement;
+      const hTag = parentBlock?.closest('h1, h2, h3, p');
+      if (hTag) {
+        headingSelect.value = hTag.tagName.toLowerCase();
+      }
+    }
+  }
+
+  document.addEventListener('selectionchange', () => {
+    const sel = window.getSelection();
+    if (sel && sel.anchorNode) {
+      const nodeEl = sel.anchorNode.nodeType === Node.ELEMENT_NODE ? sel.anchorNode : sel.anchorNode.parentElement;
+      if (nodeEl && nodeEl.closest('.note-item-text')) {
+        document.getElementById('ribbon-bar')?.classList.add('text-formatting-active');
+        syncRibbonActiveStates();
+      }
+    }
+  });
+
+  // Setup draggable scrollbars
+  setupScrollbarDragging();
+  setupEdgeAutoScroll();
 
   document.getElementById('btn-undo')?.addEventListener('click', () => {
     if (state.history.canUndo()) {
@@ -3819,6 +3967,154 @@ function setupKeyboardAndClipboard() {
 // --- Layout, Floating Puck & Inking Palette are now managed by src/ui/ modules ---
 
 
+
+// --- Setup Draggable Position Scrollbars (Canvas Trackers) ---
+function setupScrollbarDragging() {
+  const sbH = document.getElementById('canvas-scrollbar-h');
+  const sbV = document.getElementById('canvas-scrollbar-v');
+  const thumbH = document.getElementById('canvas-scroll-thumb-h');
+  const thumbV = document.getElementById('canvas-scroll-thumb-v');
+  if (!sbH || !sbV || !thumbH || !thumbV) return;
+
+  // Horizontal thumb drag
+  thumbH.addEventListener('mousedown', (e) => {
+    if (sbH.classList.contains('locked')) return;
+    e.stopPropagation();
+    e.preventDefault();
+    thumbH.classList.add('active');
+    const startX = e.clientX;
+    const initialThumbLeft = thumbH.offsetLeft;
+    const trackW = sbH.offsetWidth;
+    const thumbW = thumbH.offsetWidth;
+    const bounds = getCanvasContentBounds();
+    const containerW = container.offsetWidth || window.innerWidth;
+    const maxScrollX = Math.max(1, bounds.width * state.viewport.zoom - containerW + 40);
+
+    const onMove = (moveEvt) => {
+      const dx = moveEvt.clientX - startX;
+      const newLeft = Math.max(0, Math.min(trackW - thumbW, initialThumbLeft + dx));
+      const ratio = newLeft / Math.max(1, trackW - thumbW);
+      state.viewport.x = 40 - ratio * maxScrollX;
+      updateWorldTransform();
+    };
+
+    const onUp = () => {
+      thumbH.classList.remove('active');
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      debouncedSave(800);
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  });
+
+  // Vertical thumb drag
+  thumbV.addEventListener('mousedown', (e) => {
+    if (sbV.classList.contains('locked')) return;
+    e.stopPropagation();
+    e.preventDefault();
+    thumbV.classList.add('active');
+    const startY = e.clientY;
+    const initialThumbTop = thumbV.offsetTop;
+    const trackH = sbV.offsetHeight;
+    const thumbHHeight = thumbV.offsetHeight;
+    const bounds = getCanvasContentBounds();
+    const containerH = container.offsetHeight || window.innerHeight;
+    const maxScrollY = Math.max(1, bounds.height * state.viewport.zoom - containerH + 40);
+
+    const onMove = (moveEvt) => {
+      const dy = moveEvt.clientY - startY;
+      const newTop = Math.max(0, Math.min(trackH - thumbHHeight, initialThumbTop + dy));
+      const ratio = newTop / Math.max(1, trackH - thumbHHeight);
+      state.viewport.y = 40 - ratio * maxScrollY;
+      updateWorldTransform();
+    };
+
+    const onUp = () => {
+      thumbV.classList.remove('active');
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      debouncedSave(800);
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  });
+}
+
+// --- Smooth Auto-Scroll During Text Selection or Dragging Near Viewport Edges ---
+let autoScrollFrame = null;
+let autoScrollVelocity = { vx: 0, vy: 0 };
+
+function stepAutoScroll() {
+  if (autoScrollVelocity.vx !== 0 || autoScrollVelocity.vy !== 0) {
+    state.viewport.pan(autoScrollVelocity.vx, autoScrollVelocity.vy);
+    updateWorldTransform();
+    autoScrollFrame = requestAnimationFrame(stepAutoScroll);
+  } else {
+    autoScrollFrame = null;
+  }
+}
+
+function setupEdgeAutoScroll() {
+  window.addEventListener('mousemove', (e) => {
+    if (document.body.getAttribute('data-mode') === 'ipad') {
+      autoScrollVelocity = { vx: 0, vy: 0 };
+      return;
+    }
+
+    if (e.buttons !== 1) {
+      autoScrollVelocity = { vx: 0, vy: 0 };
+      return;
+    }
+
+    const sel = window.getSelection();
+    const isSelecting = sel && sel.rangeCount > 0 && !sel.isCollapsed;
+    const isDragging = state.isDraggingBlock || state.isMarquee;
+
+    if (!isSelecting && !isDragging) {
+      autoScrollVelocity = { vx: 0, vy: 0 };
+      return;
+    }
+
+    const rect = container.getBoundingClientRect();
+    const edgeMargin = 55;
+    const maxSpeed = 14;
+
+    let vx = 0;
+    let vy = 0;
+
+    if (e.clientX > rect.right - edgeMargin) {
+      const proximity = Math.min(edgeMargin, e.clientX - (rect.right - edgeMargin));
+      vx = -Math.round((proximity / edgeMargin) * maxSpeed);
+    } else if (e.clientX < rect.left + edgeMargin) {
+      const proximity = Math.min(edgeMargin, (rect.left + edgeMargin) - e.clientX);
+      vx = Math.round((proximity / edgeMargin) * maxSpeed);
+    }
+
+    if (e.clientY > rect.bottom - edgeMargin) {
+      const proximity = Math.min(edgeMargin, e.clientY - (rect.bottom - edgeMargin));
+      vy = -Math.round((proximity / edgeMargin) * maxSpeed);
+    } else if (e.clientY < rect.top + edgeMargin) {
+      const proximity = Math.min(edgeMargin, (rect.top + edgeMargin) - e.clientY);
+      vy = Math.round((proximity / edgeMargin) * maxSpeed);
+    }
+
+    autoScrollVelocity = { vx, vy };
+    if ((vx !== 0 || vy !== 0) && !autoScrollFrame) {
+      autoScrollFrame = requestAnimationFrame(stepAutoScroll);
+    }
+  }, { passive: true });
+
+  window.addEventListener('mouseup', () => {
+    autoScrollVelocity = { vx: 0, vy: 0 };
+    if (autoScrollFrame) {
+      cancelAnimationFrame(autoScrollFrame);
+      autoScrollFrame = null;
+    }
+  });
+}
 
 // Flush pending debounced auto-save immediately before window unloads, hides, or loses focus
 const flushPendingSave = () => {
