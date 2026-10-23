@@ -1021,10 +1021,15 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
 
   const serializeTextContent = (el) => {
     if (!el) return '';
-    if (el.querySelector('img') || el.querySelector('.note-image-container')) {
-      return MarkdownLatexParser.nodeToMarkdown(el).trim();
+    // If it's plain text without tags or images, return clean text
+    if (!el.innerHTML.includes('<') && !el.querySelector('img')) {
+      return el.innerText || el.textContent || '';
     }
-    return el.innerText || el.textContent || '';
+    // Retain clean rich HTML, stripping temporary floating toolbars
+    const clone = el.cloneNode(true);
+    clone.querySelectorAll('.embedded-img-toolbar, .embedded-img-resize-handle').forEach(t => t.remove());
+    clone.querySelectorAll('.selected-image').forEach(c => c.classList.remove('selected-image'));
+    return clone.innerHTML;
   };
 
   // Binds floating toolbar and corner resize handle to embedded images
@@ -1171,7 +1176,12 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
 
   const renderVisual = () => {
     textDiv.classList.remove('raw-code-mode');
-    textDiv.innerHTML = MarkdownLatexParser.renderToHtml(item.content || '');
+    const content = item.content || '';
+    if (content.includes('<p') || content.includes('<h1') || content.includes('<h2') || content.includes('<h3') || content.includes('<div') || content.includes('<ul') || content.includes('<ol') || content.includes('<strong') || content.includes('<b>')) {
+      textDiv.innerHTML = content;
+    } else {
+      textDiv.innerHTML = MarkdownLatexParser.renderToHtml(content);
+    }
     bindEmbeddedImageControls();
     if (toggleBtn) {
       toggleBtn.innerHTML = '&lt;/&gt; Code';
@@ -1181,7 +1191,12 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
 
   const renderRawCode = () => {
     textDiv.classList.add('raw-code-mode');
-    textDiv.innerText = item.content || '';
+    const content = item.content || '';
+    if (content.includes('<')) {
+      textDiv.innerText = MarkdownLatexParser.htmlToMarkdown(content) || content;
+    } else {
+      textDiv.innerText = content;
+    }
     if (toggleBtn) {
       toggleBtn.innerHTML = '👁 Visual';
       toggleBtn.title = 'Switch back to visual formatting';
@@ -1339,25 +1354,23 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
       }
     }
 
-    // 2. Rich Text & Mixed HTML Paste from Web / Docs
+    // 2. Rich Text & Mixed HTML Paste from Web / Docs / MS Word
     if (htmlData && htmlData.trim()) {
       e.preventDefault();
-      const convertedMd = MarkdownLatexParser.htmlToMarkdown(htmlData);
-      if (convertedMd) {
-        if (isRawCodeMode) {
-          document.execCommand('insertText', false, convertedMd);
-          item.content = textDiv.innerText || '';
-        } else {
-          const renderedHtml = MarkdownLatexParser.renderToHtml(convertedMd);
-          document.execCommand('insertHTML', false, renderedHtml);
-          item.content = serializeTextContent(textDiv);
-          bindEmbeddedImageControls();
-        }
-        saveActivePageDocument();
-        // Asynchronously vault external web images in background
-        vaultImagesInTextItem(item, textDiv);
-        return;
+      if (isRawCodeMode) {
+        const convertedMd = MarkdownLatexParser.htmlToMarkdown(htmlData);
+        document.execCommand('insertText', false, convertedMd);
+        item.content = textDiv.innerText || '';
+      } else {
+        const cleanHtml = MarkdownLatexParser.sanitizeRichHtml(htmlData);
+        document.execCommand('insertHTML', false, cleanHtml);
+        item.content = serializeTextContent(textDiv);
+        bindEmbeddedImageControls();
       }
+      saveActivePageDocument();
+      // Asynchronously vault external web images in background
+      vaultImagesInTextItem(item, textDiv);
+      return;
     }
 
     // 3. Plain Text fallback

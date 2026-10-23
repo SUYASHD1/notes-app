@@ -149,3 +149,31 @@ test('Wikipedia sidebar boxes, empty links, tiny UI icons, and [v][t][e] templat
   assert.ok(md.includes('This is the real article text.'));
 });
 
+test('sanitizeRichHtml faithfully cleans MS Word paste: retains headings, unwraps fake bold, and preserves images', () => {
+  const wordHtml = `
+    <p class="MsoTitle" style="font-size:18.0pt;font-weight:bold;">June 2026 Current Affairs — UPESSC PGT</p>
+    <p class="MsoNormal"><b style="mso-bidi-font-weight:normal">December 2026 exam · High-yield facts</b></p>
+    <p class="MsoNormal"><b style="mso-bidi-font-weight:normal">For June, the strongest preparation strategy is to connect schemes.</b></p>
+    <img src="https://example.com/orange-book.png" alt="Book Icon" width="120" height="120" />
+    <p class="MsoHeading2" style="mso-outline-level:2"><b>1. PARIVARTAN Scheme — ₹9,585 crore</b></p>
+    <p class="MsoNormal">Priority 1</p>
+    <a href="https://indianexpress.com">indianexpress.com</a>
+  `;
+
+  const clean = MarkdownLatexParser.sanitizeRichHtml(wordHtml);
+  // Heading 1 preserved
+  assert.ok(clean.includes('<h1>') && clean.includes('June 2026 Current Affairs'), 'Title must be converted to h1');
+  // Fake bold unwrapped on body paragraphs
+  assert.ok(!clean.includes('<b style="mso-bidi-font-weight:normal">'), 'Fake bidi bold tag must be unwrapped');
+  assert.ok(clean.includes('December 2026 exam'), 'Content preserved');
+  assert.ok(clean.includes('For June, the strongest preparation strategy'), 'Body text preserved');
+  // Section heading preserved
+  assert.ok(clean.includes('<h2>') && clean.includes('1. PARIVARTAN Scheme'), 'Section title must be converted to h2');
+  // Image wrapped in note-image-container
+  assert.ok(clean.includes('note-image-container wrap-center'), 'Image must be wrapped in centered note-image-container');
+  assert.ok(clean.includes('src="https://example.com/orange-book.png"'));
+  // Link has note-link class and target _blank
+  assert.ok(clean.includes('class="note-link"'));
+  assert.ok(clean.includes('target="_blank"'));
+});
+
