@@ -629,15 +629,15 @@ function getCanvasContentBounds() {
 function clampViewportBounds() {
   const bounds = getCanvasContentBounds();
   const containerW = container.offsetWidth || window.innerWidth;
-  const containerH = container.offsetHeight || window.innerHeight;
 
   // Fixed left boundary at margin x = 40 (cannot pan past left origin)
   // Right boundary limit so right edge doesn't pan past bounds.width
   const minX = Math.min(40, containerW - bounds.width * state.viewport.zoom);
-  const minY = Math.min(40, containerH - bounds.height * state.viewport.zoom);
-
   state.viewport.x = Math.max(minX, Math.min(40, state.viewport.x));
-  state.viewport.y = Math.max(minY, Math.min(40, state.viewport.y));
+
+  // Top boundary margin anchored at y = 40 (cannot pan into void above canvas origin)
+  // Downward vertical scrolling is 100% endless and unrestricted like a real continuous notebook!
+  state.viewport.y = Math.min(40, state.viewport.y);
 }
 
 function updateScrollbars() {
@@ -662,13 +662,15 @@ function updateScrollbars() {
   const scrollRatioX = Math.min(1, Math.max(0, currentScrollX / maxScrollX));
   thumbH.style.left = `${Math.round(scrollRatioX * (trackW - thumbW))}px`;
 
-  // Vertical scrollbar
+  // Vertical scrollbar: dynamic total space based on lowest content or current scroll position
+  const currentWorldBottom = (containerH - state.viewport.y) / state.viewport.zoom;
+  const totalWorldH = Math.max(bounds.height, currentWorldBottom + 600);
   const trackH = sbV.offsetHeight || 200;
   const visibleH = containerH / state.viewport.zoom;
-  const thumbHHeight = Math.max(30, Math.min(trackH, Math.round((visibleH / bounds.height) * trackH)));
+  const thumbHHeight = Math.max(30, Math.min(trackH, Math.round((visibleH / totalWorldH) * trackH)));
   thumbV.style.height = `${thumbHHeight}px`;
 
-  const maxScrollY = Math.max(1, bounds.height * state.viewport.zoom - containerH + 40);
+  const maxScrollY = Math.max(1, totalWorldH * state.viewport.zoom - containerH + 40);
   const currentScrollY = Math.max(0, 40 - state.viewport.y);
   const scrollRatioY = Math.min(1, Math.max(0, currentScrollY / maxScrollY));
   thumbV.style.top = `${Math.round(scrollRatioY * (trackH - thumbHHeight))}px`;
@@ -3667,9 +3669,10 @@ function setupRibbonControls() {
     }
   });
 
-  // Setup draggable scrollbars
+  // Setup draggable scrollbars, auto-scrolling, and Word ribbon tabs
   setupScrollbarDragging();
   setupEdgeAutoScroll();
+  setupRibbonTabs();
 
   document.getElementById('btn-undo')?.addEventListener('click', () => {
     if (state.history.canUndo()) {
@@ -3976,12 +3979,49 @@ function setupScrollbarDragging() {
   const thumbV = document.getElementById('canvas-scroll-thumb-v');
   if (!sbH || !sbV || !thumbH || !thumbV) return;
 
-  // Horizontal thumb drag
-  thumbH.addEventListener('mousedown', (e) => {
+  // Prevent canvas from stealing pointer events on scrollbars
+  [sbH, sbV].forEach(el => {
+    el.addEventListener('pointerdown', (e) => e.stopPropagation());
+    el.addEventListener('mousedown', (e) => e.stopPropagation());
+  });
+
+  // Track click to jump
+  sbH.addEventListener('pointerdown', (e) => {
+    if (sbH.classList.contains('locked') || e.target === thumbH) return;
+    const rect = sbH.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const bounds = getCanvasContentBounds();
+    const containerW = container.offsetWidth || window.innerWidth;
+    const maxScrollX = Math.max(1, bounds.width * state.viewport.zoom - containerW + 40);
+    const ratio = Math.max(0, Math.min(1, clickX / rect.width));
+    state.viewport.x = 40 - ratio * maxScrollX;
+    updateWorldTransform();
+    debouncedSave(800);
+  });
+
+  sbV.addEventListener('pointerdown', (e) => {
+    if (sbV.classList.contains('locked') || e.target === thumbV) return;
+    const rect = sbV.getBoundingClientRect();
+    const clickY = e.clientY - rect.top;
+    const bounds = getCanvasContentBounds();
+    const containerH = container.offsetHeight || window.innerHeight;
+    const currentWorldBottom = (containerH - state.viewport.y) / state.viewport.zoom;
+    const totalWorldH = Math.max(bounds.height, currentWorldBottom + 600);
+    const maxScrollY = Math.max(1, totalWorldH * state.viewport.zoom - containerH + 40);
+    const ratio = Math.max(0, Math.min(1, clickY / rect.height));
+    state.viewport.y = 40 - ratio * maxScrollY;
+    updateWorldTransform();
+    debouncedSave(800);
+  });
+
+  // Horizontal thumb drag with PointerCapture
+  thumbH.addEventListener('pointerdown', (e) => {
     if (sbH.classList.contains('locked')) return;
     e.stopPropagation();
     e.preventDefault();
+    thumbH.setPointerCapture(e.pointerId);
     thumbH.classList.add('active');
+
     const startX = e.clientX;
     const initialThumbLeft = thumbH.offsetLeft;
     const trackW = sbH.offsetWidth;
@@ -3990,7 +4030,7 @@ function setupScrollbarDragging() {
     const containerW = container.offsetWidth || window.innerWidth;
     const maxScrollX = Math.max(1, bounds.width * state.viewport.zoom - containerW + 40);
 
-    const onMove = (moveEvt) => {
+    const onPointerMove = (moveEvt) => {
       const dx = moveEvt.clientX - startX;
       const newLeft = Math.max(0, Math.min(trackW - thumbW, initialThumbLeft + dx));
       const ratio = newLeft / Math.max(1, trackW - thumbW);
@@ -3998,32 +4038,39 @@ function setupScrollbarDragging() {
       updateWorldTransform();
     };
 
-    const onUp = () => {
+    const onPointerUp = (upEvt) => {
       thumbH.classList.remove('active');
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
+      try { thumbH.releasePointerCapture(upEvt.pointerId); } catch (_) {}
+      thumbH.removeEventListener('pointermove', onPointerMove);
+      thumbH.removeEventListener('pointerup', onPointerUp);
+      thumbH.removeEventListener('pointercancel', onPointerUp);
       debouncedSave(800);
     };
 
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
+    thumbH.addEventListener('pointermove', onPointerMove);
+    thumbH.addEventListener('pointerup', onPointerUp);
+    thumbH.addEventListener('pointercancel', onPointerUp);
   });
 
-  // Vertical thumb drag
-  thumbV.addEventListener('mousedown', (e) => {
+  // Vertical thumb drag with PointerCapture
+  thumbV.addEventListener('pointerdown', (e) => {
     if (sbV.classList.contains('locked')) return;
     e.stopPropagation();
     e.preventDefault();
+    thumbV.setPointerCapture(e.pointerId);
     thumbV.classList.add('active');
+
     const startY = e.clientY;
     const initialThumbTop = thumbV.offsetTop;
     const trackH = sbV.offsetHeight;
     const thumbHHeight = thumbV.offsetHeight;
     const bounds = getCanvasContentBounds();
     const containerH = container.offsetHeight || window.innerHeight;
-    const maxScrollY = Math.max(1, bounds.height * state.viewport.zoom - containerH + 40);
+    const currentWorldBottom = (containerH - state.viewport.y) / state.viewport.zoom;
+    const totalWorldH = Math.max(bounds.height, currentWorldBottom + 600);
+    const maxScrollY = Math.max(1, totalWorldH * state.viewport.zoom - containerH + 40);
 
-    const onMove = (moveEvt) => {
+    const onPointerMove = (moveEvt) => {
       const dy = moveEvt.clientY - startY;
       const newTop = Math.max(0, Math.min(trackH - thumbHHeight, initialThumbTop + dy));
       const ratio = newTop / Math.max(1, trackH - thumbHHeight);
@@ -4031,15 +4078,18 @@ function setupScrollbarDragging() {
       updateWorldTransform();
     };
 
-    const onUp = () => {
+    const onPointerUp = (upEvt) => {
       thumbV.classList.remove('active');
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
+      try { thumbV.releasePointerCapture(upEvt.pointerId); } catch (_) {}
+      thumbV.removeEventListener('pointermove', onPointerMove);
+      thumbV.removeEventListener('pointerup', onPointerUp);
+      thumbV.removeEventListener('pointercancel', onPointerUp);
       debouncedSave(800);
     };
 
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
+    thumbV.addEventListener('pointermove', onPointerMove);
+    thumbV.addEventListener('pointerup', onPointerUp);
+    thumbV.addEventListener('pointercancel', onPointerUp);
   });
 }
 
@@ -4058,7 +4108,7 @@ function stepAutoScroll() {
 }
 
 function setupEdgeAutoScroll() {
-  window.addEventListener('mousemove', (e) => {
+  window.addEventListener('pointermove', (e) => {
     if (document.body.getAttribute('data-mode') === 'ipad') {
       autoScrollVelocity = { vx: 0, vy: 0 };
       return;
@@ -4069,36 +4119,27 @@ function setupEdgeAutoScroll() {
       return;
     }
 
-    const sel = window.getSelection();
-    const isSelecting = sel && sel.rangeCount > 0 && !sel.isCollapsed;
-    const isDragging = state.isDraggingBlock || state.isMarquee;
-
-    if (!isSelecting && !isDragging) {
-      autoScrollVelocity = { vx: 0, vy: 0 };
-      return;
-    }
-
     const rect = container.getBoundingClientRect();
-    const edgeMargin = 55;
-    const maxSpeed = 14;
+    const edgeMargin = 60;
+    const maxSpeed = 16;
 
     let vx = 0;
     let vy = 0;
 
     if (e.clientX > rect.right - edgeMargin) {
-      const proximity = Math.min(edgeMargin, e.clientX - (rect.right - edgeMargin));
-      vx = -Math.round((proximity / edgeMargin) * maxSpeed);
+      const p = Math.min(edgeMargin, e.clientX - (rect.right - edgeMargin));
+      vx = -Math.round((p / edgeMargin) * maxSpeed);
     } else if (e.clientX < rect.left + edgeMargin) {
-      const proximity = Math.min(edgeMargin, (rect.left + edgeMargin) - e.clientX);
-      vx = Math.round((proximity / edgeMargin) * maxSpeed);
+      const p = Math.min(edgeMargin, (rect.left + edgeMargin) - e.clientX);
+      vx = Math.round((p / edgeMargin) * maxSpeed);
     }
 
     if (e.clientY > rect.bottom - edgeMargin) {
-      const proximity = Math.min(edgeMargin, e.clientY - (rect.bottom - edgeMargin));
-      vy = -Math.round((proximity / edgeMargin) * maxSpeed);
+      const p = Math.min(edgeMargin, e.clientY - (rect.bottom - edgeMargin));
+      vy = -Math.round((p / edgeMargin) * maxSpeed);
     } else if (e.clientY < rect.top + edgeMargin) {
-      const proximity = Math.min(edgeMargin, (rect.top + edgeMargin) - e.clientY);
-      vy = Math.round((proximity / edgeMargin) * maxSpeed);
+      const p = Math.min(edgeMargin, (rect.top + edgeMargin) - e.clientY);
+      vy = Math.round((p / edgeMargin) * maxSpeed);
     }
 
     autoScrollVelocity = { vx, vy };
@@ -4107,13 +4148,48 @@ function setupEdgeAutoScroll() {
     }
   }, { passive: true });
 
-  window.addEventListener('mouseup', () => {
+  window.addEventListener('pointerup', () => {
     autoScrollVelocity = { vx: 0, vy: 0 };
     if (autoScrollFrame) {
       cancelAnimationFrame(autoScrollFrame);
       autoScrollFrame = null;
     }
   });
+}
+
+// --- Word Ribbon Tabs Controller (Home vs Insert) ---
+function setupRibbonTabs() {
+  const homeTabBtn = document.getElementById('tab-btn-home');
+  const insertTabBtn = document.getElementById('tab-btn-insert');
+  const textGroup = document.getElementById('ribbon-text-group');
+  const insertCluster = document.querySelector('.insert-cluster');
+
+  const switchTab = (tab) => {
+    if (tab === 'home') {
+      homeTabBtn?.classList.add('active');
+      insertTabBtn?.classList.remove('active');
+      if (textGroup) textGroup.style.display = 'flex';
+      if (insertCluster) insertCluster.style.display = 'none';
+    } else {
+      insertTabBtn?.classList.add('active');
+      homeTabBtn?.classList.remove('active');
+      if (textGroup) textGroup.style.display = 'none';
+      if (insertCluster) insertCluster.style.display = 'flex';
+    }
+  };
+
+  homeTabBtn?.addEventListener('click', () => switchTab('home'));
+  insertTabBtn?.addEventListener('click', () => switchTab('insert'));
+
+  // Auto-switch to Home (Text Formatting) tab when typing in notes
+  document.addEventListener('focusin', (e) => {
+    if (e.target && e.target.closest && e.target.closest('.note-item-text')) {
+      switchTab('home');
+    }
+  });
+
+  // Default view: Home tab
+  switchTab('home');
 }
 
 // Flush pending debounced auto-save immediately before window unloads, hides, or loses focus
