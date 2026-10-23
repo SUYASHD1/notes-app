@@ -3,7 +3,7 @@
 > **Last Updated:** October 2026  
 > **Status:** Fully Functional, PWA Standalone Enabled, Deployed to Production (Vercel)  
 > **Live Web Application:** [https://notes-app-topaz-six.vercel.app/](https://notes-app-topaz-six.vercel.app/)  
-> **Automated Test Suite:** `57 / 57 tests passed (100%)`
+> **Automated Test Suite:** `59 / 59 tests passed (100%)`
 
 ---
 
@@ -66,6 +66,14 @@ This application is a freeform, ultra-fast note-taking system designed to combin
   3. **Sleek Zoom Popover:** Replaced four exposed buttons with a single compact `100%` pill that only opens controls when deliberately tapped.
   4. **Decluttered Top Bar:** Responsive icon-only mode toggle and subtle green status dot on mobile and tablets.
 
+### 8. Clean Blank Page Guarantee, Notebook Management & File Explorer
+* **The Problem:** Every time a new section or page was created, it loaded with sample "Physics and Calculus 101" notes instead of a clean, blank sheet. Also, there was no way to delete or add notebooks, or reorganize pages like a real folder manager.
+* **The Solution:**
+  1. **Clean Blank Canvas Guarantee:** Separated sample demo notes from newly created pages. Empty and newly created pages now load as 100% fresh, blank canvases.
+  2. **Notebook Management:** Added `+` (Create Notebook), `✏️` (Rename Notebook), and `🗑️` (Delete Notebook) directly into the notebook header selector with safety confirmation dialogs.
+  3. **Quick Inline Renaming:** Double-clicking any section or page in the sidebar opens an instant renaming prompt.
+  4. **True File Manager Tree in Storage Hub:** Inside the Storage & Data Hub settings flyout, an interactive folder explorer allows users to browse notebooks, sections, and pages, drag and drop pages between sections/notebooks, duplicate pages with a single click, and rename or delete any item.
+
 ---
 
 ## 🚀 3. Features & Capabilities
@@ -112,12 +120,13 @@ This application is a freeform, ultra-fast note-taking system designed to combin
 | `src/blocks/` | Universal note containers, text/latex, tables, math plots, and PDF printout managers. |
 | [src/storage/indexed_db.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/src/storage/indexed_db.js) | Full storage engine: IndexedDB vault, hard drive folder migration, live metrics, and backup/restore. |
 | [dev-server.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/dev-server.js) | Local development server with URL query-stripping and strict no-cache headers. |
-| `tests/` | 57 automated unit tests covering inking, geometry, storage, backups, and PWA validity. |
+| `tests/` | 59 automated unit tests covering inking, geometry, storage, backups, PWA validity, and file management. |
 
 ---
 
 ## 🧪 5. Automated Test Status
-* **Unit Tests Passing:** `57 / 57 tests passed (100%)`
+* **Unit Tests Passing:** `59 / 59 tests passed (100%)`
+* **File Management & Clean Canvas Verification:** Automated test suite verifies notebook, section, and page lifecycle (creation, renaming, cross-notebook move, copy/duplicate, cascading deletion) and guarantees blank canvases for all new notes.
 * **Storage Hub Verification:** Verified modal opening, metrics calculation, backup download, and clean close.
 * **PWA Verification:** Manifest schema, icon asset verification, and service worker offline caching fully verified.
 * **Production Status:** Deployed live on Vercel at `https://notes-app-topaz-six.vercel.app/`.

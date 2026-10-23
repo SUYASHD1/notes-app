@@ -11,6 +11,7 @@ export function createDefaultHierarchy() {
   const sec3 = hm.addSection(nb1.id, 'Integrals & Area', '#10b981');
 
   const p1 = hm.addPage(sec1.id, 'Derivatives Intro & Graph');
+  p1.id = 'nb_physics_demo_p1';
   hm.addPage(sec1.id, 'Critical Points Practice', p1.id);
   hm.addPage(sec2.id, 'Chain Rule & Composition');
   hm.addPage(sec3.id, 'Fundamental Theorem of Calculus');
@@ -122,6 +123,38 @@ export function renderHierarchyUI({
         <button class="item-delete-btn" title="Delete Section" style="margin-left:auto; background:none; border:none; color:#94a3b8; cursor:pointer; font-size:12px;">&times;</button>
       `;
 
+      const nameSpan = li.querySelector('.item-name');
+      nameSpan.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        const newName = prompt(`Rename section "${sec.name}" to:`, sec.name);
+        if (newName && newName.trim() && newName.trim() !== sec.name) {
+          state.hierarchy.renameSection(sec.id, newName.trim());
+          saveHierarchy(state);
+          renderHierarchyUI({ state, saveActivePageDocument, loadActivePageDocument, renderAll });
+          if (showToast) showToast(`✏️ Renamed section to "${newName.trim()}"`);
+        }
+      });
+
+      // Drag target: Allow dragging pages into this section
+      li.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        li.classList.add('drag-target-hover');
+      });
+      li.addEventListener('dragleave', () => li.classList.remove('drag-target-hover'));
+      li.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        li.classList.remove('drag-target-hover');
+        const draggedPageId = e.dataTransfer.getData('text/plain');
+        if (draggedPageId) {
+          const moved = state.hierarchy.movePage(draggedPageId, sec.id);
+          if (moved) {
+            saveHierarchy(state);
+            renderHierarchyUI({ state, saveActivePageDocument, loadActivePageDocument, renderAll });
+            if (showToast) showToast(`🚚 Moved page into "${sec.name}"`);
+          }
+        }
+      });
+
       li.querySelector('.item-delete-btn').addEventListener('click', (e) => {
         e.stopPropagation();
         if (confirm(`Delete section "${sec.name}" and all its pages?`)) {
@@ -160,11 +193,34 @@ export function renderHierarchyUI({
       const li = document.createElement('li');
       li.className = `page-item ${p.isSubpage ? 'subpage' : ''} ${p.id === state.activePageId ? 'active' : ''}`;
       li.dataset.pageId = p.id;
+      li.draggable = true;
       li.innerHTML = `
+        <span class="page-drag-grip" title="Drag to reorder or move to section">⋮⋮</span>
         ${p.isSubpage ? '<span class="subpage-indicator">↳</span>' : '<span class="page-icon">📄</span>'}
-        <span class="item-name">${p.title}</span>
+        <span class="item-name" title="Double click to rename">${p.title}</span>
         <button class="item-delete-btn" title="Delete Page" style="margin-left:auto; background:none; border:none; color:#94a3b8; cursor:pointer; font-size:12px;">&times;</button>
       `;
+
+      // Dragging page
+      li.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', p.id);
+        e.dataTransfer.effectAllowed = 'move';
+        li.classList.add('page-dragging');
+      });
+      li.addEventListener('dragend', () => li.classList.remove('page-dragging'));
+
+      // Double-click to rename page
+      const pageTitleSpan = li.querySelector('.item-name');
+      pageTitleSpan.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        const newTitle = prompt(`Rename page "${p.title}" to:`, p.title);
+        if (newTitle && newTitle.trim() && newTitle.trim() !== p.title) {
+          state.hierarchy.renamePage(p.id, newTitle.trim());
+          saveHierarchy(state);
+          renderHierarchyUI({ state, saveActivePageDocument, loadActivePageDocument, renderAll });
+          if (showToast) showToast(`✏️ Renamed page to "${newTitle.trim()}"`);
+        }
+      });
 
       li.querySelector('.item-delete-btn').addEventListener('click', async (e) => {
         e.stopPropagation();
@@ -211,12 +267,69 @@ export function setupSidebarControls({
 }) {
   const rerender = () => renderHierarchyUI({ state, saveActivePageDocument, loadActivePageDocument, renderAll });
 
+  // Add New Notebook Button
+  document.getElementById('btn-new-notebook')?.addEventListener('click', async () => {
+    const name = prompt('Enter New Notebook Name:', 'New Notebook');
+    if (name && name.trim()) {
+      const colors = ['#6366f1', '#3b82f6', '#10b981', '#f59e0b', '#ec4899'];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const nb = state.hierarchy.addNotebook(name.trim(), color);
+      const sec = state.hierarchy.addSection(nb.id, 'General Notes', '#8b5cf6');
+      const page = state.hierarchy.addPage(sec.id, 'Untitled Page');
+      state.activeNotebookId = nb.id;
+      state.activeSectionId = sec.id;
+      state.activePageId = page.id;
+      saveHierarchy(state);
+      rerender();
+      await loadActivePageDocument();
+      renderAll();
+      if (showToast) showToast(`📓 Created notebook "${name.trim()}"`);
+    }
+  });
+
+  // Rename Active Notebook Button
+  document.getElementById('btn-rename-notebook')?.addEventListener('click', () => {
+    const activeNb = state.hierarchy.notebooks.find(n => n.id === state.activeNotebookId);
+    if (!activeNb) return;
+    const newName = prompt(`Rename notebook "${activeNb.name}" to:`, activeNb.name);
+    if (newName && newName.trim() && newName.trim() !== activeNb.name) {
+      state.hierarchy.renameNotebook(activeNb.id, newName.trim());
+      saveHierarchy(state);
+      rerender();
+      if (showToast) showToast(`✏️ Renamed notebook to "${newName.trim()}"`);
+    }
+  });
+
+  // Delete Active Notebook Button
+  document.getElementById('btn-delete-notebook')?.addEventListener('click', async () => {
+    const activeNb = state.hierarchy.notebooks.find(n => n.id === state.activeNotebookId);
+    if (!activeNb) return;
+    if (confirm(`Delete notebook "${activeNb.name}" and ALL its sections and pages? This cannot be undone.`)) {
+      state.hierarchy.deleteNotebook(activeNb.id);
+      if (state.hierarchy.notebooks.length === 0) {
+        const freshNb = state.hierarchy.addNotebook('My Notebook', '#6366f1');
+        const freshSec = state.hierarchy.addSection(freshNb.id, 'General Notes', '#8b5cf6');
+        state.hierarchy.addPage(freshSec.id, 'Untitled Page');
+      }
+      state.activeNotebookId = state.hierarchy.notebooks[0].id;
+      const remSecs = state.hierarchy.getSectionsForNotebook(state.activeNotebookId);
+      state.activeSectionId = remSecs.length ? remSecs[0].id : null;
+      const remPages = state.activeSectionId ? state.hierarchy.getPagesForSection(state.activeSectionId) : [];
+      state.activePageId = remPages.length ? remPages[0].id : null;
+      saveHierarchy(state);
+      rerender();
+      await loadActivePageDocument();
+      renderAll();
+      if (showToast) showToast(`🗑️ Deleted notebook "${activeNb.name}"`);
+    }
+  });
+
   document.getElementById('btn-new-section')?.addEventListener('click', async () => {
     const name = prompt('Enter New Section Name:', 'New Section');
-    if (name) {
+    if (name && name.trim()) {
       const colors = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ec4899'];
       const color = colors[Math.floor(Math.random() * colors.length)];
-      const sec = state.hierarchy.addSection(state.activeNotebookId, name, color);
+      const sec = state.hierarchy.addSection(state.activeNotebookId, name.trim(), color);
       const page = state.hierarchy.addPage(sec.id, 'Untitled Page');
       state.activeSectionId = sec.id;
       state.activePageId = page.id;
@@ -224,20 +337,20 @@ export function setupSidebarControls({
       rerender();
       await loadActivePageDocument();
       renderAll();
-      showToast(`📁 Created section "${name}"`);
+      showToast(`📁 Created section "${name.trim()}"`);
     }
   });
 
   document.getElementById('btn-new-page')?.addEventListener('click', async () => {
     const title = prompt('Enter New Page Title:', 'Untitled Page');
-    if (title) {
-      const page = state.hierarchy.addPage(state.activeSectionId, title);
+    if (title && title.trim()) {
+      const page = state.hierarchy.addPage(state.activeSectionId, title.trim());
       state.activePageId = page.id;
       saveHierarchy(state);
       rerender();
       await loadActivePageDocument();
       renderAll();
-      showToast(`📄 Created page "${title}"`);
+      showToast(`📄 Created blank page "${title.trim()}"`);
     }
   });
 

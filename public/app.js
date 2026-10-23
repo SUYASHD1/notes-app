@@ -168,6 +168,8 @@ async function initApp() {
     storageStatus,
     showToast,
     initHierarchy: () => initHierarchy({ state, renderHierarchyUI: () => renderHierarchyUI({ state, saveActivePageDocument, loadActivePageDocument, renderAll }) }),
+    saveHierarchy: (st) => saveHierarchy(st || state),
+    renderHierarchyUI: () => renderHierarchyUI({ state, saveActivePageDocument, loadActivePageDocument, renderAll }),
     loadActivePageDocument,
     renderAll
   });
@@ -217,12 +219,16 @@ async function loadActivePageDocument() {
       try {
         state.doc = DocumentModel.fromJSON(raw);
       } catch {
-        state.doc = createSampleDocument(state.activePageId);
+        state.doc = createBlankDocument(state.activePageId);
       }
-    } else {
+    } else if (state.activePageId === 'nb_physics_demo_p1') {
+      // Only the first demo page of the default sample notebook gets sample content
       state.doc = createSampleDocument(state.activePageId);
+    } else {
+      // All other pages start completely clean and blank
+      state.doc = createBlankDocument(state.activePageId);
     }
-    // Migrate page into LocalVault
+    // Persist clean page into LocalVault
     saveActivePageDocument();
   }
 
@@ -277,6 +283,16 @@ function saveActivePageDocument() {
     storageStatus.textContent = 'Saved locally';
     storageStatus.title = 'Saved to LocalVault at ' + new Date().toLocaleTimeString();
   }
+}
+
+function createBlankDocument(pageId) {
+  const pageMeta = state.hierarchy?.pages?.find(p => p.id === pageId);
+  return new DocumentModel({
+    id: pageId,
+    title: pageMeta ? pageMeta.title : 'Untitled Page',
+    blocks: [],
+    globalAnnotations: []
+  });
 }
 
 // Default Universal Note Containers

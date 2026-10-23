@@ -2730,3 +2730,248 @@ body[data-mode="ipad"] .marquee-box {
     font-size: 0.72rem;
   }
 }
+
+/* Notebook Header Quick Actions */
+.notebook-quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.notebook-quick-actions .icon-btn-sm {
+  width: 24px;
+  height: 24px;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.notebook-quick-actions .icon-btn-sm:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  color: #1e293b;
+}
+
+.notebook-quick-actions .text-danger:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+/* Sidebar Drag & Drop Visuals */
+.page-drag-grip {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-right: 4px;
+  cursor: grab;
+  opacity: 0.6;
+}
+
+.page-drag-grip:hover {
+  opacity: 1;
+}
+
+.page-dragging {
+  opacity: 0.4 !important;
+  background: #e0e7ff !important;
+}
+
+.drag-target-hover {
+  background: rgba(99, 102, 241, 0.15) !important;
+  border: 1.5px dashed #6366f1 !important;
+  border-radius: 6px;
+}
+
+/* Notebook & File Explorer Tree Styles */
+.explorer-tree-view {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px;
+  max-height: 420px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.explorer-empty {
+  padding: 24px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.explorer-nb-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.explorer-nb-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.explorer-nb-header.active-nb {
+  border-left: 3px solid #6366f1;
+}
+
+.explorer-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.explorer-toggle-chevron {
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.8rem;
+  color: #64748b;
+  width: 14px;
+  display: inline-block;
+  text-align: center;
+}
+
+.explorer-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: text;
+}
+
+.explorer-count-badge {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #64748b;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+.explorer-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.exp-btn {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 2px 6px;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.exp-btn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.exp-btn-delete:hover, .exp-btn-delete-sec:hover, .exp-btn-delete-page:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+.explorer-sections-container {
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.explorer-sec-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.explorer-sec-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.02);
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.explorer-sec-header.active-sec {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.sec-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.explorer-pages-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.explorer-page-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 8px 5px 20px;
+  font-size: 0.8rem;
+  color: #334155;
+  border-top: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.explorer-page-row:hover {
+  background: #f1f5f9;
+}
+
+.explorer-page-row.active-page {
+  background: #e0e7ff;
+  font-weight: 600;
+  color: #3730a3;
+}
+
+.explorer-drag-handle {
+  cursor: grab;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  margin-right: 4px;
+}
+
+.drag-hover {
+  background: rgba(99, 102, 241, 0.12) !important;
+  border: 2px dashed #6366f1 !important;
+}
+

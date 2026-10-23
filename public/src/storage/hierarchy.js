@@ -69,6 +69,93 @@ export class HierarchyManager {
     this.pages = this.pages.filter(p => !sectionIds.includes(p.sectionId));
   }
 
+  renameNotebook(notebookId, newName) {
+    const nb = this.notebooks.find(n => n.id === notebookId);
+    if (nb && newName?.trim()) {
+      nb.name = newName.trim();
+      return true;
+    }
+    return false;
+  }
+
+  renameSection(sectionId, newName) {
+    const sec = this.sections.find(s => s.id === sectionId);
+    if (sec && newName?.trim()) {
+      sec.name = newName.trim();
+      return true;
+    }
+    return false;
+  }
+
+  renamePage(pageId, newTitle) {
+    const p = this.pages.find(page => page.id === pageId);
+    if (p && newTitle?.trim()) {
+      p.title = newTitle.trim();
+      p.updatedAt = Date.now();
+      return true;
+    }
+    return false;
+  }
+
+  movePage(pageId, targetSectionId) {
+    const p = this.pages.find(page => page.id === pageId);
+    const targetSec = this.sections.find(s => s.id === targetSectionId);
+    if (p && targetSec) {
+      p.sectionId = targetSectionId;
+      p.parentPageId = null;
+      p.isSubpage = false;
+      p.updatedAt = Date.now();
+      return true;
+    }
+    return false;
+  }
+
+  moveSection(sectionId, targetNotebookId) {
+    const sec = this.sections.find(s => s.id === sectionId);
+    const targetNb = this.notebooks.find(n => n.id === targetNotebookId);
+    if (sec && targetNb) {
+      sec.notebookId = targetNotebookId;
+      return true;
+    }
+    return false;
+  }
+
+  copyPage(pageId, targetSectionId) {
+    const p = this.pages.find(page => page.id === pageId);
+    const targetSec = this.sections.find(s => s.id === targetSectionId);
+    if (p && targetSec) {
+      const newPage = {
+        id: 'page_' + Math.random().toString(36).substr(2, 9),
+        sectionId: targetSectionId,
+        title: `${p.title} (Copy)`,
+        parentPageId: null,
+        isSubpage: false,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+      this.pages.push(newPage);
+      return newPage;
+    }
+    return null;
+  }
+
+  reorderPages(sectionId, orderedPageIds) {
+    const otherPages = this.pages.filter(p => p.sectionId !== sectionId);
+    const sectionPagesMap = new Map(this.pages.filter(p => p.sectionId === sectionId).map(p => [p.id, p]));
+    const reordered = [];
+    for (const id of orderedPageIds) {
+      if (sectionPagesMap.has(id)) {
+        reordered.push(sectionPagesMap.get(id));
+        sectionPagesMap.delete(id);
+      }
+    }
+    // Append any unmentioned pages
+    for (const remaining of sectionPagesMap.values()) {
+      reordered.push(remaining);
+    }
+    this.pages = [...otherPages, ...reordered];
+  }
+
   toJSON() {
     return {
       notebooks: this.notebooks,
