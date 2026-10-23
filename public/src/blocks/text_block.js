@@ -53,6 +53,37 @@ export class MarkdownLatexParser {
         continue;
       }
 
+      // Check Markdown Images ![alt](url)
+      const imgMatch = trimmed.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+      if (imgMatch) {
+        tokens.push({
+          type: 'image',
+          alt: imgMatch[1],
+          src: imgMatch[2]
+        });
+        continue;
+      }
+
+      // Check Bullet Lists (- or *)
+      if ((trimmed.startsWith('- ') || trimmed.startsWith('* ')) && !trimmed.startsWith('- [ ] ') && !trimmed.startsWith('- [x] ') && !trimmed.startsWith('- [X] ')) {
+        tokens.push({
+          type: 'list_item',
+          content: trimmed.substring(2)
+        });
+        continue;
+      }
+
+      // Check Numbered Lists (1. , 2. )
+      const numMatch = trimmed.match(/^(\d+)\.\s+(.*)$/);
+      if (numMatch) {
+        tokens.push({
+          type: 'numbered_item',
+          number: numMatch[1],
+          content: numMatch[2]
+        });
+        continue;
+      }
+
       // Standard paragraph with inline formatting
       tokens.push({
         type: 'paragraph',
@@ -224,6 +255,15 @@ export class MarkdownLatexParser {
         case 'heading':
           htmlLines.push(`<h${token.level}>${this.escapeHtml(token.content)}</h${token.level}>`);
           break;
+        case 'image':
+          htmlLines.push(`<div class="note-image-container"><img class="note-embedded-image" src="${token.src}" alt="${this.escapeHtml(token.alt || 'Pasted Image')}" loading="lazy" /></div>`);
+          break;
+        case 'list_item':
+          htmlLines.push(`<li class="note-bullet-item">${this.escapeHtml(token.content).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>')}</li>`);
+          break;
+        case 'numbered_item':
+          htmlLines.push(`<li class="note-numbered-item" value="${token.number}">${this.escapeHtml(token.content).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>')}</li>`);
+          break;
         case 'checklist':
           htmlLines.push(`<label class="checklist-item"><input type="checkbox" ${token.checked ? 'checked' : ''} disabled /> ${this.escapeHtml(token.content)}</label>`);
           break;
@@ -239,7 +279,8 @@ export class MarkdownLatexParser {
             return this.escapeHtml(inLine.content)
               .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
               .replace(/\*(.*?)\*/g, '<em>$1</em>')
-              .replace(/~~(.*?)~~/g, '<del>$1</del>');
+              .replace(/~~(.*?)~~/g, '<del>$1</del>')
+              .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img class="note-embedded-image" src="$2" alt="$1" />');
           }).join('');
           htmlLines.push(`<p>${renderedInlines}</p>`);
           break;
@@ -254,5 +295,87 @@ export class MarkdownLatexParser {
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
+  }
+
+  /**
+   * Converts pasted rich HTML (headings, bold, lists, images) into standard Markdown
+   */
+  static htmlToMarkdown(html) {
+    if (!html || typeof html !== 'string') return '';
+
+    if (typeof DOMParser !== 'undefined') {
+      try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const converted = this.nodeToMarkdown(doc.body).trim();
+        if (converted) return converted;
+      } catch (_) {}
+    }
+
+    // RegEx based fallback for non-DOM environments
+    return html
+      .replace(/<h1[^>]*>([\s\S]*?)<\/h1>/gi, '\n# $1\n')
+      .replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, '\n## $1\n')
+      .replace(/<h3[^>]*>([\s\S]*?)<\/h3>/gi, '\n### $1\n')
+      .replace(/<h[4-6][^>]*>([\s\S]*?)<\/h[4-6]>/gi, '\n### $1\n')
+      .replace(/<strong[^>]*>([\s\S]*?)<\/strong>/gi, '**$1**')
+      .replace(/<b[^>]*>([\s\S]*?)<\/b>/gi, '**$1**')
+      .replace(/<em[^>]*>([\s\S]*?)<\/em>/gi, '*$1*')
+      .replace(/<i[^>]*>([\s\S]*?)<\/i>/gi, '*$1*')
+      .replace(/<del[^>]*>([\s\S]*?)<\/del>/gi, '~~$1~~')
+      .replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, '\n- $1')
+      .replace(/<img[^>]*src=["']([^"']+)["'][^>]*alt=["']?([^"'>]*)["']?[^>]*>/gi, '\n![$2]($1)\n')
+      .replace(/<img[^>]*alt=["']?([^"'>]*)["']?[^>]*src=["']([^"']+)["'][^>]*>/gi, '\n![$1]($2)\n')
+      .replace(/<img[^>]*src=["']([^"']+)["'][^>]*>/gi, '\n![Pasted Image]($1)\n')
+      .replace(/<br\s*[\/]?>/gi, '\n')
+      .replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, '\n$1\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
+  static nodeToMarkdown(node) {
+    if (!node) return '';
+    if (node.nodeType === 3) {
+      return node.textContent || '';
+    }
+    if (node.nodeType !== 1) return '';
+
+    const tag = node.tagName.toLowerCase();
+
+    if (tag === 'img') {
+      const src = node.getAttribute('src') || '';
+      const alt = node.getAttribute('alt') || 'Pasted Image';
+      return src ? `\n![${alt}](${src})\n` : '';
+    }
+
+    let childrenText = '';
+    for (const child of node.childNodes) {
+      childrenText += this.nodeToMarkdown(child);
+    }
+
+    switch (tag) {
+      case 'h1': return `\n# ${childrenText.trim()}\n`;
+      case 'h2': return `\n## ${childrenText.trim()}\n`;
+      case 'h3': return `\n### ${childrenText.trim()}\n`;
+      case 'h4':
+      case 'h5':
+      case 'h6': return `\n### ${childrenText.trim()}\n`;
+      case 'strong':
+      case 'b': return `**${childrenText}**`;
+      case 'em':
+      case 'i': return `*${childrenText}*`;
+      case 'del':
+      case 's': return `~~${childrenText}~~`;
+      case 'li': return `\n- ${childrenText.trim()}`;
+      case 'p': return `\n${childrenText}\n`;
+      case 'br': return '\n';
+      case 'div': return `\n${childrenText}\n`;
+      case 'a':
+        const href = node.getAttribute('href');
+        return href ? `[${childrenText}](${href})` : childrenText;
+      default:
+        return childrenText;
+    }
   }
 }

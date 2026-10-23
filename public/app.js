@@ -409,11 +409,13 @@ function initTouchRecognizer() {
       const originX = center.x - rect.left;
       const originY = center.y - rect.top;
 
-      // Smooth anchored pinch-to-zoom centered right between the user's fingers (Freeform / OneNote style)
-      if (scaleFactor && scaleFactor > 0 && Math.abs(scaleFactor - 1.0) > 0.003) {
+      // Determine if the user is actively pinching to zoom in or out
+      const isPinchZooming = scaleFactor && scaleFactor > 0 && Math.abs(scaleFactor - 1.0) > 0.006;
+      if (isPinchZooming) {
+        // Smooth anchored pinch-to-zoom centered right between the user's fingers without scroll drift
         state.viewport.zoomAt(originX, originY, scaleFactor);
-      }
-      if (panDelta && (panDelta.dx !== 0 || panDelta.dy !== 0)) {
+      } else if (panDelta && (Math.abs(panDelta.dx) > 0.5 || Math.abs(panDelta.dy) > 0.5)) {
+        // Two fingers gliding together without pinching: smooth scroll / pan
         state.viewport.pan(panDelta.dx, panDelta.dy);
       }
       updateWorldTransform();
@@ -864,6 +866,15 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
   }
   const toggleBtn = headerEl ? headerEl.querySelector('.btn-toggle-edit') : null;
 
+  const serializeTextContent = (el) => {
+    if (!el) return '';
+    // If the element has embedded <img> elements or rich formatting from a direct paste
+    if (el.querySelector('img')) {
+      return MarkdownLatexParser.nodeToMarkdown(el).trim();
+    }
+    return el.innerText || el.textContent || '';
+  };
+
   const updateView = () => {
     if (isEditing) {
       textDiv.contentEditable = 'true';
@@ -878,11 +889,52 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
 
   updateView();
 
+  // Rich Paste Handling: Preserve formatting, headings, bullet lists, and embedded images
+  textDiv.addEventListener('paste', (e) => {
+    e.stopPropagation();
+    const htmlData = e.clipboardData?.getData('text/html');
+    const plainText = e.clipboardData?.getData('text/plain');
+    const items = Array.from(e.clipboardData?.items || []);
+    const imageItem = items.find(it => it.type.startsWith('image/'));
+
+    // 1. Direct Image Paste from Clipboard (Screenshots, Copied Image Files)
+    if (imageItem) {
+      e.preventDefault();
+      const file = imageItem.getAsFile();
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (loadEvt) => {
+          const imgMd = `\n![Pasted Image](${loadEvt.target.result})\n`;
+          document.execCommand('insertText', false, imgMd);
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+    }
+
+    // 2. Rich Text & Mixed HTML Paste from Web / Docs
+    if (htmlData && htmlData.trim()) {
+      e.preventDefault();
+      const convertedMd = MarkdownLatexParser.htmlToMarkdown(htmlData);
+      if (convertedMd) {
+        document.execCommand('insertText', false, convertedMd);
+        return;
+      }
+    }
+
+    // 3. Plain Text fallback
+    if (plainText) {
+      e.preventDefault();
+      document.execCommand('insertText', false, plainText);
+      return;
+    }
+  });
+
   if (toggleBtn) {
     toggleBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       if (isEditing) {
-        item.content = textDiv.innerText;
+        item.content = serializeTextContent(textDiv);
         isEditing = false;
         updateView();
         saveActivePageDocument();
@@ -904,7 +956,7 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
 
   textDiv.addEventListener('blur', () => {
     if (isEditing) {
-      item.content = textDiv.innerText;
+      item.content = serializeTextContent(textDiv);
       isEditing = false;
       updateView();
       saveActivePageDocument();
@@ -2069,6 +2121,19 @@ function setupCanvasInteractions() {
     state.viewport.pan(-e.deltaX * panSpeed, -e.deltaY * panSpeed);
     updateWorldTransform();
     debouncedSave(800);
+  }, { passive: false });
+
+  // Suppress browser default page scrolling during multi-touch gestures on container
+  container.addEventListener('touchstart', (e) => {
+    if (e.touches && e.touches.length >= 2 && e.cancelable) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  container.addEventListener('touchmove', (e) => {
+    if (e.touches && e.touches.length >= 2 && e.cancelable) {
+      e.preventDefault();
+    }
   }, { passive: false });
 
   // Helper to identify clicks on interactive UI vs canvas background

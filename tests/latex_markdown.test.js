@@ -59,3 +59,28 @@ test('Gracefully catch broken LaTeX syntax without crashing', () => {
   assert.ok(html.includes('latex-error'));
   assert.ok(html.includes('[Invalid LaTeX:'));
 });
+
+test('Rich HTML paste to Markdown conversion preserves headings, bold, lists, and images', () => {
+  const richHtml = `<h2>Lecture Summary</h2>
+<p>Here is <strong>important concept</strong> with an image:</p>
+<img src="https://example.com/diagram.png" alt="Force Diagram" />
+<ul>
+  <li>Point one</li>
+  <li>Point two</li>
+</ul>`;
+
+  const md = MarkdownLatexParser.htmlToMarkdown(richHtml);
+  assert.ok(md.includes('## Lecture Summary'));
+  assert.ok(md.includes('**important concept**'));
+  assert.ok(md.includes('![Force Diagram](https://example.com/diagram.png)'));
+  assert.ok(md.includes('- Point one'));
+  assert.ok(md.includes('- Point two'));
+
+  const renderedHtml = MarkdownLatexParser.renderToHtml(md);
+  assert.ok(renderedHtml.includes('<h2'));
+  assert.ok(renderedHtml.includes('<strong>important concept</strong>'));
+  assert.ok(renderedHtml.includes('note-embedded-image'));
+  assert.ok(renderedHtml.includes('src="https://example.com/diagram.png"'));
+  assert.ok(renderedHtml.includes('note-bullet-item'));
+});
+

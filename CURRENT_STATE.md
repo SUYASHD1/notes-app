@@ -3,7 +3,7 @@
 > **Last Updated:** October 2026  
 > **Status:** Fully Functional, PWA Standalone Enabled, Deployed to Production (Vercel)  
 > **Live Web Application:** [https://notes-app-topaz-six.vercel.app/](https://notes-app-topaz-six.vercel.app/)  
-> **Automated Test Suite:** `60 / 60 tests passed (100%)`
+> **Automated Test Suite:** `61 / 61 tests passed (100%)`
 
 ---
 
@@ -74,6 +74,14 @@ This application is a freeform, ultra-fast note-taking system designed to combin
   3. **Quick Inline Renaming:** Double-clicking any section or page in the sidebar opens an instant renaming prompt.
   4. **True File Manager Tree in Storage Hub:** Inside the Storage & Data Hub settings flyout, an interactive folder explorer allows users to browse notebooks, sections, and pages, drag and drop pages between sections/notebooks, duplicate pages with a single click, and rename or delete any item.
 
+### 9. Rich Formatting & Embedded Image Paste + Stationary Pinch-Zoom
+* **The Problem:** Pasting rich web/document content (headings, bold, lists, and images) initially showed images, but clicking on the canvas caused all formatting and images to vanish, leaving only plain text. Large images also broke outside note boundaries. Additionally, pinching to zoom in/out scrolled/drifted the canvas simultaneously.
+* **The Solution:**
+  1. **Rich Paste & Image Preservation:** Added an HTML-to-Markdown parser and DOM serializer that captures rich formatting (`# Headings`, `**Bold**`, `- Lists`, and `![Images](src)`) so nothing is stripped on blur/click away.
+  2. **Smart Boundary Fitting:** Styled all embedded images with `max-width: 100%`, `height: auto`, and rounded borders so they never burst outside note containers.
+  3. **Decoupled Pinch-Zooming:** During pinch-to-zoom gestures, pan-drift vectors are suppressed. Zooming remains perfectly stationary centered right beneath the user's fingertips.
+  4. **Multi-Touch Window Scroll Prevention:** Prevented browser background scrolling during multi-finger gestures on the canvas.
+
 ---
 
 ## 🚀 3. Features & Capabilities
@@ -120,13 +128,14 @@ This application is a freeform, ultra-fast note-taking system designed to combin
 | `src/blocks/` | Universal note containers, text/latex, tables, math plots, and PDF printout managers. |
 | [src/storage/indexed_db.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/src/storage/indexed_db.js) | Full storage engine: IndexedDB vault, hard drive folder migration, live metrics, and backup/restore. |
 | [dev-server.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/dev-server.js) | Local development server with URL query-stripping and strict no-cache headers. |
-| `tests/` | 60 automated unit tests covering inking, geometry, storage, backups, PWA validity, file management, and auto-numbering. |
+| `tests/` | 61 automated unit tests covering inking, geometry, storage, backups, PWA validity, file management, auto-numbering, and rich paste. |
 
 ---
 
 ## 🧪 5. Automated Test Status
-* **Unit Tests Passing:** `60 / 60 tests passed (100%)`
+* **Unit Tests Passing:** `61 / 61 tests passed (100%)`
 * **File Management & Clean Canvas Verification:** Automated test suite verifies notebook, section, and page lifecycle (creation, renaming, cross-notebook move, copy/duplicate, cascading deletion, smart auto-numbering) and guarantees blank canvases for all new notes.
+* **Rich Paste & Stationary Zoom Verification:** Verified rich HTML to markdown conversion, embedded image rendering, and decoupled stationary pinch-to-zoom.
 * **Storage Hub Verification:** Verified modal opening, metrics calculation, backup download, and clean close.
 * **PWA Verification:** Manifest schema, icon asset verification, and service worker offline caching fully verified.
 * **Production Status:** Deployed live on Vercel at `https://notes-app-topaz-six.vercel.app/`.

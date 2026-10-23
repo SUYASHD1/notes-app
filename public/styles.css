@@ -1563,6 +1563,37 @@ body[data-mode="ipad"] #status-bar .zoom-pill {
   display: block;
 }
 
+/* Embedded images and lists inside text notes */
+.note-image-container {
+  max-width: 100%;
+  margin: 10px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.note-embedded-image,
+.note-item-text img,
+.universal-note-container img {
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 8px;
+  display: block;
+  object-fit: contain;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.note-bullet-item {
+  list-style-type: disc;
+  margin-left: 24px;
+  margin-bottom: 4px;
+}
+
+.note-numbered-item {
+  list-style-type: decimal;
+  margin-left: 24px;
+  margin-bottom: 4px;
+}
+
 .note-item-media {
   display: flex;
   flex-direction: column;
