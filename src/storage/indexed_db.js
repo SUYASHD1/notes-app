@@ -326,6 +326,241 @@ export class LocalVault {
     });
   }
 
+  // --- Backup & Restore Engine ---
+
+  async getAllPages() {
+    await this.init();
+    if (!this.isIDBSupported || !this.db) {
+      return Array.from(this._memoryFallback.pages.values());
+    }
+
+    return new Promise((resolve) => {
+      try {
+        const tx = this.db.transaction('pages', 'readonly');
+        const req = tx.objectStore('pages').getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => resolve([]);
+      } catch {
+        resolve([]);
+      }
+    });
+  }
+
+  async exportFullBackup() {
+    await this.init();
+    const hierarchy = await this.loadHierarchy();
+    const pages = await this.getAllPages();
+    const activeNotebookId = await this.getSetting('activeNotebookId');
+    const activeSectionId = await this.getSetting('activeSectionId');
+    const activePageId = await this.getSetting('activePageId');
+
+    return {
+      appName: 'NotesApp',
+      version: '1.0',
+      exportedAt: Date.now(),
+      exportedAtFormatted: new Date().toISOString(),
+      hierarchy: hierarchy || { notebooks: [], sections: [], pages: [] },
+      pages: pages || [],
+      settings: {
+        activeNotebookId,
+        activeSectionId,
+        activePageId
+      }
+    };
+  }
+
+  async importFullBackup(backupData) {
+    if (!backupData || typeof backupData !== 'object') {
+      throw new Error('Invalid backup data format');
+    }
+
+    await this.init();
+
+    // 1. Restore hierarchy
+    if (backupData.hierarchy) {
+      await this.saveHierarchy(backupData.hierarchy);
+    }
+
+    // 2. Restore all pages
+    let pageCount = 0;
+    if (Array.isArray(backupData.pages)) {
+      for (const page of backupData.pages) {
+        if (page && page.id) {
+          await this.savePage(page.id, page);
+          pageCount++;
+        }
+      }
+    }
+
+    // 3. Restore settings
+    if (backupData.settings) {
+      if (backupData.settings.activeNotebookId) await this.saveSetting('activeNotebookId', backupData.settings.activeNotebookId);
+      if (backupData.settings.activeSectionId) await this.saveSetting('activeSectionId', backupData.settings.activeSectionId);
+      if (backupData.settings.activePageId) await this.saveSetting('activePageId', backupData.settings.activePageId);
+    }
+
+    return {
+      success: true,
+      notebooksRestored: backupData.hierarchy?.notebooks?.length || 0,
+      sectionsRestored: backupData.hierarchy?.sections?.length || 0,
+      pagesRestored: pageCount
+    };
+  }
+
+  // --- Storage Metrics & Diagnostics ---
+
+  async getStorageMetrics() {
+    await this.init();
+    const hierarchy = (await this.loadHierarchy()) || { notebooks: [], sections: [], pages: [] };
+    const pages = await this.getAllPages();
+
+    let totalStrokes = 0;
+    let totalBlocks = 0;
+    let totalAssets = 0;
+    let totalBytesApprox = 0;
+
+    pages.forEach(p => {
+      const pageStr = JSON.stringify(p);
+      totalBytesApprox += pageStr.length * 2; // UTF-16 byte approximation
+      if (Array.isArray(p.globalAnnotations)) {
+        totalStrokes += p.globalAnnotations.length;
+      }
+      if (Array.isArray(p.blocks)) {
+        totalBlocks += p.blocks.length;
+        p.blocks.forEach(b => {
+          if (Array.isArray(b.items)) {
+            b.items.forEach(it => {
+              if (it && (it.type === 'image' || it.type === 'pdf')) {
+                totalAssets++;
+              }
+            });
+          }
+        });
+      }
+    });
+
+    let systemUsage = null;
+    let systemQuota = null;
+    let isPersisted = false;
+
+    if (typeof navigator !== 'undefined' && navigator.storage) {
+      try {
+        if (navigator.storage.estimate) {
+          const estimate = await navigator.storage.estimate();
+          systemUsage = estimate.usage || totalBytesApprox;
+          systemQuota = estimate.quota || null;
+        }
+        if (navigator.storage.persisted) {
+          isPersisted = await navigator.storage.persisted();
+        }
+      } catch (_) {}
+    }
+
+    const bytesToUse = systemUsage || totalBytesApprox;
+    const formatBytes = (bytes) => {
+      if (!bytes || bytes <= 0) return '0 KB';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
+    };
+
+    return {
+      totalBytes: bytesToUse,
+      formattedUsage: formatBytes(bytesToUse),
+      formattedQuota: systemQuota ? formatBytes(systemQuota) : 'Device Quota Managed',
+      notebooksCount: hierarchy.notebooks?.length || 0,
+      sectionsCount: hierarchy.sections?.length || 0,
+      pagesCount: pages.length || hierarchy.pages?.length || 0,
+      strokesCount: totalStrokes,
+      blocksCount: totalBlocks,
+      assetsCount: totalAssets,
+      isPersisted
+    };
+  }
+
+  async requestPersistenceLock() {
+    if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist) {
+      try {
+        const persisted = await navigator.storage.persist();
+        return persisted;
+      } catch {
+        return false;
+      }
+    }
+    return false;
+  }
+
+  // --- Hard Drive Folder Sync (File System Access API) ---
+
+  async setHardDriveFolder(handle, folderName) {
+    await this.init();
+    await this.saveSetting('hardDriveFolderHandle', handle);
+    await this.saveSetting('hardDriveFolderName', folderName || handle.name || 'Custom Folder');
+    await this.saveSetting('storageLocationType', 'hard_drive');
+  }
+
+  async getHardDriveFolder() {
+    await this.init();
+    const handle = await this.getSetting('hardDriveFolderHandle');
+    const folderName = await this.getSetting('hardDriveFolderName');
+    const locationType = await this.getSetting('storageLocationType', 'device_vault');
+    return { handle, folderName, locationType };
+  }
+
+  async clearHardDriveFolder() {
+    await this.init();
+    await this.saveSetting('hardDriveFolderHandle', null);
+    await this.saveSetting('hardDriveFolderName', null);
+    await this.saveSetting('storageLocationType', 'device_vault');
+  }
+
+  async migrateCurrentDataToFolder(folderHandle, progressCb = () => {}) {
+    if (!folderHandle || typeof folderHandle.getFileHandle !== 'function') {
+      return { success: false, error: 'Invalid directory handle' };
+    }
+
+    try {
+      progressCb({ step: 'init', message: 'Connecting to selected folder...' });
+
+      // 1. Write hierarchy.json
+      progressCb({ step: 'hierarchy', message: 'Saving notebook hierarchy structure...' });
+      const hierarchy = (await this.loadHierarchy()) || { notebooks: [], sections: [], pages: [] };
+      const hierFile = await folderHandle.getFileHandle('hierarchy.json', { create: true });
+      const hierWritable = await hierFile.createWritable();
+      await hierWritable.write(JSON.stringify(hierarchy, null, 2));
+      await hierWritable.close();
+
+      // 2. Create pages directory and save each page
+      progressCb({ step: 'pages_dir', message: 'Creating pages directory...' });
+      const pagesDir = await folderHandle.getDirectoryHandle('pages', { create: true });
+      const pages = await this.getAllPages();
+
+      for (let i = 0; i < pages.length; i++) {
+        const p = pages[i];
+        progressCb({
+          step: 'page',
+          message: `Copying page ${i + 1} of ${pages.length}: "${p.title || p.id}"...`,
+          current: i + 1,
+          total: pages.length
+        });
+        const pageFile = await pagesDir.getFileHandle(`${p.id}.json`, { create: true });
+        const pageWritable = await pageFile.createWritable();
+        await pageWritable.write(JSON.stringify(p, null, 2));
+        await pageWritable.close();
+      }
+
+      // 3. Mark folder as active
+      await this.setHardDriveFolder(folderHandle, folderHandle.name);
+      progressCb({ step: 'done', message: 'All notes safely transferred!' });
+
+      return { success: true, count: pages.length };
+    } catch (err) {
+      console.warn('Migration to folder failed:', err);
+      return { success: false, error: err.message };
+    }
+  }
+
   /**
    * Clears all data (useful for factory reset or testing teardowns).
    */

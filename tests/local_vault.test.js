@@ -105,3 +105,72 @@ test('LocalVault persists user workspace settings and clears on reset', async ()
   const clearedNb = await vault.getSetting('activeNotebookId');
   assert.equal(clearedNb, null);
 });
+
+test('LocalVault exports full backup and restores seamlessly', async () => {
+  const vault = new LocalVault('TestDB_BackupRestore');
+  
+  await vault.saveHierarchy({
+    notebooks: [{ id: 'nb_astro', name: 'Astrophysics', color: '#10b981' }],
+    sections: [{ id: 'sec_galaxies', notebookId: 'nb_astro', name: 'Spiral Galaxies' }],
+    pages: [{ id: 'page_andromeda', sectionId: 'sec_galaxies', title: 'Andromeda' }]
+  });
+
+  await vault.savePage('page_andromeda', {
+    id: 'page_andromeda',
+    title: 'Andromeda Collision Course',
+    blocks: [{ id: 'b1', type: 'text', content: '2.5 million light years' }],
+    globalAnnotations: [{ id: 's1', tool: 'pen', points: [{ x: 10, y: 10 }] }]
+  });
+
+  await vault.saveSetting('activeNotebookId', 'nb_astro');
+
+  // 1. Export backup
+  const backup = await vault.exportFullBackup();
+  assert.ok(backup);
+  assert.equal(backup.appName, 'NotesApp');
+  assert.equal(backup.hierarchy.notebooks.length, 1);
+  assert.equal(backup.pages.length, 1);
+  assert.equal(backup.settings.activeNotebookId, 'nb_astro');
+
+  // 2. Clear vault
+  await vault.clearAll();
+  assert.equal(await vault.loadHierarchy(), null);
+  assert.equal(await vault.loadPage('page_andromeda'), null);
+
+  // 3. Restore backup
+  const restoreRes = await vault.importFullBackup(backup);
+  assert.equal(restoreRes.success, true);
+  assert.equal(restoreRes.notebooksRestored, 1);
+  assert.equal(restoreRes.pagesRestored, 1);
+
+  // 4. Verify restored state
+  const restoredHierarchy = await vault.loadHierarchy();
+  assert.equal(restoredHierarchy.notebooks[0].name, 'Astrophysics');
+  const restoredPage = await vault.loadPage('page_andromeda');
+  assert.equal(restoredPage.title, 'Andromeda Collision Course');
+});
+
+test('LocalVault computes live storage metrics and breakdown', async () => {
+  const vault = new LocalVault('TestDB_Metrics');
+
+  await vault.saveHierarchy({
+    notebooks: [{ id: 'nb_chem', name: 'Chemistry' }],
+    sections: [{ id: 'sec_organic', name: 'Organic' }, { id: 'sec_inorganic', name: 'Inorganic' }],
+    pages: [{ id: 'p1' }, { id: 'p2' }]
+  });
+
+  await vault.savePage('p1', {
+    id: 'p1',
+    blocks: [{ id: 'b1' }, { id: 'b2' }],
+    globalAnnotations: [{ id: 's1' }, { id: 's2' }, { id: 's3' }]
+  });
+
+  const metrics = await vault.getStorageMetrics();
+  assert.ok(metrics);
+  assert.equal(metrics.notebooksCount, 1);
+  assert.equal(metrics.sectionsCount, 2);
+  assert.ok(metrics.pagesCount >= 1);
+  assert.equal(metrics.strokesCount, 3);
+  assert.equal(metrics.blocksCount, 2);
+  assert.ok(metrics.formattedUsage);
+});
