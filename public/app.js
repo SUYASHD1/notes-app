@@ -279,32 +279,46 @@ function saveActivePageDocument(targetPageId = state.activePageId) {
   }
   const pageIdToSave = targetPageId || state.activePageId;
   if (!state.doc || !pageIdToSave) return;
+
+  // Flush any dirty text editor content before committing document
+  if (typeof document !== 'undefined') {
+    document.querySelectorAll('.note-item-text').forEach(el => {
+      if (typeof el._syncContent === 'function') el._syncContent();
+    });
+  }
+
   state.doc.viewport = { x: state.viewport.x, y: state.viewport.y, zoom: state.viewport.zoom };
   const docJson = state.doc.toJSON();
 
-  // 1. Always persist full fidelity in LocalVault (IndexedDB)
+  // 1. Always persist full fidelity asynchronously in LocalVault (IndexedDB)
   state.vault.savePage(pageIdToSave, docJson).catch(e => console.warn('LocalVault save warning:', e));
 
-  // 2. Also save to localStorage for instant synchronous boot
-  try {
-    const key = getPageStorageKey(pageIdToSave);
-    localStorage.setItem(key, JSON.stringify(docJson));
-  } catch (err) {
+  // 2. Write to localStorage during idle time to prevent synchronous UI freezes
+  const scheduleDiskWrite = (typeof window !== 'undefined' && window.requestIdleCallback)
+    ? (cb) => window.requestIdleCallback(cb, { timeout: 1000 })
+    : (cb) => setTimeout(cb, 20);
+
+  scheduleDiskWrite(() => {
     try {
-      const shallow = JSON.parse(JSON.stringify(docJson));
-      if (shallow.blocks) {
-        shallow.blocks.forEach(b => {
-          if (b.items) {
-            b.items.forEach(it => {
-              if (it.dataUrl && it.dataUrl.length > 50000) it.dataUrl = '';
-              if (it.src && it.src.length > 50000) it.src = '';
-            });
-          }
-        });
-      }
-      localStorage.setItem(getPageStorageKey(pageIdToSave), JSON.stringify(shallow));
-    } catch (_) {}
-  }
+      const key = getPageStorageKey(pageIdToSave);
+      localStorage.setItem(key, JSON.stringify(docJson));
+    } catch (err) {
+      try {
+        const shallow = JSON.parse(JSON.stringify(docJson));
+        if (shallow.blocks) {
+          shallow.blocks.forEach(b => {
+            if (b.items) {
+              b.items.forEach(it => {
+                if (it.dataUrl && it.dataUrl.length > 50000) it.dataUrl = '';
+                if (it.src && it.src.length > 50000) it.src = '';
+              });
+            }
+          });
+        }
+        localStorage.setItem(getPageStorageKey(pageIdToSave), JSON.stringify(shallow));
+      } catch (_) {}
+    }
+  });
 
   if (storageStatus) {
     storageStatus.textContent = 'Saved locally';
@@ -953,6 +967,7 @@ async function vaultImagesInTextItem(textItem, textDiv) {
   if (matches.length === 0) return;
 
   let changed = false;
+  const urlMap = new Map();
   for (const m of matches) {
     const fullMatch = m[0];
     const rawAlt = m[1];
@@ -961,6 +976,7 @@ async function vaultImagesInTextItem(textItem, textDiv) {
       const offlineDataUrl = await vaultExternalImage(webUrl);
       if (offlineDataUrl && offlineDataUrl !== webUrl) {
         textItem.content = textItem.content.replace(fullMatch, `![${rawAlt}](${offlineDataUrl})`);
+        urlMap.set(webUrl, offlineDataUrl);
         changed = true;
       }
     } catch (e) {
@@ -973,10 +989,15 @@ async function vaultImagesInTextItem(textItem, textDiv) {
     if (textDiv) {
       const imgs = textDiv.querySelectorAll('img.note-embedded-image');
       imgs.forEach(img => {
-        if (img.src && (img.src.startsWith('http://') || img.src.startsWith('https://'))) {
-          const parsed = MarkdownLatexParser.parse(textItem.content);
-          const found = (parsed.tokens || []).find(t => t.type === 'image' && t.src && t.src.startsWith('data:'));
-          if (found) img.src = found.src;
+        if (urlMap.has(img.src)) {
+          img.src = urlMap.get(img.src);
+        } else {
+          for (const [origUrl, dataUrl] of urlMap.entries()) {
+            if (img.src.includes(origUrl) || origUrl.includes(img.src)) {
+              img.src = dataUrl;
+              break;
+            }
+          }
         }
       });
     }
@@ -1193,14 +1214,62 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
     });
   }
 
-  // Live in-place typing auto-save without destroying visual formatting
-  textDiv.addEventListener('input', () => {
+  const syncToItem = () => {
+    if (!textDiv._dirty) return;
+    textDiv._dirty = false;
     if (isRawCodeMode) {
       item.content = textDiv.innerText || '';
     } else {
       item.content = serializeTextContent(textDiv);
     }
+  };
+  textDiv._syncContent = syncToItem;
+
+  // Live in-place typing: 0ms keystroke latency (no recursive serialization on every keypress)
+  textDiv.addEventListener('input', () => {
+    textDiv._dirty = true;
     debouncedSave(800);
+  });
+
+  // Smart Notion/OneNote shortcuts (# + space, ## + space, - + space, etc.)
+  textDiv.addEventListener('keydown', (e) => {
+    if (isRawCodeMode) return;
+    if (e.key === ' ' || e.code === 'Space') {
+      const sel = window.getSelection();
+      if (sel && sel.isCollapsed && sel.anchorNode && sel.anchorNode.nodeType === Node.TEXT_NODE) {
+        const node = sel.anchorNode;
+        const textBeforeCursor = node.nodeValue.substring(0, sel.anchorOffset).trim();
+
+        let formatCommand = null;
+        let formatArg = null;
+        if (textBeforeCursor === '#') {
+          formatCommand = 'formatBlock';
+          formatArg = '<h1>';
+        } else if (textBeforeCursor === '##') {
+          formatCommand = 'formatBlock';
+          formatArg = '<h2>';
+        } else if (textBeforeCursor === '###') {
+          formatCommand = 'formatBlock';
+          formatArg = '<h3>';
+        } else if (textBeforeCursor === '-' || textBeforeCursor === '*') {
+          formatCommand = 'insertUnorderedList';
+        } else if (textBeforeCursor === '1.' || textBeforeCursor === '1)') {
+          formatCommand = 'insertOrderedList';
+        }
+
+        if (formatCommand) {
+          e.preventDefault();
+          node.nodeValue = node.nodeValue.substring(sel.anchorOffset);
+          if (formatCommand === 'formatBlock') {
+            document.execCommand('formatBlock', false, formatArg);
+          } else {
+            document.execCommand(formatCommand, false, null);
+          }
+          textDiv._dirty = true;
+          debouncedSave(800);
+        }
+      }
+    }
   });
 
   // Interactive Checklists in visual mode
@@ -1212,10 +1281,11 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
       if (labelText) {
         const oldPrefix = checkbox.checked ? '- [ ] ' : '- [x] ';
         const newPrefix = checkbox.checked ? '- [x] ' : '- [ ] ';
-        if (item.content.includes(oldPrefix + labelText)) {
+        if (item.content && item.content.includes(oldPrefix + labelText)) {
           item.content = item.content.replace(oldPrefix + labelText, newPrefix + labelText);
         }
       }
+      textDiv._dirty = true;
       saveActivePageDocument();
     }
   });
@@ -1286,11 +1356,7 @@ function renderTextItem(parentEl, item, headerEl, containerBlock) {
   });
 
   textDiv.addEventListener('blur', () => {
-    if (isRawCodeMode) {
-      item.content = textDiv.innerText || '';
-    } else {
-      item.content = serializeTextContent(textDiv);
-    }
+    syncToItem();
     saveActivePageDocument();
   });
 
@@ -2480,7 +2546,43 @@ let lastMoveTime = 0;
 let lastMovePoint = { x: 0, y: 0 };
 
 function setupCanvasInteractions() {
-  // 1. Natural Wheel & Touchpad Zoom / Pan
+  // 1. Natural Wheel & Touchpad Zoom / Pan with 60-120 FPS requestAnimationFrame coalescing
+  let pendingWheelPanX = 0;
+  let pendingWheelPanY = 0;
+  let pendingWheelZoomFactor = 1.0;
+  let pendingWheelCursorX = 0;
+  let pendingWheelCursorY = 0;
+  let hasPendingWheelZoom = false;
+  let hasPendingWheelPan = false;
+  let wheelRafId = null;
+  let wheelSaveTimer = null;
+
+  function flushWheelTransform() {
+    wheelRafId = null;
+    if (hasPendingWheelZoom) {
+      state.viewport.zoomAt(pendingWheelCursorX, pendingWheelCursorY, pendingWheelZoomFactor);
+      pendingWheelZoomFactor = 1.0;
+      hasPendingWheelZoom = false;
+    }
+    if (hasPendingWheelPan) {
+      state.viewport.pan(pendingWheelPanX, pendingWheelPanY);
+      pendingWheelPanX = 0;
+      pendingWheelPanY = 0;
+      hasPendingWheelPan = false;
+    }
+    updateWorldTransform();
+  }
+
+  function scheduleWheelTransform() {
+    if (!wheelRafId) {
+      wheelRafId = requestAnimationFrame(flushWheelTransform);
+    }
+    if (wheelSaveTimer) clearTimeout(wheelSaveTimer);
+    wheelSaveTimer = setTimeout(() => {
+      saveActivePageDocument();
+    }, 1000);
+  }
+
   container.addEventListener('wheel', (e) => {
     // In Ink Mode: strictly block all navigation gestures!
     if (state.mode === 'ipad') {
@@ -2497,11 +2599,13 @@ function setupCanvasInteractions() {
 
       // Continuous exponential zoom scaling (smooth on both precision touchpads and notched wheels)
       const zoomSensitivity = e.deltaMode === 1 ? 0.04 : 0.0025;
-      const zoomFactor = Math.min(1.25, Math.max(0.8, Math.exp(-e.deltaY * zoomSensitivity)));
+      const factor = Math.min(1.25, Math.max(0.8, Math.exp(-e.deltaY * zoomSensitivity)));
 
-      state.viewport.zoomAt(cursorX, cursorY, zoomFactor);
-      updateWorldTransform();
-      debouncedSave(800);
+      pendingWheelZoomFactor *= factor;
+      pendingWheelCursorX = cursorX;
+      pendingWheelCursorY = cursorY;
+      hasPendingWheelZoom = true;
+      scheduleWheelTransform();
       return;
     }
 
@@ -2509,9 +2613,9 @@ function setupCanvasInteractions() {
     if (e.shiftKey) {
       e.preventDefault();
       const panSpeed = e.deltaMode === 1 ? 24 : 1.0;
-      state.viewport.pan(-e.deltaY * panSpeed, 0);
-      updateWorldTransform();
-      debouncedSave(800);
+      pendingWheelPanX += -e.deltaY * panSpeed;
+      hasPendingWheelPan = true;
+      scheduleWheelTransform();
       return;
     }
 
@@ -2528,9 +2632,10 @@ function setupCanvasInteractions() {
 
     e.preventDefault();
     const panSpeed = e.deltaMode === 1 ? 24 : 1.0;
-    state.viewport.pan(-e.deltaX * panSpeed, -e.deltaY * panSpeed);
-    updateWorldTransform();
-    debouncedSave(800);
+    pendingWheelPanX += -e.deltaX * panSpeed;
+    pendingWheelPanY += -e.deltaY * panSpeed;
+    hasPendingWheelPan = true;
+    scheduleWheelTransform();
   }, { passive: false });
 
   // Suppress browser default page scrolling during multi-touch gestures on container

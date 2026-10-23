@@ -104,3 +104,29 @@ test('Image wrapping modes (left, right, center) and width attributes parse and 
   assert.ok(inlineHtml.includes('width: 320px'), 'Inline image should have 320px width');
 });
 
+test('Wikipedia article paste cleans up image links, removes citation footnotes, and renders clickable links', () => {
+  const wikiSnippet = `
+    <p>PHP is a general-purpose scripting language<sup class="reference"><a href="#cite_note-287">[287]</a></sup>.</p>
+    <a href="/wiki/File:LAMP_software_bundle.svg">
+      <img src="https://upload.wikimedia.org/lamp.png" alt="LAMP Software" />
+    </a>
+    <p>Visit <a href="https://php.net">Official PHP Website</a> for downloads.</p>
+  `;
+
+  const md = MarkdownLatexParser.htmlToMarkdown(wikiSnippet);
+  // Image must NOT be wrapped in markdown link brackets
+  assert.ok(!md.includes('[!['), 'Image should not be wrapped in double brackets');
+  assert.ok(!md.includes('](/wiki/File:'), 'Link href should not trail image');
+  assert.ok(md.includes('![LAMP Software](https://upload.wikimedia.org/lamp.png)'));
+
+  // Footnote [287] must be stripped
+  assert.ok(!md.includes('[287]'), 'Wikipedia citation footnote [287] should be stripped');
+
+  // Render to visual HTML
+  const rendered = MarkdownLatexParser.renderToHtml(md);
+  assert.ok(!rendered.includes('](/wiki/File:'), 'Stray link markdown should not appear in rendered HTML');
+  assert.ok(!rendered.includes('<p>['), 'Stray open bracket should not precede image');
+  assert.ok(rendered.includes('class="note-link"'), 'External link should render with note-link class');
+  assert.ok(rendered.includes('href="https://php.net"'), 'Link should retain destination href');
+});
+

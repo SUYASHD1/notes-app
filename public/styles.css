@@ -1450,7 +1450,10 @@ body[data-mode="ipad"] #status-bar .zoom-pill {
   display: flex;
   flex-direction: column;
   min-width: 320px;
-  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+  contain: layout paint;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  transition: border-color 0.15s ease;
 }
 
 .universal-note-container.selected {
@@ -1626,6 +1629,22 @@ body[data-mode="ipad"] #status-bar .zoom-pill {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   pointer-events: auto;
   cursor: pointer;
+}
+
+/* Hyperlinks in Notes */
+.note-item-text a.note-link,
+.note-link {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 2.5px;
+  cursor: pointer;
+  word-break: break-word;
+  transition: color 0.15s ease;
+}
+
+.note-item-text a.note-link:hover,
+.note-link:hover {
+  color: #1d4ed8;
 }
 
 /* Floating Toolbar for Embedded Images */

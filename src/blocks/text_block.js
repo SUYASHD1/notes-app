@@ -299,17 +299,27 @@ export class MarkdownLatexParser {
           htmlLines.push(`<div class="note-image-container wrap-${props.wrap}" data-raw-alt="${this.escapeHtml(token.alt || '')}" data-alt="${this.escapeHtml(props.alt)}" data-wrap="${props.wrap}" data-width="${props.width}" data-src="${token.src}"${styleAttr}><img class="note-embedded-image" src="${token.src}" alt="${this.escapeHtml(props.alt)}" loading="lazy" /></div>`);
           break;
         }
-        case 'list_item':
-          htmlLines.push(`<li class="note-bullet-item">${this.escapeHtml(token.content).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>')}</li>`);
+        case 'list_item': {
+          const formatted = this.escapeHtml(token.content)
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+|mailto:[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="note-link">$1</a>');
+          htmlLines.push(`<li class="note-bullet-item">${formatted}</li>`);
           break;
-        case 'numbered_item':
-          htmlLines.push(`<li class="note-numbered-item" value="${token.number}">${this.escapeHtml(token.content).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>')}</li>`);
+        }
+        case 'numbered_item': {
+          const formatted = this.escapeHtml(token.content)
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+|mailto:[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="note-link">$1</a>');
+          htmlLines.push(`<li class="note-numbered-item" value="${token.number}">${formatted}</li>`);
           break;
+        }
         case 'checklist':
           htmlLines.push(`<label class="checklist-item"><input type="checkbox" ${token.checked ? 'checked' : ''} disabled /> ${this.escapeHtml(token.content)}</label>`);
           break;
-        case 'paragraph':
-          const renderedInlines = token.inlines.map(inLine => {
+        case 'paragraph': {
+          let renderedInlines = token.inlines.map(inLine => {
             if (inLine.type === 'math_inline') {
               if (inLine.parsed && inLine.parsed.isValid) {
                 return this.renderLatex(inLine.formula, false);
@@ -317,7 +327,7 @@ export class MarkdownLatexParser {
                 return `<span class="latex-error">[Invalid LaTeX: ${inLine.formula}]</span>`;
               }
             }
-            return this.escapeHtml(inLine.content)
+            let text = this.escapeHtml(inLine.content)
               .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
               .replace(/\*(.*?)\*/g, '<em>$1</em>')
               .replace(/~~(.*?)~~/g, '<del>$1</del>')
@@ -326,9 +336,20 @@ export class MarkdownLatexParser {
                 const styleAttr = props.width ? ` style="width: ${props.width}; max-width: 100%;"` : '';
                 return `<div class="note-image-container wrap-${props.wrap}" data-raw-alt="${this.escapeHtml(rawAlt)}" data-alt="${this.escapeHtml(props.alt)}" data-wrap="${props.wrap}" data-width="${props.width}" data-src="${src}"${styleAttr}><img class="note-embedded-image" src="${src}" alt="${this.escapeHtml(props.alt)}" loading="lazy" /></div>`;
               });
+
+            // Strip stray brackets from images wrapped in links: [ <div class="note-image-container"...</div> ](url)
+            text = text.replace(/\[\s*(<div class="note-image-container[\s\S]*?<\/div>)\s*\]\([^)]*\)/g, '$1');
+
+            // Render clickable hyperlinks
+            text = text.replace(/(^|[^!])\[([^\]]+)\]\((https?:\/\/[^\s)]+|mailto:[^\s)]+)\)/g, '$1<a href="$3" target="_blank" rel="noopener noreferrer" class="note-link">$2</a>');
+
+            return text;
           }).join('');
+
+          renderedInlines = renderedInlines.replace(/\[\s*(<div class="note-image-container[\s\S]*?<\/div>)\s*\]\([^)]*\)/g, '$1');
           htmlLines.push(`<p>${renderedInlines}</p>`);
           break;
+        }
       }
     }
 
@@ -359,6 +380,15 @@ export class MarkdownLatexParser {
 
     // RegEx based fallback for non-DOM environments
     return html
+      .replace(/<sup[^>]*class=["'][^"']*reference[^"']*["'][^>]*>[\s\S]*?<\/sup>/gi, '')
+      .replace(/<a[^>]*href=["']#cite[^"']*["'][^>]*>[\s\S]*?<\/a>/gi, '')
+      .replace(/<a[^>]*>\s*(<img[^>]*>)\s*<\/a>/gi, '$1')
+      .replace(/<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, (_, href, text) => {
+        if (href.startsWith('#cite') || href.startsWith('#ref') || /^\[\d+\]$/.test(text.trim())) {
+          return '';
+        }
+        return `[${text}](${href})`;
+      })
       .replace(/<h1[^>]*>([\s\S]*?)<\/h1>/gi, '\n# $1\n')
       .replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, '\n## $1\n')
       .replace(/<h3[^>]*>([\s\S]*?)<\/h3>/gi, '\n### $1\n')
@@ -441,9 +471,24 @@ export class MarkdownLatexParser {
       case 'p': return `\n${childrenText}\n`;
       case 'br': return '\n';
       case 'div': return `\n${childrenText}\n`;
-      case 'a':
-        const href = node.getAttribute('href');
+      case 'sup':
+        // Strip Wikipedia citation footnote markers like [287], [288], [citation needed]
+        if (node.classList && (node.classList.contains('reference') || node.classList.contains('mw-ref'))) {
+          return '';
+        }
+        return `<sup>${childrenText}</sup>`;
+      case 'a': {
+        const href = node.getAttribute('href') || '';
+        // If anchor wraps an image, return just the image without link brackets
+        if (node.querySelector && node.querySelector('img')) {
+          return childrenText.trim() + '\n';
+        }
+        // If anchor is an internal footnote reference (#cite, #ref, mw-ref, or [287])
+        if (href.startsWith('#cite') || href.startsWith('#ref') || (node.classList && node.classList.contains('mw-ref')) || /^\[\d+\]$/.test(childrenText.trim())) {
+          return '';
+        }
         return href ? `[${childrenText}](${href})` : childrenText;
+      }
       default:
         return childrenText;
     }
