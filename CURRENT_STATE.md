@@ -58,6 +58,14 @@ This application is a freeform, ultra-fast note-taking system designed to combin
   3. **High-Resolution App Icons:** Created 180x180 (iPad Retina Home Screen), 192x192, and 512x512 icons for desktop and mobile docks.
   4. **Smart Installation Flow (`install_prompt.js`):** On Windows/Mac/Android, an install button triggers native installation to the taskbar/desktop. On iPadOS Safari, an interactive visual guide shows the user exactly how to tap "Share ➔ Add to Home Screen".
 
+### 7. iPad Safe Areas, Pure Ink Lock & Interface Decluttering
+* **The Problem:** In iPad standalone mode, Apple's clock/battery bar sat over top buttons making them unclickable, and the home swipe-line cut off the bottom bar. Also, resting a palm on the glass could accidentally trigger "Fit All" and cause notes to jump.
+* **The Solution:**
+  1. **iPad Safe Area Insets:** Added automatic top/bottom cushions (`env(safe-area-inset-top)` and `env(safe-area-inset-bottom)`) and dynamic screen height (`100dvh`). The top bar extends cleanly behind the clock while buttons sit in the clear touch zone.
+  2. **Pure Ink Mode Lock:** In ✏️ Ink Mode, navigation is 100% disabled. The canvas is stationary and bottom bar buttons are touch-immune. Palms and wrists can rest anywhere without causing accidental view jumps.
+  3. **Sleek Zoom Popover:** Replaced four exposed buttons with a single compact `100%` pill that only opens controls when deliberately tapped.
+  4. **Decluttered Top Bar:** Responsive icon-only mode toggle and subtle green status dot on mobile and tablets.
+
 ---
 
 ## 🚀 3. Features & Capabilities

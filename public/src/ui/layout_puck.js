@@ -55,6 +55,7 @@ export function setMode({
     document.querySelectorAll('.note-item-text').forEach(t => t.contentEditable = 'false');
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     if (window.getSelection) window.getSelection().removeAllRanges();
+    document.getElementById('zoom-flyout')?.classList.add('hidden');
 
     if (textGroup) textGroup.style.display = 'none';
     if (inkGroup) inkGroup.style.display = 'flex';

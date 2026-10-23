@@ -1977,6 +1977,12 @@ let lastMovePoint = { x: 0, y: 0 };
 function setupCanvasInteractions() {
   // 1. Natural Wheel & Touchpad Zoom / Pan
   container.addEventListener('wheel', (e) => {
+    // In Ink Mode: strictly block all navigation gestures!
+    if (state.mode === 'ipad') {
+      e.preventDefault();
+      return;
+    }
+
     // Zoom handling: Ctrl/Meta key or touchpad pinch
     if (e.ctrlKey || e.metaKey) {
       e.preventDefault();
@@ -3144,12 +3150,31 @@ function setupKeyboardAndClipboard() {
   });
 
   // Reset View, Fit All & Zoom Controls
+  const zoomPill = document.getElementById('btn-zoom-pill');
+  const zoomFlyout = document.getElementById('zoom-flyout');
+
+  if (zoomPill && zoomFlyout) {
+    zoomPill.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (state.mode === 'ipad') return; // Strict ink lock
+      zoomFlyout.classList.toggle('hidden');
+    });
+
+    window.addEventListener('click', (e) => {
+      if (!zoomFlyout.contains(e.target) && e.target !== zoomPill) {
+        zoomFlyout.classList.add('hidden');
+      }
+    });
+  }
+
   document.getElementById('btn-zoom-fit')?.addEventListener('click', () => {
     fitAllContent(true);
+    zoomFlyout?.classList.add('hidden');
     showToast('🔍 Framed All Content in View (Shift+1)');
   });
   document.getElementById('btn-reset-view')?.addEventListener('click', () => {
     animateViewport(40, 40, 1.0);
+    zoomFlyout?.classList.add('hidden');
     showToast('Reset View to 100%');
   });
   document.getElementById('btn-zoom-in')?.addEventListener('click', () => {

@@ -33,18 +33,23 @@ body, html {
   display: flex;
   flex-direction: column;
   width: 100vw;
+  width: 100dvw;
   height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
-/* Header */
+/* Header with Safe Area Insets for iPad & Mobile Status Bar */
 #top-bar {
-  height: 48px;
+  height: calc(48px + env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-left: calc(14px + env(safe-area-inset-left, 0px));
+  padding-right: calc(14px + env(safe-area-inset-right, 0px));
   background: var(--topbar-bg);
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
   box-shadow: var(--shadow-sm);
   z-index: 100;
 }
@@ -469,19 +474,24 @@ body, html {
   align-items: center;
   gap: 6px;
   background: #f1f5f9;
-  padding: 2px 8px;
+  padding: 3px 8px;
   border-radius: var(--radius);
   border: 1px solid var(--border-color);
+  max-width: 240px;
 }
 
 .notebook-dropdown-wrapper select {
   background: transparent;
   border: none;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: var(--text-main);
   outline: none;
   cursor: pointer;
+  max-width: 200px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .icon-btn {
@@ -1092,18 +1102,167 @@ body[data-layout="layout-c"] #floating-tool-palette {
   z-index: 70;
 }
 
-/* Bottom Status Bar */
+/* Bottom Status Bar with iPad Safe Area Insets */
 #status-bar {
-  height: 26px;
+  height: calc(30px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: calc(14px + env(safe-area-inset-left, 0px));
+  padding-right: calc(14px + env(safe-area-inset-right, 0px));
   background: #ffffff;
   border-top: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
   font-size: 0.75rem;
   color: #64748b;
   z-index: 100;
+  user-select: none;
+}
+
+/* Strict Ink Mode Lock: Bottom bar is completely touch-immune to palm resting */
+body[data-mode="ipad"] #status-bar {
+  pointer-events: none;
+  opacity: 0.72;
+}
+
+body[data-mode="ipad"] #status-bar .zoom-pill {
+  cursor: default;
+  background: #f8fafc;
+}
+
+.status-left {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  margin-right: 12px;
+}
+
+#page-status-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.78rem;
+  color: #64748b;
+  max-width: 100%;
+}
+
+.status-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* Zoom Popover Pill */
+.zoom-popover-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.zoom-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  padding: 3px 9px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.zoom-pill:hover {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+}
+
+.zoom-pill-icon {
+  font-size: 0.75rem;
+}
+
+.zoom-pill-chevron {
+  font-size: 0.65rem;
+  color: #64748b;
+  margin-left: 2px;
+}
+
+.zoom-flyout {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.18), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 1002;
+  min-width: 175px;
+  animation: flyoutSlideUp 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.zoom-flyout.hidden {
+  display: none !important;
+}
+
+.zoom-flyout-header {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+  padding: 2px 4px;
+}
+
+.zoom-flyout-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: space-between;
+}
+
+.zoom-flyout-row .btn,
+.zoom-flyout-row .icon-btn-sm {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  padding: 4px 6px;
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid #e2e8f0;
+}
+
+.btn-ghost:hover {
+  background: #f1f5f9;
+}
+
+.w-full {
+  width: 100%;
+  justify-content: center;
+}
+
+@keyframes flyoutSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* High-DPI Vector Sharpness */
@@ -1867,8 +2026,8 @@ body[data-mode="ipad"] .marquee-box {
 /* Floating, Parkable Quick-Toggle Puck */
 .floating-puck {
   position: fixed;
-  right: 20px;
-  bottom: 80px;
+  right: calc(20px + env(safe-area-inset-right, 0px));
+  bottom: calc(56px + env(safe-area-inset-bottom, 0px));
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -2509,5 +2668,65 @@ body[data-mode="ipad"] .marquee-box {
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
+  }
+}
+
+/* Responsive Cleanliness & Decluttering for iPad & Mobile */
+@media (max-width: 860px) {
+  #top-bar {
+    padding-left: calc(10px + env(safe-area-inset-left, 0px));
+    padding-right: calc(10px + env(safe-area-inset-right, 0px));
+  }
+
+  .notebook-dropdown-wrapper {
+    max-width: 170px;
+  }
+
+  .notebook-dropdown-wrapper select {
+    max-width: 130px;
+    font-size: 0.82rem;
+  }
+
+  /* Compact Mode Toggle: Keep icons, hide word labels on compact screens */
+  .mode-pill-toggle .pill-btn {
+    padding: 4px 8px;
+    font-size: 0.85rem;
+  }
+
+  .mode-pill-toggle .pill-text {
+    display: none;
+  }
+
+  /* Compact Storage Badge: Turns into a subtle glowing green status dot */
+  #storage-status {
+    font-size: 0;
+    padding: 0;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #16a34a;
+    box-shadow: 0 0 0 2px #dcfce7;
+    margin-left: 2px;
+  }
+}
+
+@media (max-width: 600px) {
+  .notebook-dropdown-wrapper {
+    max-width: 130px;
+  }
+
+  .notebook-dropdown-wrapper select {
+    max-width: 95px;
+    font-size: 0.78rem;
+  }
+
+  .header-left, .header-right {
+    gap: 6px;
+  }
+
+  /* Status Bar: Clean breadcrumb on tiny screens */
+  #page-status-label {
+    max-width: 180px;
+    font-size: 0.72rem;
   }
 }

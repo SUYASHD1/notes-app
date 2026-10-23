@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Notes">
   <link rel="apple-touch-icon" href="./icons/icon-180.png">
-  <link rel="stylesheet" href="./styles.css?v=3.0.2">
+  <link rel="stylesheet" href="./styles.css?v=3.0.3">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -42,8 +42,14 @@
       <!-- Right: Navigate vs. Ink Mode & Settings -->
       <div class="header-right">
         <div class="mode-pill-toggle">
-          <button id="btn-mode-win" class="pill-btn active" title="Navigate Mode: Smooth touch pan, zoom & keyboard editing">💻 Navigate</button>
-          <button id="btn-mode-ipad" class="pill-btn" title="Ink Mode: Dedicated Apple Pencil & stylus writing">✏️ Ink Mode</button>
+          <button id="btn-mode-win" class="pill-btn active" title="Navigate Mode: Smooth touch pan, zoom & keyboard editing">
+            <span class="pill-icon">💻</span>
+            <span class="pill-text">Navigate</span>
+          </button>
+          <button id="btn-mode-ipad" class="pill-btn" title="Ink Mode: Dedicated Apple Pencil & stylus writing">
+            <span class="pill-icon">✏️</span>
+            <span class="pill-text">Ink Mode</span>
+          </button>
         </div>
         <button id="btn-install-app" class="icon-btn pwa-install-btn" title="Install Standalone App (Zero Browser Bars)" style="display: none;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -262,14 +268,28 @@
     <!-- Bottom Status Bar -->
     <footer id="status-bar">
       <div class="status-left">
-        <span id="page-status-label">Physics & Calculus > Limits & Continuity > Derivatives Intro</span>
+        <span id="page-status-label" title="Current Note Location">Physics &amp; Calculus &gt; Limits &amp; Continuity &gt; Derivatives Intro</span>
       </div>
       <div class="status-right">
-        <button id="btn-zoom-out" class="icon-btn-sm" title="Zoom Out">-</button>
-        <span id="zoom-indicator">100%</span>
-        <button id="btn-zoom-in" class="icon-btn-sm" title="Zoom In">+</button>
-        <button id="btn-zoom-fit" class="btn btn-sm" title="Zoom to Fit All Content (Shift+1)" style="margin-left: 8px;">Fit All</button>
-        <button id="btn-reset-view" class="btn btn-sm" style="margin-left: 4px;">100%</button>
+        <div class="zoom-popover-wrapper">
+          <button id="btn-zoom-pill" class="zoom-pill" title="Tap to adjust Zoom or Fit View">
+            <span class="zoom-pill-icon">🔍</span>
+            <span id="zoom-indicator">100%</span>
+            <span class="zoom-pill-chevron">▾</span>
+          </button>
+          
+          <div id="zoom-flyout" class="zoom-flyout hidden">
+            <div class="zoom-flyout-header">Zoom &amp; Canvas View</div>
+            <div class="zoom-flyout-row">
+              <button id="btn-zoom-out" class="icon-btn-sm" title="Zoom Out (Ctrl+-)">−</button>
+              <button id="btn-reset-view" class="btn btn-sm btn-ghost" title="Reset View to 100%">100%</button>
+              <button id="btn-zoom-in" class="icon-btn-sm" title="Zoom In (Ctrl++)">+</button>
+            </div>
+            <button id="btn-zoom-fit" class="btn btn-sm btn-accent-light w-full" title="Zoom to Fit All Content (Shift+1)">
+              📐 Fit All Content
+            </button>
+          </div>
+        </div>
       </div>
     </footer>
 
