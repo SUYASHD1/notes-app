@@ -8,33 +8,11 @@
   touch-action: none;
   -webkit-touch-callout: none;
   transition: opacity 0.15s ease;
-  display: none;
-}
-
-.canvas-block.selected .resize-handle,
-.canvas-block:hover .resize-handle,
-.universal-note-container.selected .resize-handle,
-.universal-note-container:hover .resize-handle {
   display: block;
 }
 
-.canvas-block.selected .handle-nw,
-.canvas-block.selected .handle-ne,
-.canvas-block.selected .handle-se,
-.canvas-block.selected .handle-sw,
-.canvas-block:hover .handle-nw,
-.canvas-block:hover .handle-ne,
-.canvas-block:hover .handle-se,
-.canvas-block:hover .handle-sw,
-.universal-note-container.selected .handle-nw,
-.universal-note-container.selected .handle-ne,
-.universal-note-container.selected .handle-se,
-.universal-note-container.selected .handle-sw,
-.universal-note-container:hover .handle-nw,
-.universal-note-container:hover .handle-ne,
-.universal-note-container:hover .handle-se,
-.universal-note-container:hover .handle-sw {
-  display: flex;
+.resize-handle:not(.canvas-block *):not(.universal-note-container *) {
+  display: none;
 }
 
 .handle-e {

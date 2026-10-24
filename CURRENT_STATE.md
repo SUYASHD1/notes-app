@@ -3,7 +3,7 @@
 > **Last Updated:** 24 October 2026 (v4.7.2)  
 > **Status:** Fully Functional, PWA Standalone Enabled, Deployed to Production (Vercel)  
 > **Live Web Application:** [https://notes-app-topaz-six.vercel.app/](https://notes-app-topaz-six.vercel.app/)  
-> **Automated Test Suite:** `74 / 74 tests passed (100%)`
+> **Automated Test Suite:** `75 / 75 tests passed (100%)`
 
 ---
 
@@ -223,13 +223,45 @@ This application is a freeform, ultra-fast note-taking system designed to combin
 | `src/blocks/` | Universal note containers, modular text blocks (`latex_parser.js`, `html_sanitizer.js`, `html_to_markdown.js`), tables, plots, and PDF printouts. |
 | [src/storage/indexed_db.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/src/storage/indexed_db.js) | Full storage engine: IndexedDB vault, hard drive folder migration, live metrics, and backup/restore. |
 | [CodeORG.md](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/CodeORG.md) | Architectural guidelines, modularization principles, and maintenance standards. |
-| `tests/` | 74 automated unit tests covering inking, geometry, storage, backups, PWA validity, dark/light themes, file management, auto-numbering, rich paste, PDF layout, and viewport boundaries. |
+| [tests/visual_smoke.test.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/tests/visual_smoke.test.js) | Automated Puppeteer visual safety net: verifies flyouts, boundary cursors, and overlay isolation. |
+| `tests/` | 75 automated tests: 74 unit tests covering inking, geometry, storage, themes + 1 Puppeteer visual browser test. |
 
 ---
 
-## 🧪 5. Automated Test Status
-* **Unit Tests Passing:** `74 / 74 tests passed (100%)`
-* **Theme Switching & Ink Adaptation:** Automated tests verify persistent theme switching between `#282828` dark mode and daylight mode, and automatic pen swatch adaptation.
-* **Browser Verification with Microsoft Edge & Puppeteer:** Verified 0 console errors, instant theme toggling, and clean visual contrast across all note containers.
+## 🧪 5. Automated Test Suite & Visual Web Testing with Puppeteer
+
+### Overall Status: `75 / 75 tests passed (100%)`
+- **74 Unit Tests:** Pure logic, math, stroke smoothing, frustum culling, storage vaulting, rich paste, and theme switching (~900ms).
+- **1 Puppeteer Visual Test:** Live headless browser test (`tests/visual_smoke.test.js`) verifying real UI visibility, boundary cursors, and overlay isolation (~2.1s).
+
+---
+
+### 🤖 Instructions: How to Run Visual Web Testing with Puppeteer
+
+Puppeteer provides our automated **"robot with eyes"** that launches Microsoft Edge or Chrome in the background, renders the application, and verifies that the visual interface is working properly.
+
+#### 1. Running the Complete Suite (Unit Tests + Puppeteer Visual Test)
+```bash
+node --test tests/*.test.js
+```
+Runs all 75 tests in ~3 seconds.
+
+#### 2. Running Only the Puppeteer Visual Test
+```bash
+node --test tests/visual_smoke.test.js
+```
+
+#### 3. What the Puppeteer Visual Safety Net Checks:
+1. **Master Visibility Guard:** Verifies that `#zoom-flyout` has `display: none` by default and does not pop out uninvited.
+2. **Transparent Layer Isolation:** Verifies that `#active-draw-canvas` is hidden (`display: none`) in Navigate Mode so it never acts like a sheet of glass blocking clicks.
+3. **Boundary Resize Zones:**
+   - Verifies all 8 boundary handles (`.handle-e`, `.handle-w`, `.handle-n`, `.handle-s`, corners) exist.
+   - Moves the virtual mouse to the note boundary and verifies that the double-headed resize arrow (`ew-resize` / `ns-resize`) appears.
+4. **Interactive Flyout Cycling:** Clicks the zoom pill, confirms the flyout smoothly opens to `display: flex`, clicks again, and confirms it closes cleanly back to `display: none`.
+5. **Console Cleanliness:** Listens to the browser's internal console and fails the test if any unhandled error or exception occurs.
+
+---
+
 * **Production Status:** Deployed live on Vercel at `https://notes-app-topaz-six.vercel.app/`.
+
 

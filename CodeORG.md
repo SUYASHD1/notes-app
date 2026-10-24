@@ -49,17 +49,12 @@ Our project has two twin engine folders that work hand-in-hand:
 
 > **Whenever you add or update an engine helper in `src/`, make sure the matching file in `public/src/` is updated as well!** This guarantees our automated tests always reflect the exact code running on your iPad and PC.
 
-### Rule 4: Test Before You Ship (The 74-Test Shield)
-- We have an automated test suite of **74 tests** in the `tests/` directory.
-- Running `node --test tests/*.test.js` takes **less than 1 second** and checks:
-  - Handwriting stroke smoothing and single-dot capture.
-  - Bounding box collision and frustum culling.
-  - Storage saving, backup downloads, and folder migration.
-  - PDF layout and natural aspect ratios.
-  - Mathematical LaTeX equation rendering.
-  - Dark mode theme switching, persistence, and ink adaptation.
-  - Spatial canvas boundaries and zero-void protection.
-- **Rule:** Before any change is marked as complete, you must run the tests and verify that `74 / 74 tests passed (100%)`.
+### Rule 4: Test Before You Ship (The 75-Test Shield: Logic + Puppeteer Visual)
+- We have an automated test suite of **75 tests** in the `tests/` directory.
+- Running `node --test tests/*.test.js` takes **~3 seconds** and checks:
+  - 74 Unit Tests: Handwriting, bounding boxes, storage, backups, PDF layout, LaTeX math, dark mode, and canvas boundaries.
+  - 1 Puppeteer Visual Safety Net (`tests/visual_smoke.test.js`): Headless Microsoft Edge/Chrome test verifying that flyouts stay closed by default, transparent drawing layers don't block clicks, and note boundary resize cursors trigger on hover.
+- **Rule:** Before any change is marked as complete, you must run the tests and verify that `75 / 75 tests passed (100%)`.
 
 ### Rule 5: Always Bump the Version Number (The Anti-Cache Guarantee)
 - Web browsers and Apple's iPad Safari aggressively cache files on disk to save data.
