@@ -4147,5 +4147,201 @@ body[data-theme="dark"] .toast {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
 }
 
+/* Notebook Header Quick Actions (Screenshot 1 Fix) */
+body[data-theme="dark"] .notebook-quick-actions {
+  background: #242424;
+  border-color: var(--border-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+body[data-theme="dark"] .notebook-quick-actions .icon-btn-sm {
+  color: #cbd5e1;
+  background: transparent;
+  border-color: transparent;
+}
+
+body[data-theme="dark"] .notebook-quick-actions .icon-btn-sm:hover {
+  background: #333333;
+  color: #ffffff;
+}
+
+body[data-theme="dark"] .notebook-quick-actions .text-danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+/* Ribbon Clusters & Font Pickers (Screenshot 2 Fix) */
+body[data-theme="dark"] .ribbon-style-cluster,
+body[data-theme="dark"] .ribbon-align-cluster {
+  background: #242424;
+  border-color: var(--border-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+body[data-theme="dark"] .ribbon-font-cluster select {
+  background: #242424;
+  border-color: var(--border-color);
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] .ribbon-font-cluster select:hover {
+  border-color: #4a4a4a;
+}
+
+/* Bottom Status / Breadcrumb Bar (Screenshot 3 Fix) */
+body[data-theme="dark"] #status-bar {
+  background: var(--topbar-bg, #1e1e1e);
+  border-top: 1px solid var(--border-color);
+  color: var(--text-muted);
+}
+
+body[data-theme="dark"] #status-bar .status-left {
+  color: var(--text-muted);
+}
+
+body[data-theme="dark"] #status-bar .zoom-pill {
+  background: #282828;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] #status-bar .zoom-pill:hover {
+  background: #333333;
+  border-color: #4a4a4a;
+}
+
+/* Storage & Data Hub Flyout Card (Screenshot 4 Fix) */
+body[data-theme="dark"] .settings-flyout-card {
+  background: rgba(34, 34, 34, 0.98);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 1px 1px rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] .settings-header {
+  background: linear-gradient(180deg, #2a2a2a, #222222);
+  border-bottom: 1px solid var(--border-color);
+}
+
+body[data-theme="dark"] .settings-header h3 {
+  color: #ffffff;
+}
+
+body[data-theme="dark"] .settings-sub {
+  color: var(--text-muted);
+}
+
+body[data-theme="dark"] .settings-close-btn {
+  background: #2a2a2a;
+  border-color: var(--border-color);
+  color: var(--text-muted);
+}
+
+body[data-theme="dark"] .settings-close-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+body[data-theme="dark"] .settings-card {
+  background: #2a2a2a;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+body[data-theme="dark"] .settings-card:hover {
+  border-color: #4a4a4a;
+}
+
+body[data-theme="dark"] .settings-card-header h4 {
+  color: #ffffff;
+}
+
+body[data-theme="dark"] .settings-desc {
+  color: #d1d5db;
+}
+
+body[data-theme="dark"] .location-details-box {
+  background: #222222;
+  border: 1px solid var(--border-color);
+}
+
+body[data-theme="dark"] .loc-label {
+  color: var(--text-muted);
+}
+
+body[data-theme="dark"] .loc-val {
+  color: #ededed;
+}
+
+body[data-theme="dark"] .loc-val.font-mono {
+  color: #93c5fd;
+}
+
+body[data-theme="dark"] .metric-box {
+  background: #222222;
+  border: 1px solid var(--border-color);
+}
+
+body[data-theme="dark"] .metric-box:hover {
+  background: #282828;
+  border-color: #4a4a4a;
+}
+
+body[data-theme="dark"] .metric-number {
+  color: #60a5fa;
+}
+
+body[data-theme="dark"] .metric-label {
+  color: var(--text-muted);
+}
+
+body[data-theme="dark"] .storage-pill {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+body[data-theme="dark"] .btn-secondary-glass {
+  background: #303030;
+  border-color: var(--border-color);
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] .btn-secondary-glass:hover {
+  background: #3a3a3a;
+  border-color: #555555;
+}
+
+body[data-theme="dark"] .folder-explorer-card {
+  background: #222222;
+  border-color: var(--border-color);
+}
+
+body[data-theme="dark"] .folder-tree-view {
+  background: #1a1a1a;
+  border-color: var(--border-color);
+}
+
+body[data-theme="dark"] .tree-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+body[data-theme="dark"] .tree-row.selected {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+body[data-theme="dark"] .folder-tree-actions button {
+  background: #2e2e2e;
+  border-color: var(--border-color);
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] .folder-tree-actions button:hover {
+  background: #383838;
+}
+
+
 
 
