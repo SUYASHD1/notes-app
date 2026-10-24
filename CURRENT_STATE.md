@@ -1,9 +1,9 @@
 # 📓 Notes App — Current State & Knowledge Log
 
-> **Last Updated:** 24 October 2026 (v4.7.2)  
+> **Last Updated:** 25 October 2026 (v4.7.4)  
 > **Status:** Fully Functional, PWA Standalone Enabled, Deployed to Production (Vercel)  
 > **Live Web Application:** [https://notes-app-topaz-six.vercel.app/](https://notes-app-topaz-six.vercel.app/)  
-> **Automated Test Suite:** `75 / 75 tests passed (100%)`
+> **Automated Test Suite:** `76 / 76 tests passed (100%)`
 
 ---
 
@@ -174,6 +174,24 @@ This application is a freeform, ultra-fast note-taking system designed to combin
   3. Added full boundary hover rules for `.handle-e`, `.handle-w`, `.handle-n`, `.handle-s`, and corners in `resize_handles.css`.
   4. Created `layout_modes.css`, `notes_typography.css`, `media_crop.css`, and `storage_hub_dark.css` to hold all remaining styles while guaranteeing 100% of files stay ≤ 334 lines.
   5. Verified live in Microsoft Edge: Zoom flyout is hidden by default and opens/closes on click; moving mouse near any note boundary immediately displays the resize cursor.
+
+### 20. Master Orchestrator Modularization (Phase 3 Completed — v4.7.4)
+* **The Goal:** Modularize the monolithic 4,028-line `public/app.js` into focused, single-responsibility engines, strictly enforcing the ≤ 350 lines limit per file and the Two-Door House pattern (`src/` and `public/src/`).
+* **What We Completed in this Release:**
+  1. **Phase 3D (Sample Notebook & Blank Canvas Engine):** Extracted starter physics notes, sample math plots, tables, and blank page generators into `src/core/sample_notebook.js` (92 lines), mirrored in `public/src/core/`.
+  2. **Phase 3C (Topbar, Ribbon & Keyboard Action Dispatchers):** Extracted container actions into `src/ui/container_actions.js` (110 lines), format tools into `src/ui/ribbon_actions.js` (316 lines), and hotkeys into `src/ui/keyboard_shortcuts.js` (201 lines).
+  3. **Phase 3B (Canvas Viewport & Touch/Inking Interactions):** Extracted kinetic momentum into `src/canvas/kinetic_pan.js` (176 lines), viewport events into `src/canvas/viewport_interaction.js` (303 lines), stroke creators into `src/canvas/stroke_creator.js` (94 lines), and ink gesture bridges into `src/canvas/inking_interaction.js` (323 lines).
+  4. **Phase 3A (Note Container Block Rendering & Docking Engine):** Extracted all note block renderers into 8 focused engines (each strictly ≤ 323 lines):
+     - `src/blocks/block_drag_resize.js` (198 lines) — Dragging and 8-point boundary resize handles.
+     - `src/blocks/math_table_renderer.js` (166 lines) — Interactive tables and 2D math function plots.
+     - `src/blocks/pdf_renderer.js` (186 lines) — High-DPI multi-page PDF documents.
+     - `src/blocks/image_cropper.js` (208 lines) — Interactive image cropping modal.
+     - `src/blocks/media_renderer.js` (286 lines) — Mixed media, image docking, and IndexedDB offline caching.
+     - `src/blocks/text_renderer.js` (323 lines) — Rich text, WYSIWYG formatting, and paste sanitization.
+     - `src/blocks/sketch_renderer.js` (319 lines) — In-note handwriting canvas and shape recognition.
+     - `src/blocks/container_renderer.js` (295 lines) — Master note container frames and child dispatch.
+  5. **Massive Orchestrator Reduction:** `public/app.js` reduced from **4,028 lines down to 699 lines** (a total reduction of **3,329 lines / 82.6%**).
+  6. **Automated Test Shield:** 100% of all automated tests passing (**76 / 76 tests**), including unit tests and the live Puppeteer visual browser test.
 
 ---
 

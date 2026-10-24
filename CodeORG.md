@@ -171,13 +171,23 @@ We are systematically restructuring all files that exceed the **350-line limit**
 - Fully mirrored in `public/src/blocks/` (Two-Door House pattern).
 - **Status:** 100% compliant with the 350-line ceiling.
 
-### ⏳ Phase 3: Master Orchestrator `public/app.js` Modularization (NEXT UP)
-- `public/app.js` currently contains ~4,000 lines. While it coordinates the application, several heavy sub-systems can be extracted into single-responsibility modules:
-  - **Phase 3A: Note Container Block Rendering & Docking Engine** (~600 lines) -> Extract into `src/blocks/container_renderer.js` and `src/blocks/docking_engine.js`.
-  - **Phase 3B: Canvas Viewport & Touch Recognizer Bridge** (~500 lines) -> Extract into `src/canvas/canvas_interaction.js`.
-  - **Phase 3C: Topbar, Ribbon & Dialog Action Handlers** (~700 lines) -> Extract into `src/ui/action_dispatcher.js`.
-  - **Phase 3D: Sample Notebook Data & Initial Workspace Seed** (~400 lines) -> Extract into `src/core/sample_notebook.js`.
-- Each extracted module must strictly adhere to the ≤ 350 lines limit and be mirrored in `public/src/`.
+### ✅ Phase 3: Master Orchestrator `public/app.js` Modularization (COMPLETED — v4.7.4)
+- Modularized the monolithic 4,028-line `public/app.js` down to **699 lines** (a **3,329-line / 82.6% reduction**):
+  - **✅ Phase 3D:** Starter notes and blank page generation in `src/core/sample_notebook.js` (92 lines).
+  - **✅ Phase 3C:** Topbar, Ribbon & Keyboard dispatchers in `src/ui/container_actions.js` (110 lines), `src/ui/ribbon_actions.js` (316 lines), and `src/ui/keyboard_shortcuts.js` (201 lines).
+  - **✅ Phase 3B:** Viewport & Inking interactions in `src/canvas/kinetic_pan.js` (176 lines), `src/canvas/viewport_interaction.js` (303 lines), `src/canvas/stroke_creator.js` (94 lines), and `src/canvas/inking_interaction.js` (323 lines).
+  - **✅ Phase 3A:** Note container blocks rendering in 8 focused sub-engines:
+    - `src/blocks/block_drag_resize.js` (198 lines)
+    - `src/blocks/math_table_renderer.js` (166 lines)
+    - `src/blocks/pdf_renderer.js` (186 lines)
+    - `src/blocks/image_cropper.js` (208 lines)
+    - `src/blocks/media_renderer.js` (286 lines)
+    - `src/blocks/text_renderer.js` (323 lines)
+    - `src/blocks/sketch_renderer.js` (319 lines)
+    - `src/blocks/container_renderer.js` (295 lines)
+- Fully mirrored across `src/` and `public/src/` (Two-Door House pattern).
+- All 16 newly created files strictly adhere to the ≤ 350-line ceiling.
+- All 76 tests passing (100%).
 
 ### ⏳ Phase 4: Prototype & Redundant Assets Archive (FINAL)
 - Archive the standalone `prototype/` directory to prevent stale files from causing search friction or confusion during development.

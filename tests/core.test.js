@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Viewport, FunctionPlotter, StrokeEngine, DocumentModel } from '../src/core.js';
+import { Viewport, FunctionPlotter, StrokeEngine, DocumentModel, createBlankDocument, createSampleDocument } from '../src/core.js';
 
 test('Viewport transformation math', () => {
   const vp = new Viewport(100, 50, 2);
@@ -109,3 +109,16 @@ test('Universal Note Container mixed-media items lifecycle', () => {
   assert.equal(restored.blocks[0].items[3].caption, 'Diagram.png');
   assert.equal(restored.blocks[0].items[4].totalPages, 4);
 });
+
+test('Sample notebook and blank document generation', () => {
+  const blank = createBlankDocument('test_page_123');
+  assert.equal(blank.id, 'test_page_123');
+  assert.equal(blank.blocks.length, 0);
+
+  const sample = createSampleDocument('nb_physics_demo_p1');
+  assert.equal(sample.id, 'nb_physics_demo_p1');
+  assert.equal(sample.blocks.length, 2);
+  assert.equal(sample.blocks[0].title, 'Kinematics & Derivatives');
+  assert.equal(sample.blocks[1].title, 'Lecture Slides & Materials');
+});
+
