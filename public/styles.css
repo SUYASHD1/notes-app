@@ -3484,46 +3484,63 @@ body[data-mode="ipad"] .marquee-box {
 .canvas-scrollbar {
   position: absolute;
   z-index: 50;
-  background: rgba(241, 245, 249, 0.75);
+  background: rgba(226, 232, 240, 0.75);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(203, 213, 225, 0.7);
+  border: 1px solid rgba(203, 213, 225, 0.8);
   border-radius: 8px;
   user-select: none;
+  cursor: pointer;
   opacity: 0.85;
   transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 
 .canvas-scrollbar.horizontal {
   bottom: 8px;
-  left: 24px;
-  right: 36px;
-  height: 10px;
+  left: 20px;
+  right: 32px;
+  height: 12px;
 }
 
 .canvas-scrollbar.vertical {
   top: 14px;
   right: 8px;
-  bottom: 26px;
-  width: 10px;
+  bottom: 28px;
+  width: 12px;
 }
 
 .canvas-scrollbar:hover {
   opacity: 1;
-  background: rgba(241, 245, 249, 0.95);
+  background: rgba(226, 232, 240, 0.95);
   border-color: #94a3b8;
 }
 
 .canvas-scroll-thumb {
   position: absolute;
-  background: #94a3b8;
+  background: #64748b;
   border-radius: 6px;
   cursor: grab;
+  touch-action: none;
+  user-select: none;
   transition: background 0.15s ease;
 }
 
+.canvas-scrollbar.horizontal .canvas-scroll-thumb {
+  top: 1px;
+  bottom: 1px;
+  height: calc(100% - 2px);
+  min-width: 36px;
+}
+
+.canvas-scrollbar.vertical .canvas-scroll-thumb {
+  left: 1px;
+  right: 1px;
+  width: calc(100% - 2px);
+  min-height: 36px;
+}
+
 .canvas-scroll-thumb:hover, .canvas-scroll-thumb.active {
-  background: #475569;
+  background: #1e293b;
   cursor: grabbing;
 }
 

@@ -640,7 +640,10 @@ function clampViewportBounds() {
   state.viewport.y = Math.min(40, state.viewport.y);
 }
 
+let isDraggingScrollbar = false;
+
 function updateScrollbars() {
+  if (isDraggingScrollbar) return;
   const sbH = document.getElementById('canvas-scrollbar-h');
   const sbV = document.getElementById('canvas-scrollbar-v');
   const thumbH = document.getElementById('canvas-scroll-thumb-h');
@@ -654,7 +657,7 @@ function updateScrollbars() {
   // Horizontal scrollbar
   const trackW = sbH.offsetWidth || 200;
   const visibleW = containerW / state.viewport.zoom;
-  const thumbW = Math.max(30, Math.min(trackW, Math.round((visibleW / bounds.width) * trackW)));
+  const thumbW = Math.max(36, Math.min(trackW, Math.round((visibleW / bounds.width) * trackW)));
   thumbH.style.width = `${thumbW}px`;
 
   const maxScrollX = Math.max(1, bounds.width * state.viewport.zoom - containerW + 40);
@@ -664,10 +667,10 @@ function updateScrollbars() {
 
   // Vertical scrollbar: dynamic total space based on lowest content or current scroll position
   const currentWorldBottom = (containerH - state.viewport.y) / state.viewport.zoom;
-  const totalWorldH = Math.max(bounds.height, currentWorldBottom + 600);
+  const totalWorldH = Math.max(bounds.height, currentWorldBottom + 800);
   const trackH = sbV.offsetHeight || 200;
   const visibleH = containerH / state.viewport.zoom;
-  const thumbHHeight = Math.max(30, Math.min(trackH, Math.round((visibleH / totalWorldH) * trackH)));
+  const thumbHHeight = Math.max(36, Math.min(trackH, Math.round((visibleH / totalWorldH) * trackH)));
   thumbV.style.height = `${thumbHHeight}px`;
 
   const maxScrollY = Math.max(1, totalWorldH * state.viewport.zoom - containerH + 40);
@@ -3985,32 +3988,48 @@ function setupScrollbarDragging() {
     el.addEventListener('mousedown', (e) => e.stopPropagation());
   });
 
-  // Track click to jump
+  // Track click to jump: instantly centers the thumb at clicked position
   sbH.addEventListener('pointerdown', (e) => {
     if (sbH.classList.contains('locked') || e.target === thumbH) return;
+    e.preventDefault();
+    e.stopPropagation();
     const rect = sbH.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const bounds = getCanvasContentBounds();
     const containerW = container.offsetWidth || window.innerWidth;
+    const trackW = sbH.offsetWidth || 200;
+    const thumbW = thumbH.offsetWidth || 36;
     const maxScrollX = Math.max(1, bounds.width * state.viewport.zoom - containerW + 40);
-    const ratio = Math.max(0, Math.min(1, clickX / rect.width));
+
+    const targetLeft = Math.max(0, Math.min(trackW - thumbW, clickX - thumbW / 2));
+    const ratio = targetLeft / Math.max(1, trackW - thumbW);
     state.viewport.x = 40 - ratio * maxScrollX;
-    updateWorldTransform();
+    clampViewportBounds();
+    world.style.transform = `translate3d(${state.viewport.x}px, ${state.viewport.y}px, 0px) scale(${state.viewport.zoom})`;
+    updateScrollbars();
     debouncedSave(800);
   });
 
   sbV.addEventListener('pointerdown', (e) => {
     if (sbV.classList.contains('locked') || e.target === thumbV) return;
+    e.preventDefault();
+    e.stopPropagation();
     const rect = sbV.getBoundingClientRect();
     const clickY = e.clientY - rect.top;
     const bounds = getCanvasContentBounds();
     const containerH = container.offsetHeight || window.innerHeight;
+    const trackH = sbV.offsetHeight || 200;
+    const thumbHHeight = thumbV.offsetHeight || 36;
     const currentWorldBottom = (containerH - state.viewport.y) / state.viewport.zoom;
-    const totalWorldH = Math.max(bounds.height, currentWorldBottom + 600);
+    const totalWorldH = Math.max(bounds.height, currentWorldBottom + 800);
     const maxScrollY = Math.max(1, totalWorldH * state.viewport.zoom - containerH + 40);
-    const ratio = Math.max(0, Math.min(1, clickY / rect.height));
+
+    const targetTop = Math.max(0, Math.min(trackH - thumbHHeight, clickY - thumbHHeight / 2));
+    const ratio = targetTop / Math.max(1, trackH - thumbHHeight);
     state.viewport.y = 40 - ratio * maxScrollY;
-    updateWorldTransform();
+    clampViewportBounds();
+    world.style.transform = `translate3d(${state.viewport.x}px, ${state.viewport.y}px, 0px) scale(${state.viewport.zoom})`;
+    updateScrollbars();
     debouncedSave(800);
   });
 
@@ -4019,13 +4038,14 @@ function setupScrollbarDragging() {
     if (sbH.classList.contains('locked')) return;
     e.stopPropagation();
     e.preventDefault();
+    isDraggingScrollbar = true;
     thumbH.setPointerCapture(e.pointerId);
     thumbH.classList.add('active');
 
     const startX = e.clientX;
     const initialThumbLeft = thumbH.offsetLeft;
-    const trackW = sbH.offsetWidth;
-    const thumbW = thumbH.offsetWidth;
+    const trackW = sbH.offsetWidth || 200;
+    const thumbW = thumbH.offsetWidth || 36;
     const bounds = getCanvasContentBounds();
     const containerW = container.offsetWidth || window.innerWidth;
     const maxScrollX = Math.max(1, bounds.width * state.viewport.zoom - containerW + 40);
@@ -4033,17 +4053,21 @@ function setupScrollbarDragging() {
     const onPointerMove = (moveEvt) => {
       const dx = moveEvt.clientX - startX;
       const newLeft = Math.max(0, Math.min(trackW - thumbW, initialThumbLeft + dx));
+      thumbH.style.left = `${newLeft}px`;
       const ratio = newLeft / Math.max(1, trackW - thumbW);
       state.viewport.x = 40 - ratio * maxScrollX;
-      updateWorldTransform();
+      clampViewportBounds();
+      world.style.transform = `translate3d(${state.viewport.x}px, ${state.viewport.y}px, 0px) scale(${state.viewport.zoom})`;
     };
 
     const onPointerUp = (upEvt) => {
+      isDraggingScrollbar = false;
       thumbH.classList.remove('active');
       try { thumbH.releasePointerCapture(upEvt.pointerId); } catch (_) {}
       thumbH.removeEventListener('pointermove', onPointerMove);
       thumbH.removeEventListener('pointerup', onPointerUp);
       thumbH.removeEventListener('pointercancel', onPointerUp);
+      updateScrollbars();
       debouncedSave(800);
     };
 
@@ -4057,33 +4081,38 @@ function setupScrollbarDragging() {
     if (sbV.classList.contains('locked')) return;
     e.stopPropagation();
     e.preventDefault();
+    isDraggingScrollbar = true;
     thumbV.setPointerCapture(e.pointerId);
     thumbV.classList.add('active');
 
     const startY = e.clientY;
     const initialThumbTop = thumbV.offsetTop;
-    const trackH = sbV.offsetHeight;
-    const thumbHHeight = thumbV.offsetHeight;
+    const trackH = sbV.offsetHeight || 200;
+    const thumbHHeight = thumbV.offsetHeight || 36;
     const bounds = getCanvasContentBounds();
     const containerH = container.offsetHeight || window.innerHeight;
     const currentWorldBottom = (containerH - state.viewport.y) / state.viewport.zoom;
-    const totalWorldH = Math.max(bounds.height, currentWorldBottom + 600);
-    const maxScrollY = Math.max(1, totalWorldH * state.viewport.zoom - containerH + 40);
+    const dragTotalWorldH = Math.max(bounds.height, currentWorldBottom + 800);
+    const maxScrollY = Math.max(1, dragTotalWorldH * state.viewport.zoom - containerH + 40);
 
     const onPointerMove = (moveEvt) => {
       const dy = moveEvt.clientY - startY;
       const newTop = Math.max(0, Math.min(trackH - thumbHHeight, initialThumbTop + dy));
+      thumbV.style.top = `${newTop}px`;
       const ratio = newTop / Math.max(1, trackH - thumbHHeight);
       state.viewport.y = 40 - ratio * maxScrollY;
-      updateWorldTransform();
+      clampViewportBounds();
+      world.style.transform = `translate3d(${state.viewport.x}px, ${state.viewport.y}px, 0px) scale(${state.viewport.zoom})`;
     };
 
     const onPointerUp = (upEvt) => {
+      isDraggingScrollbar = false;
       thumbV.classList.remove('active');
       try { thumbV.releasePointerCapture(upEvt.pointerId); } catch (_) {}
       thumbV.removeEventListener('pointermove', onPointerMove);
       thumbV.removeEventListener('pointerup', onPointerUp);
       thumbV.removeEventListener('pointercancel', onPointerUp);
+      updateScrollbars();
       debouncedSave(800);
     };
 
@@ -4091,6 +4120,8 @@ function setupScrollbarDragging() {
     thumbV.addEventListener('pointerup', onPointerUp);
     thumbV.addEventListener('pointercancel', onPointerUp);
   });
+
+  window.addEventListener('resize', updateScrollbars);
 }
 
 // --- Smooth Auto-Scroll During Text Selection or Dragging Near Viewport Edges ---
