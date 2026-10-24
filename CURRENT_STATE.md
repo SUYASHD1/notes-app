@@ -1,6 +1,6 @@
 # 📓 Notes App — Current State & Knowledge Log
 
-> **Last Updated:** 25 October 2026 (v4.7.4)  
+> **Last Updated:** 25 October 2026 (v4.7.5)  
 > **Status:** Fully Functional, PWA Standalone Enabled, Deployed to Production (Vercel)  
 > **Live Web Application:** [https://notes-app-topaz-six.vercel.app/](https://notes-app-topaz-six.vercel.app/)  
 > **Automated Test Suite:** `76 / 76 tests passed (100%)`
@@ -285,6 +285,19 @@ node --test tests/visual_smoke.test.js
    - Moves the virtual mouse to the note boundary and verifies that the double-headed resize arrow (`ew-resize` / `ns-resize`) appears.
 4. **Interactive Flyout Cycling:** Clicks the zoom pill, confirms the flyout smoothly opens to `display: flex`, clicks again, and confirms it closes cleanly back to `display: none`.
 5. **Console Cleanliness:** Listens to the browser's internal console and fails the test if any unhandled error or exception occurs.
+
+---
+
+## 🏛️ 8. Modular Architecture & Code Organization (v4.7.5 Final Polish)
+
+Following the pragmatic Option A buffer zone (≤ 450 lines max, target ≤ 350 lines) and strict Two-Door House parity (`src/` and `public/src/` mirrored 100%):
+
+1. **`public/app.js` (416 lines):** Streamlined from 4,028 original lines down to 416 lines (89.7% reduction). Camera navigation and bounds handling delegated to `src/canvas/viewport_camera.js` (115 lines); document auto-saving and serialization delegated to `src/storage/page_storage.js` (140 lines).
+2. **`src/ui/storage_settings_modal.js` (246 lines):** Shrunk from 590 lines down to 246 lines by extracting the notebook folder hierarchy visualizer into `src/ui/explorer_tree.js` (371 lines).
+3. **`src/storage/indexed_db.js` (425 lines):** Shrunk from 591 lines down to 425 lines by modularizing JSON file backup/restore into `src/storage/vault_backup.js` (62 lines), hard-drive folder synchronization into `src/storage/vault_folder_sync.js` (56 lines), and storage diagnostics & persistence lock into `src/storage/vault_metrics.js` (84 lines).
+4. **`src/ui/sidebar.js` (398 lines):** Kept intact as a cohesive, single-responsibility component safely within the 450-line grace buffer.
+5. **Zero Over-Limit Violations:** Zero files exceed 450 lines across the entire codebase.
+6. **Automated Verification:** 76 / 76 automated tests passing at 100% across all modules.
 
 ---
 

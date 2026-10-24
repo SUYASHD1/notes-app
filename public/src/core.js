@@ -18,6 +18,7 @@ export { setupKineticPan } from './canvas/kinetic_pan.js';
 export { setupViewportInteractions } from './canvas/viewport_interaction.js';
 export { finalizeStroke } from './canvas/stroke_creator.js';
 export { setupInkingInteractions } from './canvas/inking_interaction.js';
+export { createViewportCamera } from './canvas/viewport_camera.js';
 
 export { MarkdownLatexParser } from './blocks/text_block.js';
 export { PDFPrintoutManager } from './blocks/pdf_block.js';
@@ -37,9 +38,14 @@ export { renderBlocks } from './blocks/container_renderer.js';
 export { HierarchyManager } from './storage/hierarchy.js';
 export { CloudflareR2Sync } from './storage/r2_sync.js';
 export { LocalVault } from './storage/indexed_db.js';
+export { exportFullBackup, importFullBackup } from './storage/vault_backup.js';
+export { migrateCurrentDataToFolder } from './storage/vault_folder_sync.js';
+export { getStorageMetrics, requestPersistenceLock } from './storage/vault_metrics.js';
+export { getPageStorageKey, createPageStorageManager } from './storage/page_storage.js';
 
 export { showToast } from './ui/toast.js';
 export { setupStorageSettingsModal } from './ui/storage_settings_modal.js';
+export { renderExplorerTree } from './ui/explorer_tree.js';
 export { initHierarchy, saveHierarchy, renderHierarchyUI, setupSidebarControls, createDefaultHierarchy } from './ui/sidebar.js';
 export { setupInkPaletteControls } from './ui/ink_palette.js';
 export { setupLayoutSwitcher, setMode, setupFloatingModePuck } from './ui/layout_puck.js';

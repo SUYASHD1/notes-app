@@ -189,21 +189,31 @@ We are systematically restructuring all files that exceed the **350-line limit**
 - All 16 newly created files strictly adhere to the ≤ 350-line ceiling.
 - All 76 tests passing (100%).
 
-### ✅ Phase 4: Prototype & Redundant Assets Archive (COMPLETED — v4.7.4)
-- Safely compressed the standalone `prototype/` experimental directory into `archive/prototype_legacy.zip`.
-- Removed loose duplicate prototype files to eliminate search friction and duplicate file confusion during development.
-- Verified 100% of automated tests pass without dependencies on the prototype.
+### ✅ Phase 5: Final Polish & Buffer Zone Alignment (COMPLETED — v4.7.5)
+- Applied the **Option A Buffer Zone** (≤ 450 lines maximum buffer, majority ≤ 350 lines):
+  - **`src/ui/storage_settings_modal.js`:** Shrunk from 590 lines down to **246 lines** by extracting the folder tree explorer to `src/ui/explorer_tree.js` (371 lines).
+  - **`src/storage/indexed_db.js`:** Shrunk from 591 lines down to **425 lines** by extracting:
+    - `src/storage/vault_backup.js` (62 lines) — JSON full backup export and restoration.
+    - `src/storage/vault_folder_sync.js` (56 lines) — Hard drive folder file migration.
+    - `src/storage/vault_metrics.js` (84 lines) — Live device storage calculation & persistent safe-lock.
+  - **`public/app.js`:** Shrunk from 700 lines down to **416 lines** (from original 4,028 lines, total reduction of **89.7%**) by extracting:
+    - `src/canvas/viewport_camera.js` (115 lines) — Smooth glide camera, boundary clamping & fit-all-content.
+    - `src/storage/page_storage.js` (140 lines) — Active page loading, idle disk saving & debounced autosave.
+  - **`src/ui/sidebar.js`:** Maintained intact at 398 lines as an approved single-responsibility navigation module safely within the grace buffer.
+- **Two-Door House Parity:** All new modules mirrored 100% character-for-character between `src/` and `public/src/` (56 total files verified).
+- **Zero Violations:** Zero files exceed 450 lines in the entire project.
+- **Verification:** All 76 automated tests passing at 100%.
 
 ---
 
 ## 🎯 Summary Checklist Before Every Release
-- [ ] No file exceeds the **350-line ceiling** without being organized.
-- [ ] Code is modularized into its own file in `src/` and mirrored in `public/src/`.
-- [ ] Zero hardcoded colors in styles — all colors point to CSS theme variables.
-- [ ] Zero-dropped-rules verification script passes for any refactored file.
-- [ ] All 74 automated tests pass (`node --test tests/*.test.js`).
-- [ ] Visual browser verification performed (no stuck menus, boundary cursors active).
-- [ ] Version number bumped in `index.html` and `sw.js`.
-- [ ] Changes logged clearly into `CURRENT_STATE.md`.
+- [x] No file exceeds the **450-line maximum buffer** (target ≤ 350 lines).
+- [x] Code is modularized into its own file in `src/` and mirrored in `public/src/`.
+- [x] Zero hardcoded colors in styles — all colors point to CSS theme variables.
+- [x] Two-Door House parity verification script passes with 0 mismatches.
+- [x] All 76 automated tests pass (`node --test tests/*.test.js`).
+- [x] Visual browser verification performed (no stuck menus, boundary cursors active).
+- [x] Version number bumped in `index.html` and `sw.js` (v4.7.5).
+- [x] Changes logged clearly into `CURRENT_STATE.md`.
 
 
