@@ -35,7 +35,15 @@ import {
   setupLayoutSwitcher,
   setMode,
   setupInstallPrompt,
-  registerServiceWorker
+  registerServiceWorker,
+  getCanvasContentBounds,
+  clampViewportBounds,
+  updateScrollbars,
+  setupScrollbarDragging,
+  setupEdgeAutoScroll,
+  registerActiveDragCallback,
+  unregisterActiveDragCallback,
+  setupRibbonTabs
 } from './src/core.js';
 
 // Global State
@@ -423,15 +431,11 @@ function initTouchRecognizer() {
       const originX = center.x - rect.left;
       const originY = center.y - rect.top;
 
-      // Determine if the user is actively pinching to zoom in or out
-      const isPinchZooming = scaleFactor && scaleFactor > 0 && Math.abs(scaleFactor - 1.0) > 0.003;
-      if (isPinchZooming) {
-        // Boost pinch delta for responsive touchscreen/tablet zooming (natural OneNote / iPad parity)
-        const delta = scaleFactor - 1.0;
-        const boostedFactor = 1.0 + delta * 2.2;
-        state.viewport.zoomAt(originX, originY, Math.max(0.6, Math.min(1.6, boostedFactor)));
-      } else if (panDelta && (Math.abs(panDelta.dx) > 0.5 || Math.abs(panDelta.dy) > 0.5)) {
-        // Two fingers gliding together without pinching: smooth scroll / pan
+      // True Locked Paper Anchoring: Scale seamlessly around the midpoint and glide with finger drift
+      if (scaleFactor && scaleFactor > 0 && Math.abs(scaleFactor - 1.0) > 0.001) {
+        state.viewport.zoomAt(originX, originY, scaleFactor);
+      }
+      if (panDelta && (panDelta.dx !== 0 || panDelta.dy !== 0)) {
         state.viewport.pan(panDelta.dx, panDelta.dy);
       }
       updateWorldTransform();
@@ -609,79 +613,21 @@ function stopMomentum() {
 }
 
 // --- Canvas Boundary Clamping & Dynamic Spatial Extension ---
-function getCanvasContentBounds() {
-  let maxX = 2600; // comfortable multi-column initial width
-  let maxY = 1800; // comfortable initial height
-  if (state.doc && state.doc.blocks) {
-    for (const b of state.doc.blocks) {
-      const right = (b.x || 0) + (b.width || 520);
-      const bottom = (b.y || 0) + (b.height || 400);
-      if (right > maxX) maxX = right;
-      if (bottom > maxY) maxY = bottom;
-    }
-  }
-  return {
-    width: maxX + 800, // Generous 800px breathing room
-    height: maxY + 800
-  };
+function applyViewportClamping() {
+  clampViewportBounds({
+    viewport: state.viewport,
+    doc: state.doc,
+    containerWidth: container.offsetWidth || window.innerWidth
+  });
 }
 
-function clampViewportBounds() {
-  const bounds = getCanvasContentBounds();
-  const containerW = container.offsetWidth || window.innerWidth;
-
-  // Fixed left boundary at margin x = 40 (cannot pan past left origin)
-  // Right boundary limit so right edge doesn't pan past bounds.width
-  const minX = Math.min(40, containerW - bounds.width * state.viewport.zoom);
-  state.viewport.x = Math.max(minX, Math.min(40, state.viewport.x));
-
-  // Top boundary margin anchored at y = 40 (cannot pan into void above canvas origin)
-  // Downward vertical scrolling is 100% endless and unrestricted like a real continuous notebook!
-  state.viewport.y = Math.min(40, state.viewport.y);
-}
-
-let isDraggingScrollbar = false;
-
-function updateScrollbars() {
-  if (isDraggingScrollbar) return;
-  const sbH = document.getElementById('canvas-scrollbar-h');
-  const sbV = document.getElementById('canvas-scrollbar-v');
-  const thumbH = document.getElementById('canvas-scroll-thumb-h');
-  const thumbV = document.getElementById('canvas-scroll-thumb-v');
-  if (!sbH || !sbV || !thumbH || !thumbV) return;
-
-  const bounds = getCanvasContentBounds();
-  const containerW = container.offsetWidth || window.innerWidth;
-  const containerH = container.offsetHeight || window.innerHeight;
-
-  // Horizontal scrollbar
-  const trackW = sbH.offsetWidth || 200;
-  const visibleW = containerW / state.viewport.zoom;
-  const thumbW = Math.max(36, Math.min(trackW, Math.round((visibleW / bounds.width) * trackW)));
-  thumbH.style.width = `${thumbW}px`;
-
-  const maxScrollX = Math.max(1, bounds.width * state.viewport.zoom - containerW + 40);
-  const currentScrollX = Math.max(0, 40 - state.viewport.x);
-  const scrollRatioX = Math.min(1, Math.max(0, currentScrollX / maxScrollX));
-  thumbH.style.left = `${Math.round(scrollRatioX * (trackW - thumbW))}px`;
-
-  // Vertical scrollbar: dynamic total space based on lowest content or current scroll position
-  const currentWorldBottom = (containerH - state.viewport.y) / state.viewport.zoom;
-  const totalWorldH = Math.max(bounds.height, currentWorldBottom + 800);
-  const trackH = sbV.offsetHeight || 200;
-  const visibleH = containerH / state.viewport.zoom;
-  const thumbHHeight = Math.max(36, Math.min(trackH, Math.round((visibleH / totalWorldH) * trackH)));
-  thumbV.style.height = `${thumbHHeight}px`;
-
-  const maxScrollY = Math.max(1, totalWorldH * state.viewport.zoom - containerH + 40);
-  const currentScrollY = Math.max(0, 40 - state.viewport.y);
-  const scrollRatioY = Math.min(1, Math.max(0, currentScrollY / maxScrollY));
-  thumbV.style.top = `${Math.round(scrollRatioY * (trackH - thumbHHeight))}px`;
+function refreshScrollbars() {
+  updateScrollbars({ state, container });
 }
 
 let lastRenderedZoom = -1;
 function updateWorldTransform() {
-  clampViewportBounds();
+  applyViewportClamping();
   world.style.transform = `translate3d(${state.viewport.x}px, ${state.viewport.y}px, 0px) scale(${state.viewport.zoom})`;
   
   const currentZoomPercent = Math.round(state.viewport.zoom * 100);
@@ -690,7 +636,7 @@ function updateWorldTransform() {
     zoomIndicator.textContent = currentZoomPercent + '%';
   }
 
-  updateScrollbars();
+  refreshScrollbars();
 }
 
 function renderAll() {
@@ -2044,34 +1990,26 @@ function renderPDFItem(parentEl, item) {
         if (badgeEl) badgeEl.textContent = `${pdf.numPages} Page${pdf.numPages > 1 ? 's' : ''}`;
         pagesContainer.innerHTML = '';
 
-        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-          const slideCard = document.createElement('div');
-          slideCard.className = 'pdf-slide-card';
+        // Determine default aspect ratio from first page
+        let defaultAspect = 595 / 842;
+        try {
+          const firstPage = await pdf.getPage(1);
+          const vp1 = firstPage.getViewport({ scale: 1.0 });
+          defaultAspect = vp1.width / vp1.height;
+        } catch (_) {}
 
-          const slideHeader = document.createElement('div');
-          slideHeader.className = 'pdf-slide-header';
-          slideHeader.textContent = `Page ${pageNum} of ${pdf.numPages}`;
-          slideCard.appendChild(slideHeader);
-
-          const canvasWrapper = document.createElement('div');
-          canvasWrapper.className = 'pdf-canvas-wrapper';
-
-          const canvas = document.createElement('canvas');
-          canvas.className = 'pdf-page-canvas';
-          canvasWrapper.appendChild(canvas);
-          slideCard.appendChild(canvasWrapper);
-          pagesContainer.appendChild(slideCard);
-
+        // Lazy renderer: renders only pages visible on screen or near viewport
+        const renderPageOnDemand = async (pageNum, canvas, canvasWrapper) => {
+          if (canvas.dataset.rendered === 'true') return;
+          canvas.dataset.rendered = 'true';
           try {
             const page = await pdf.getPage(pageNum);
             const unscaledVp = page.getViewport({ scale: 1.0 });
-
-            // Preserve natural page aspect ratio (e.g. A4 / Letter)
             canvasWrapper.style.aspectRatio = `${unscaledVp.width} / ${unscaledVp.height}`;
 
-            // High-DPI Vector Scale: dynamically scales with devicePixelRatio & zoom so PDF never pixelates
             const dpr = window.devicePixelRatio || 1;
-            const targetScale = Math.max(2.5, Math.min(4.0, dpr * Math.max(1, state.viewport.zoom * 1.2)));
+            // High-DPI Vector Scale: optimal 2.0x max on Retina prevents iPad graphics memory stalls
+            const targetScale = Math.min(2.0, Math.max(1.2, dpr));
             const viewport = page.getViewport({ scale: targetScale });
 
             canvas.width = Math.round(viewport.width);
@@ -2087,6 +2025,47 @@ function renderPDFItem(parentEl, item) {
             console.error(`Error rendering page ${pageNum}:`, pageErr);
             canvasWrapper.innerHTML = `<div class="pdf-error">Page ${pageNum} failed to render.</div>`;
           }
+        };
+
+        const pageObserver = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              const slide = entry.target;
+              const pageNum = parseInt(slide.dataset.pageNum, 10);
+              const canvas = slide.querySelector('.pdf-page-canvas');
+              const wrapper = slide.querySelector('.pdf-canvas-wrapper');
+              if (canvas && wrapper) {
+                renderPageOnDemand(pageNum, canvas, wrapper);
+              }
+            }
+          });
+        }, { root: null, rootMargin: '400px 0px' });
+
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          const slideCard = document.createElement('div');
+          slideCard.className = 'pdf-slide-card';
+          slideCard.dataset.pageNum = pageNum;
+
+          const slideHeader = document.createElement('div');
+          slideHeader.className = 'pdf-slide-header';
+          slideHeader.textContent = `Page ${pageNum} of ${pdf.numPages}`;
+          slideCard.appendChild(slideHeader);
+
+          const canvasWrapper = document.createElement('div');
+          canvasWrapper.className = 'pdf-canvas-wrapper';
+          canvasWrapper.style.aspectRatio = `${defaultAspect}`;
+
+          const canvas = document.createElement('canvas');
+          canvas.className = 'pdf-page-canvas';
+          canvasWrapper.appendChild(canvas);
+          slideCard.appendChild(canvasWrapper);
+          pagesContainer.appendChild(slideCard);
+
+          if (pageNum === 1) {
+            renderPageOnDemand(1, canvas, canvasWrapper);
+          }
+
+          pageObserver.observe(slideCard);
         }
       }).catch(err => {
         console.error('PDF.js render error:', err);
@@ -2533,23 +2512,45 @@ function makeDraggable(el, handle, block) {
       if (b) initialPositions.set(id, { x: b.x, y: b.y });
     });
 
-    const onPointerMove = (moveEvent) => {
-      const dx = (moveEvent.clientX - startX) / state.viewport.zoom;
-      const dy = (moveEvent.clientY - startY) / state.viewport.zoom;
+    let accumulatedScrollDx = 0;
+    let accumulatedScrollDy = 0;
 
+    const updateBlockPositions = (screenDx, screenDy) => {
       initialPositions.forEach((pos, id) => {
         const targetBlock = state.doc.getBlock(id);
         const targetEl = document.getElementById(id);
         if (targetBlock && targetEl) {
-          targetBlock.x = Math.round(pos.x + dx);
-          targetBlock.y = Math.round(pos.y + dy);
+          // Physical boundaries: cannot breach top or left margins into the void
+          targetBlock.x = Math.max(40, Math.round(pos.x + screenDx + accumulatedScrollDx));
+          targetBlock.y = Math.max(40, Math.round(pos.y + screenDy + accumulatedScrollDy));
           targetEl.style.left = `${targetBlock.x}px`;
           targetEl.style.top = `${targetBlock.y}px`;
         }
       });
     };
 
+    let lastMoveClientX = startX;
+    let lastMoveClientY = startY;
+
+    // Register with edge auto-scroll so the box glides with the cursor when canvas pans
+    registerActiveDragCallback((scrollDx, scrollDy) => {
+      accumulatedScrollDx += scrollDx;
+      accumulatedScrollDy += scrollDy;
+      const screenDx = (lastMoveClientX - startX) / state.viewport.zoom;
+      const screenDy = (lastMoveClientY - startY) / state.viewport.zoom;
+      updateBlockPositions(screenDx, screenDy);
+    });
+
+    const onPointerMove = (moveEvent) => {
+      lastMoveClientX = moveEvent.clientX;
+      lastMoveClientY = moveEvent.clientY;
+      const screenDx = (moveEvent.clientX - startX) / state.viewport.zoom;
+      const screenDy = (moveEvent.clientY - startY) / state.viewport.zoom;
+      updateBlockPositions(screenDx, screenDy);
+    };
+
     const onPointerUp = (upEvent) => {
+      unregisterActiveDragCallback();
       try {
         if (upEvent && upEvent.pointerId !== undefined && handle.hasPointerCapture && handle.hasPointerCapture(upEvent.pointerId)) {
           handle.releasePointerCapture(upEvent.pointerId);
@@ -2559,6 +2560,7 @@ function makeDraggable(el, handle, block) {
       window.removeEventListener('pointerup', onPointerUp);
       window.removeEventListener('pointercancel', onPointerUp);
       window.removeEventListener('mousemove', onPointerMove);
+      window.removeEventListener('mouseup', onPointerUp);
       debouncedSave(600);
     };
 
@@ -3673,8 +3675,31 @@ function setupRibbonControls() {
   });
 
   // Setup draggable scrollbars, auto-scrolling, and Word ribbon tabs
-  setupScrollbarDragging();
-  setupEdgeAutoScroll();
+  setupScrollbarDragging({
+    state,
+    container,
+    world,
+    onTransformChange: () => {
+      const currentZoomPercent = Math.round(state.viewport.zoom * 100);
+      if (currentZoomPercent !== lastRenderedZoom) {
+        lastRenderedZoom = currentZoomPercent;
+        zoomIndicator.textContent = currentZoomPercent + '%';
+      }
+    },
+    onSave: () => debouncedSave(800)
+  });
+  setupEdgeAutoScroll({
+    state,
+    container,
+    world,
+    onTransformChange: () => {
+      const currentZoomPercent = Math.round(state.viewport.zoom * 100);
+      if (currentZoomPercent !== lastRenderedZoom) {
+        lastRenderedZoom = currentZoomPercent;
+        zoomIndicator.textContent = currentZoomPercent + '%';
+      }
+    }
+  });
   setupRibbonTabs();
 
   document.getElementById('btn-undo')?.addEventListener('click', () => {
@@ -3974,273 +3999,8 @@ function setupKeyboardAndClipboard() {
 
 
 
-// --- Setup Draggable Position Scrollbars (Canvas Trackers) ---
-function setupScrollbarDragging() {
-  const sbH = document.getElementById('canvas-scrollbar-h');
-  const sbV = document.getElementById('canvas-scrollbar-v');
-  const thumbH = document.getElementById('canvas-scroll-thumb-h');
-  const thumbV = document.getElementById('canvas-scroll-thumb-v');
-  if (!sbH || !sbV || !thumbH || !thumbV) return;
+// --- Scrollbars, Edge Auto-Scroll & Ribbon are now managed by modular controllers ---
 
-  // Prevent canvas from stealing pointer events on scrollbars
-  [sbH, sbV].forEach(el => {
-    el.addEventListener('pointerdown', (e) => e.stopPropagation());
-    el.addEventListener('mousedown', (e) => e.stopPropagation());
-  });
-
-  // Track click to jump: instantly centers the thumb at clicked position
-  sbH.addEventListener('pointerdown', (e) => {
-    if (sbH.classList.contains('locked') || e.target === thumbH) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const rect = sbH.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const bounds = getCanvasContentBounds();
-    const containerW = container.offsetWidth || window.innerWidth;
-    const trackW = sbH.offsetWidth || 200;
-    const thumbW = thumbH.offsetWidth || 36;
-    const maxScrollX = Math.max(1, bounds.width * state.viewport.zoom - containerW + 40);
-
-    const targetLeft = Math.max(0, Math.min(trackW - thumbW, clickX - thumbW / 2));
-    const ratio = targetLeft / Math.max(1, trackW - thumbW);
-    state.viewport.x = 40 - ratio * maxScrollX;
-    clampViewportBounds();
-    world.style.transform = `translate3d(${state.viewport.x}px, ${state.viewport.y}px, 0px) scale(${state.viewport.zoom})`;
-    updateScrollbars();
-    debouncedSave(800);
-  });
-
-  sbV.addEventListener('pointerdown', (e) => {
-    if (sbV.classList.contains('locked') || e.target === thumbV) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const rect = sbV.getBoundingClientRect();
-    const clickY = e.clientY - rect.top;
-    const bounds = getCanvasContentBounds();
-    const containerH = container.offsetHeight || window.innerHeight;
-    const trackH = sbV.offsetHeight || 200;
-    const thumbHHeight = thumbV.offsetHeight || 36;
-    const currentWorldBottom = (containerH - state.viewport.y) / state.viewport.zoom;
-    const totalWorldH = Math.max(bounds.height, currentWorldBottom + 800);
-    const maxScrollY = Math.max(1, totalWorldH * state.viewport.zoom - containerH + 40);
-
-    const targetTop = Math.max(0, Math.min(trackH - thumbHHeight, clickY - thumbHHeight / 2));
-    const ratio = targetTop / Math.max(1, trackH - thumbHHeight);
-    state.viewport.y = 40 - ratio * maxScrollY;
-    clampViewportBounds();
-    world.style.transform = `translate3d(${state.viewport.x}px, ${state.viewport.y}px, 0px) scale(${state.viewport.zoom})`;
-    updateScrollbars();
-    debouncedSave(800);
-  });
-
-  // Horizontal thumb drag with PointerCapture
-  thumbH.addEventListener('pointerdown', (e) => {
-    if (sbH.classList.contains('locked')) return;
-    e.stopPropagation();
-    e.preventDefault();
-    isDraggingScrollbar = true;
-    thumbH.setPointerCapture(e.pointerId);
-    thumbH.classList.add('active');
-
-    const startX = e.clientX;
-    const initialThumbLeft = thumbH.offsetLeft;
-    const trackW = sbH.offsetWidth || 200;
-    const thumbW = thumbH.offsetWidth || 36;
-    const bounds = getCanvasContentBounds();
-    const containerW = container.offsetWidth || window.innerWidth;
-    const maxScrollX = Math.max(1, bounds.width * state.viewport.zoom - containerW + 40);
-
-    const onPointerMove = (moveEvt) => {
-      const dx = moveEvt.clientX - startX;
-      const newLeft = Math.max(0, Math.min(trackW - thumbW, initialThumbLeft + dx));
-      thumbH.style.left = `${newLeft}px`;
-      const ratio = newLeft / Math.max(1, trackW - thumbW);
-      state.viewport.x = 40 - ratio * maxScrollX;
-      clampViewportBounds();
-      world.style.transform = `translate3d(${state.viewport.x}px, ${state.viewport.y}px, 0px) scale(${state.viewport.zoom})`;
-    };
-
-    const onPointerUp = (upEvt) => {
-      isDraggingScrollbar = false;
-      thumbH.classList.remove('active');
-      try { thumbH.releasePointerCapture(upEvt.pointerId); } catch (_) {}
-      thumbH.removeEventListener('pointermove', onPointerMove);
-      thumbH.removeEventListener('pointerup', onPointerUp);
-      thumbH.removeEventListener('pointercancel', onPointerUp);
-      updateScrollbars();
-      debouncedSave(800);
-    };
-
-    thumbH.addEventListener('pointermove', onPointerMove);
-    thumbH.addEventListener('pointerup', onPointerUp);
-    thumbH.addEventListener('pointercancel', onPointerUp);
-  });
-
-  // Vertical thumb drag with PointerCapture
-  thumbV.addEventListener('pointerdown', (e) => {
-    if (sbV.classList.contains('locked')) return;
-    e.stopPropagation();
-    e.preventDefault();
-    isDraggingScrollbar = true;
-    thumbV.setPointerCapture(e.pointerId);
-    thumbV.classList.add('active');
-
-    const startY = e.clientY;
-    const initialThumbTop = thumbV.offsetTop;
-    const trackH = sbV.offsetHeight || 200;
-    const thumbHHeight = thumbV.offsetHeight || 36;
-    const bounds = getCanvasContentBounds();
-    const containerH = container.offsetHeight || window.innerHeight;
-    const currentWorldBottom = (containerH - state.viewport.y) / state.viewport.zoom;
-    const dragTotalWorldH = Math.max(bounds.height, currentWorldBottom + 800);
-    const maxScrollY = Math.max(1, dragTotalWorldH * state.viewport.zoom - containerH + 40);
-
-    const onPointerMove = (moveEvt) => {
-      const dy = moveEvt.clientY - startY;
-      const newTop = Math.max(0, Math.min(trackH - thumbHHeight, initialThumbTop + dy));
-      thumbV.style.top = `${newTop}px`;
-      const ratio = newTop / Math.max(1, trackH - thumbHHeight);
-      state.viewport.y = 40 - ratio * maxScrollY;
-      clampViewportBounds();
-      world.style.transform = `translate3d(${state.viewport.x}px, ${state.viewport.y}px, 0px) scale(${state.viewport.zoom})`;
-    };
-
-    const onPointerUp = (upEvt) => {
-      isDraggingScrollbar = false;
-      thumbV.classList.remove('active');
-      try { thumbV.releasePointerCapture(upEvt.pointerId); } catch (_) {}
-      thumbV.removeEventListener('pointermove', onPointerMove);
-      thumbV.removeEventListener('pointerup', onPointerUp);
-      thumbV.removeEventListener('pointercancel', onPointerUp);
-      updateScrollbars();
-      debouncedSave(800);
-    };
-
-    thumbV.addEventListener('pointermove', onPointerMove);
-    thumbV.addEventListener('pointerup', onPointerUp);
-    thumbV.addEventListener('pointercancel', onPointerUp);
-  });
-
-  window.addEventListener('resize', updateScrollbars);
-}
-
-// --- Smooth Auto-Scroll During Text Selection or Dragging Near Viewport Edges ---
-let autoScrollFrame = null;
-let autoScrollVelocity = { vx: 0, vy: 0 };
-
-function stepAutoScroll() {
-  if (autoScrollVelocity.vx !== 0 || autoScrollVelocity.vy !== 0) {
-    state.viewport.pan(autoScrollVelocity.vx, autoScrollVelocity.vy);
-    updateWorldTransform();
-    autoScrollFrame = requestAnimationFrame(stepAutoScroll);
-  } else {
-    autoScrollFrame = null;
-  }
-}
-
-function setupEdgeAutoScroll() {
-  window.addEventListener('pointermove', (e) => {
-    if (document.body.getAttribute('data-mode') === 'ipad') {
-      autoScrollVelocity = { vx: 0, vy: 0 };
-      return;
-    }
-
-    if (e.buttons !== 1) {
-      autoScrollVelocity = { vx: 0, vy: 0 };
-      return;
-    }
-
-    const rect = container.getBoundingClientRect();
-    const edgeMargin = 60;
-    const maxSpeed = 16;
-
-    let vx = 0;
-    let vy = 0;
-
-    if (e.clientX > rect.right - edgeMargin) {
-      const p = Math.min(edgeMargin, e.clientX - (rect.right - edgeMargin));
-      vx = -Math.round((p / edgeMargin) * maxSpeed);
-    } else if (e.clientX < rect.left + edgeMargin) {
-      const p = Math.min(edgeMargin, (rect.left + edgeMargin) - e.clientX);
-      vx = Math.round((p / edgeMargin) * maxSpeed);
-    }
-
-    if (e.clientY > rect.bottom - edgeMargin) {
-      const p = Math.min(edgeMargin, e.clientY - (rect.bottom - edgeMargin));
-      vy = -Math.round((p / edgeMargin) * maxSpeed);
-    } else if (e.clientY < rect.top + edgeMargin) {
-      const p = Math.min(edgeMargin, (rect.top + edgeMargin) - e.clientY);
-      vy = Math.round((p / edgeMargin) * maxSpeed);
-    }
-
-    autoScrollVelocity = { vx, vy };
-    if ((vx !== 0 || vy !== 0) && !autoScrollFrame) {
-      autoScrollFrame = requestAnimationFrame(stepAutoScroll);
-    }
-  }, { passive: true });
-
-  window.addEventListener('pointerup', () => {
-    autoScrollVelocity = { vx: 0, vy: 0 };
-    if (autoScrollFrame) {
-      cancelAnimationFrame(autoScrollFrame);
-      autoScrollFrame = null;
-    }
-  });
-}
-
-// --- Word Ribbon Tabs Controller (Home vs Insert) ---
-function setupRibbonTabs() {
-  const homeTabBtn = document.getElementById('tab-btn-home');
-  const insertTabBtn = document.getElementById('tab-btn-insert');
-  const ribbonBar = document.getElementById('ribbon-bar');
-  const textGroup = document.getElementById('ribbon-text-group');
-  const insertCluster = document.querySelector('.insert-cluster');
-
-  const switchTab = (tab) => {
-    if (ribbonBar) {
-      ribbonBar.setAttribute('data-tab', tab);
-    }
-    if (tab === 'home') {
-      homeTabBtn?.classList.add('active');
-      insertTabBtn?.classList.remove('active');
-      if (textGroup) textGroup.style.display = 'flex';
-      if (insertCluster) insertCluster.style.display = 'none';
-    } else {
-      insertTabBtn?.classList.add('active');
-      homeTabBtn?.classList.remove('active');
-      if (textGroup) textGroup.style.display = 'none';
-      if (insertCluster) insertCluster.style.display = 'flex';
-    }
-  };
-
-  const onHomeClick = (e) => {
-    e?.preventDefault();
-    e?.stopPropagation();
-    switchTab('home');
-  };
-
-  const onInsertClick = (e) => {
-    e?.preventDefault();
-    e?.stopPropagation();
-    switchTab('insert');
-  };
-
-  homeTabBtn?.addEventListener('click', onHomeClick);
-  homeTabBtn?.addEventListener('pointerdown', (e) => e?.stopPropagation());
-
-  insertTabBtn?.addEventListener('click', onInsertClick);
-  insertTabBtn?.addEventListener('pointerdown', (e) => e?.stopPropagation());
-
-  // Auto-switch to Home (Text Formatting) tab when typing in notes
-  document.addEventListener('focusin', (e) => {
-    if (e.target && e.target.closest && e.target.closest('.note-item-text')) {
-      switchTab('home');
-    }
-  });
-
-  // Default view: Home tab
-  switchTab('home');
-}
 
 // Flush pending debounced auto-save immediately before window unloads, hides, or loses focus
 const flushPendingSave = () => {

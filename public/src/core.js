@@ -11,6 +11,8 @@ export { StrokeRenderer } from './canvas/stroke_renderer.js';
 export { ShapeDetector } from './canvas/shape_detector.js';
 export { TouchGestureRecognizer } from './canvas/gestures.js';
 export { EraserEngine } from './canvas/eraser_engine.js';
+export { getCanvasContentBounds, clampViewportBounds } from './canvas/viewport_bounds.js';
+export { updateScrollbars, setupScrollbarDragging, setupEdgeAutoScroll, registerActiveDragCallback, unregisterActiveDragCallback } from './canvas/scrollbar_controller.js';
 
 export { MarkdownLatexParser } from './blocks/text_block.js';
 export { PDFPrintoutManager } from './blocks/pdf_block.js';
@@ -29,6 +31,7 @@ export { initHierarchy, saveHierarchy, renderHierarchyUI, setupSidebarControls, 
 export { setupInkPaletteControls } from './ui/ink_palette.js';
 export { setupLayoutSwitcher, setMode, setupFloatingModePuck } from './ui/layout_puck.js';
 export { setupInstallPrompt, registerServiceWorker, showIOSInstallModal, isStandaloneMode, isIOSDevice } from './ui/install_prompt.js';
+export { setupRibbonTabs } from './ui/ribbon_controller.js';
 
 // Backward compatibility alias for StrokeEngine
 import { StrokeRenderer } from './canvas/stroke_renderer.js';
