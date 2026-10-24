@@ -186,12 +186,12 @@ This application is a freeform, ultra-fast note-taking system designed to combin
 | [public/styles.css](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/styles.css) | Complete design system, glassmorphism ribbons, spatial scrollbars, and note container styles. |
 | `src/ui/` | Modular UI controllers: `toast.js`, `storage_settings_modal.js`, `sidebar.js`, `ink_palette.js`, `layout_puck.js`, `install_prompt.js`. |
 | [public/manifest.json](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/manifest.json) | Web App Manifest for standalone installation and home screen launching. |
-| [public/sw.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/sw.js) | Service Worker providing offline-first caching for Airplane Mode reliability (`v4.4.0`). |
+| [public/sw.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/sw.js) | Service Worker providing offline-first caching for Airplane Mode reliability (`v4.5.0`). |
 | `src/canvas/` | Math, viewport, stroke smoothing, gesture recognition, and eraser engines. |
 | `src/blocks/` | Universal note containers, text/latex, tables, math plots, and PDF printout managers. |
 | [src/storage/indexed_db.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/src/storage/indexed_db.js) | Full storage engine: IndexedDB vault, hard drive folder migration, live metrics, and backup/restore. |
-| [bugfix24Oct.md](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/bugfix24Oct.md) | Architectural bugfix roadmap for PDF on-demand virtualization, pinch-zoom anchoring, and boundary clamping. |
-| `tests/` | 69 automated unit tests covering inking, geometry, storage, backups, PWA validity, file management, auto-numbering, rich paste, and PDF layout. |
+| [CodeORG.md](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/CodeORG.md) | Architectural guidelines, modularization principles, and maintenance standards. |
+| `tests/` | 71 automated unit tests covering inking, geometry, storage, backups, PWA validity, file management, auto-numbering, rich paste, PDF layout, and viewport boundaries. |
 
 ---
 
