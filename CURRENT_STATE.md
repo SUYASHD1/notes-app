@@ -1,9 +1,9 @@
 # 📓 Notes App — Current State & Knowledge Log
 
-> **Last Updated:** 24 October 2026  
+> **Last Updated:** 24 October 2026 (v4.7.2)  
 > **Status:** Fully Functional, PWA Standalone Enabled, Deployed to Production (Vercel)  
 > **Live Web Application:** [https://notes-app-topaz-six.vercel.app/](https://notes-app-topaz-six.vercel.app/)  
-> **Automated Test Suite:** `71 / 71 tests passed (100%)`
+> **Automated Test Suite:** `74 / 74 tests passed (100%)`
 
 ---
 
@@ -157,6 +157,24 @@ This application is a freeform, ultra-fast note-taking system designed to combin
   3. **Modular Theme Controller:** Implemented in `src/ui/theme_controller.js` (and mirrored in `public/src/ui/theme_controller.js`). Supports instant toggling via the `🌙` / `☀️` button in the top bar, persists the user's choice to the device vault settings store, and updates system `theme-color` meta tags.
   4. **Automated Verification:** Verified across all 74 unit tests and profiled directly in Microsoft Edge using Puppeteer with 0 console errors.
 
+### 18. Codebase Organization & 350-Line Limit (Phase 1 & Phase 2)
+* **The Goal:** Prevent cognitive overload, speed up searches, and eliminate regressions caused by giant monolithic files by enforcing a hard ceiling of ≤ 350 lines per file (as documented in `CodeORG.md`).
+* **The Solution:**
+  1. **Phase 1 (Styles Modularization):** Split the monolithic 4,348-line `public/styles.css` into 18 clean, single-responsibility files in `public/css/` (each ≤ 334 lines) and reduced `public/styles.css` to 24 lines of clean `@import` rules.
+  2. **Phase 2 (Text Block Modularization):** Split `src/blocks/text_block.js` (720 lines) into 4 focused engines (`text_block.js`, `latex_parser.js`, `html_sanitizer.js`, `html_to_markdown.js`), all ≤ 331 lines, mirrored in `public/src/blocks/` (Two-Door House).
+
+### 19. Full-Boundary Resize & Master Visibility Regression Resolution (v4.7.2)
+* **The Problem:** Following stylesheet modularization, the Zoom flyout became permanently popped out, and mouse hovering over note boundaries failed to show resize arrows (`↔`, `↕`, `⤡`).
+* **The Root Causes:**
+  1. Omission of `.hidden { display: none !important; }` in the CSS split: left `#zoom-flyout` open, and left the full-screen transparent ink canvas (`#active-draw-canvas`) active with `z-index: 60`, which acted like a pane of glass intercepting mouse hover events before they could reach note boundaries.
+  2. `contain: layout paint;` on `.universal-note-container`: CSS paint containment clipped the 6px-8px negative protrusion of the interactive resize handle zones.
+* **The Solution:**
+  1. Restored `.hidden { display: none !important; }` globally in `theme.css` and `.zoom-flyout.hidden` in `status_bar.css`.
+  2. Replaced `contain: layout paint;` with `contain: layout;` on `.universal-note-container` so boundary hit zones are fully active.
+  3. Added full boundary hover rules for `.handle-e`, `.handle-w`, `.handle-n`, `.handle-s`, and corners in `resize_handles.css`.
+  4. Created `layout_modes.css`, `notes_typography.css`, `media_crop.css`, and `storage_hub_dark.css` to hold all remaining styles while guaranteeing 100% of files stay ≤ 334 lines.
+  5. Verified live in Microsoft Edge: Zoom flyout is hidden by default and opens/closes on click; moving mouse near any note boundary immediately displays the resize cursor.
+
 ---
 
 ## 🚀 3. Features & Capabilities
@@ -196,13 +214,13 @@ This application is a freeform, ultra-fast note-taking system designed to combin
 | File | Primary Role |
 | :--- | :--- |
 | [public/index.html](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/index.html) | Main HTML layout, dual-tab ribbon, canvas viewport, dark mode toggle, and Storage & Data Hub settings flyout. |
-| [public/app.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/app.js) | Master application orchestrator, event handlers, canvas transform loop, and scrollbar controller. |
-| [public/styles.css](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/styles.css) | Complete design system, `#282828` dark mode system, glassmorphism ribbons, and note container styles (`v4.6.0`). |
+| [public/styles.css](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/styles.css) | Master stylesheet (`v4.7.2`, 24 lines) orchestrating 18 scoped modules in `public/css/` (each ≤ 334 lines). |
+| `public/css/` | 18 single-responsibility stylesheets covering themes, ribbons, canvas, notes, typography, handles, and modals. |
 | `src/ui/` | Modular UI controllers: `theme_controller.js`, `toast.js`, `storage_settings_modal.js`, `sidebar.js`, `ink_palette.js`, `layout_puck.js`, `install_prompt.js`. |
 | [public/manifest.json](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/manifest.json) | Web App Manifest for standalone installation and home screen launching. |
-| [public/sw.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/sw.js) | Service Worker providing offline-first caching for Airplane Mode reliability (`v4.6.0`). |
+| [public/sw.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/sw.js) | Service Worker providing offline-first caching for Airplane Mode reliability (`v4.7.2`). |
 | `src/canvas/` | Math, viewport, stroke smoothing, gesture recognition, and eraser engines. |
-| `src/blocks/` | Universal note containers, text/latex, tables, math plots, and PDF printout managers. |
+| `src/blocks/` | Universal note containers, modular text blocks (`latex_parser.js`, `html_sanitizer.js`, `html_to_markdown.js`), tables, plots, and PDF printouts. |
 | [src/storage/indexed_db.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/src/storage/indexed_db.js) | Full storage engine: IndexedDB vault, hard drive folder migration, live metrics, and backup/restore. |
 | [CodeORG.md](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/CodeORG.md) | Architectural guidelines, modularization principles, and maintenance standards. |
 | `tests/` | 74 automated unit tests covering inking, geometry, storage, backups, PWA validity, dark/light themes, file management, auto-numbering, rich paste, PDF layout, and viewport boundaries. |

@@ -113,11 +113,90 @@ When a user reports a bug or requests a new feature, follow this exact recipe:
 
 ---
 
+---
+
+## 🛡️ 5. Reorganization Guardrails & Lessons Learned (Zero-Breakage Shield)
+
+During our codebase modularization, we identified crucial lessons to guarantee that splitting large files never inadvertently breaks the application:
+
+### Lesson 1: The "Zero-Dropped-Rules" Verification
+- When splitting a massive file into smaller files, **never rely on manual copy-pasting alone**.
+- Always run an automated comparison script (`scratch/find_missing.cjs`) comparing the original file against the new split files to guarantee that **zero rules, selectors, or exports are left behind**.
+
+### Lesson 2: The Master Visibility Trap (`.hidden`)
+- A single missing utility rule like `.hidden { display: none !important; }` can trigger a cascade of visual bugs:
+  - Hidden flyouts (like the Zoom menu) stay permanently popped open.
+  - Transparent drawing canvases (`#active-draw-canvas`) remain active on top of the workspace with a high `z-index`, blocking user mouse events from reaching notes and buttons underneath.
+- **Rule:** Foundational utilities (`.hidden`, `.btn-ghost`, etc.) must live in the primary `theme.css` so they are available universally before any component renders.
+
+### Lesson 3: CSS Containment vs. Protruding Handles
+- `contain: paint` strictly clips any visual element that extends outside its parent's bounding box.
+- Because our boundary resize handles protrude 6px to 8px outside the note box to catch user mouse hovers, setting `contain: paint` shaves off the handles and prevents cursor change.
+- **Rule:** Use `contain: layout;` instead of `contain: layout paint;` for note containers so boundary handles and selection markers are never clipped.
+
+### Lesson 4: Mandatory Browser Visual Verification
+- Automated unit tests (`node --test`) test data logic and calculations in isolation, but cannot verify mouse hover states, cursor changes, or visual layering.
+- **Rule:** After every reorganization step, run a visual browser inspection check (checking flyouts, edge hover cursors, and button states) before committing and pushing.
+
+---
+
+## 🗺️ 6. Reorganization Phases & Roadmap
+
+We are systematically restructuring all files that exceed the **350-line limit**:
+
+### ✅ Phase 1: CSS Modularization (COMPLETED — v4.7.2)
+- Modularized the monolithic 4,348-line stylesheet into **18 scoped, single-responsibility files** in `public/css/`:
+  - `theme.css` (275 lines) — Design tokens, master variables, `.hidden` utility.
+  - `topbar.css` (316 lines) — Master navigation bar, notebook selector.
+  - `ribbon.css` (291 lines) — Home and Insert tab formatting ribbons.
+  - `ink_tools.css` (189 lines) — Pen, highlighter, and eraser tools.
+  - `sidebar.css` (230 lines) — 2-tier section and page hierarchy navigation.
+  - `explorer_tree.css` (273 lines) — Storage hub folder manager and page tree.
+  - `canvas.css` (231 lines) — Infinite spatial canvas and scrollbar tracks.
+  - `status_bar.css` (159 lines) — Bottom bar, zoom flyout menu, and view shortcuts.
+  - `notes.css` (254 lines) — Universal note containers and card headers.
+  - `notes_typography.css` (168 lines) — Rich headings, lists, quotes, and links.
+  - `resize_handles.css` (334 lines) — 8-point and full-boundary resize zones.
+  - `math_blocks.css` (177 lines) — LaTeX math blocks, tables, and function plots.
+  - `media_pdf.css` (303 lines) — Multi-page PDF printouts and media cards.
+  - `media_crop.css` (103 lines) — Image cropping modal and handles.
+  - `storage_hub.css` (276 lines) — Storage vault settings flyout and metrics.
+  - `storage_hub_dark.css` (120 lines) — Dark mode overrides for storage settings.
+  - `storage_cloud.css` (174 lines) — Cloudflare R2 sync drawer and iOS install guide.
+  - `layout_modes.css` (193 lines) — Layout B (Notion), Layout C (Excalidraw), and iPad touch adaptations.
+- Master `public/styles.css` reduced to 24 lines of clean `@import` statements.
+- **Status:** 100% compliant with the 350-line ceiling (0 files over 350 lines).
+
+### ✅ Phase 2: Text Block Modularization (COMPLETED — v4.7.1)
+- Modularized `src/blocks/text_block.js` (originally 720 lines) into 4 focused sub-engines:
+  - `src/blocks/text_block.js` (97 lines) — Clean facade coordinating the block.
+  - `src/blocks/latex_parser.js` (331 lines) — Pure LaTeX delimiter parsing and KaTeX rendering.
+  - `src/blocks/html_sanitizer.js` (161 lines) — MS Word and web paste sanitization.
+  - `src/blocks/html_to_markdown.js` (182 lines) — DOM-to-markdown conversion and image link extraction.
+- Fully mirrored in `public/src/blocks/` (Two-Door House pattern).
+- **Status:** 100% compliant with the 350-line ceiling.
+
+### ⏳ Phase 3: Master Orchestrator `public/app.js` Modularization (NEXT UP)
+- `public/app.js` currently contains ~4,000 lines. While it coordinates the application, several heavy sub-systems can be extracted into single-responsibility modules:
+  - **Phase 3A: Note Container Block Rendering & Docking Engine** (~600 lines) -> Extract into `src/blocks/container_renderer.js` and `src/blocks/docking_engine.js`.
+  - **Phase 3B: Canvas Viewport & Touch Recognizer Bridge** (~500 lines) -> Extract into `src/canvas/canvas_interaction.js`.
+  - **Phase 3C: Topbar, Ribbon & Dialog Action Handlers** (~700 lines) -> Extract into `src/ui/action_dispatcher.js`.
+  - **Phase 3D: Sample Notebook Data & Initial Workspace Seed** (~400 lines) -> Extract into `src/core/sample_notebook.js`.
+- Each extracted module must strictly adhere to the ≤ 350 lines limit and be mirrored in `public/src/`.
+
+### ⏳ Phase 4: Prototype & Redundant Assets Archive (FINAL)
+- Archive the standalone `prototype/` directory to prevent stale files from causing search friction or confusion during development.
+
+---
+
 ## 🎯 Summary Checklist Before Every Release
 - [ ] No file exceeds the **350-line ceiling** without being organized.
 - [ ] Code is modularized into its own file in `src/` and mirrored in `public/src/`.
 - [ ] Zero hardcoded colors in styles — all colors point to CSS theme variables.
+- [ ] Zero-dropped-rules verification script passes for any refactored file.
 - [ ] All 74 automated tests pass (`node --test tests/*.test.js`).
+- [ ] Visual browser verification performed (no stuck menus, boundary cursors active).
 - [ ] Version number bumped in `index.html` and `sw.js`.
 - [ ] Changes logged clearly into `CURRENT_STATE.md`.
+
 
