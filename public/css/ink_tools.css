@@ -1,0 +1,188 @@
+/* ==========================================================================
+   🖋️ INK CONTROLS & DRAWING TOOLS (< 350 lines)
+   ========================================================================== */
+
+.ink-tool-switcher {
+  display: flex;
+  background: var(--panel-sub);
+  border-radius: 6px;
+  padding: 2px;
+  border: 1px solid var(--border-color);
+  gap: 2px;
+}
+
+.ink-pill-btn {
+  background: transparent;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.ink-pill-btn:hover { color: var(--text-main); }
+.ink-pill-btn.active {
+  background: var(--card-bg);
+  color: var(--accent-color);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.ink-size-group {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--panel-sub);
+  padding: 2px 4px;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+}
+
+.ink-size-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.ink-size-btn:hover { background: var(--dropdown-hover); }
+.ink-size-btn.active {
+  background: var(--card-bg);
+  border-color: var(--border-color);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.size-dot {
+  background: var(--text-main);
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.ink-colors-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ink-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 1px var(--border-color);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  padding: 0;
+}
+
+.ink-swatch:hover { transform: scale(1.15); }
+.ink-swatch.active {
+  transform: scale(1.18);
+  box-shadow: 0 0 0 2px var(--accent-color);
+}
+
+.ink-color-custom-input {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 1px;
+  cursor: pointer;
+  background: var(--card-bg);
+}
+
+.ink-mode-toggle {
+  display: flex;
+  background: var(--panel-sub);
+  border-radius: 6px;
+  padding: 2px;
+  border: 1px solid var(--border-subtle);
+  gap: 2px;
+}
+
+.ink-toggle-btn {
+  background: transparent;
+  border: none;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ink-toggle-btn:hover { color: var(--text-main); }
+.ink-toggle-btn.active {
+  background: var(--card-bg);
+  color: var(--text-main);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.ink-eraser-sizes {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.ink-eraser-size-btn {
+  background: var(--panel-sub);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.ink-eraser-size-btn:hover { background: var(--dropdown-hover); }
+.ink-eraser-size-btn.active {
+  background: var(--accent-light);
+  border-color: #bfdbfe;
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+#active-draw-canvas.eraser-cursor {
+  cursor: crosshair;
+}
+
+/* Dark Mode Overrides */
+body[data-theme="dark"] .ink-palette {
+  background: #252525;
+  border-color: var(--border-color);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+body[data-theme="dark"] .ink-size-btn,
+body[data-theme="dark"] .ink-eraser-size-btn {
+  border-color: var(--border-color);
+  background: #2f2f2f;
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] .ink-size-btn.active,
+body[data-theme="dark"] .ink-eraser-size-btn.active {
+  border-color: var(--accent-color);
+  background: rgba(59, 130, 246, 0.25);
+  color: #60a5fa;
+}
+
+body[data-theme="dark"] .ink-swatch {
+  border-color: #2b2b2b;
+  box-shadow: 0 0 0 1px #4a4a4a;
+}

@@ -1,0 +1,230 @@
+/* ==========================================================================
+   🖼️ INFINITE CANVAS & SPATIAL ENGINE (< 350 lines)
+   ========================================================================== */
+
+#canvas-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  user-select: none;
+  background-color: var(--bg-color);
+  background-image: radial-gradient(var(--grid-dot) 1.2px, transparent 1.2px);
+  background-size: 24px 24px;
+}
+
+#canvas-world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0 !important;
+  -webkit-transform-origin: 0 0 !important;
+  will-change: transform;
+  touch-action: none;
+}
+
+.canvas-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  image-rendering: -webkit-optimize-contrast;
+  shape-rendering: geometricPrecision;
+}
+
+#global-annotations-svg, .vector-annotations-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 45;
+}
+
+#active-draw-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 60;
+  cursor: crosshair;
+  touch-action: none;
+  -webkit-touch-callout: none;
+}
+
+.visually-hidden-file-input {
+  position: absolute !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  opacity: 0 !important;
+  width: 1px !important;
+  height: 1px !important;
+  pointer-events: none !important;
+  overflow: hidden !important;
+}
+
+.marquee-box {
+  position: absolute;
+  border: 1px dashed var(--accent-color);
+  background: rgba(37, 99, 235, 0.08);
+  pointer-events: none;
+  z-index: 70;
+}
+
+/* Spatial Scrollbars */
+.canvas-scrollbar {
+  position: absolute;
+  z-index: 50;
+  background: rgba(226, 232, 240, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(203, 213, 225, 0.8);
+  border-radius: 8px;
+  user-select: none;
+  cursor: pointer;
+  opacity: 0.85;
+  transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.canvas-scrollbar.horizontal {
+  bottom: 8px;
+  left: 20px;
+  right: 32px;
+  height: 12px;
+}
+
+.canvas-scrollbar.vertical {
+  top: 14px;
+  right: 8px;
+  bottom: 28px;
+  width: 12px;
+}
+
+.canvas-scrollbar:hover {
+  opacity: 1;
+  background: rgba(226, 232, 240, 0.95);
+  border-color: #94a3b8;
+}
+
+.canvas-scroll-thumb {
+  position: absolute;
+  background: #64748b;
+  border-radius: 6px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.canvas-scrollbar.horizontal .canvas-scroll-thumb {
+  top: 1px;
+  bottom: 1px;
+  height: calc(100% - 2px);
+  min-width: 36px;
+}
+
+.canvas-scrollbar.vertical .canvas-scroll-thumb {
+  left: 1px;
+  right: 1px;
+  width: calc(100% - 2px);
+  min-height: 36px;
+}
+
+.canvas-scroll-thumb:hover, .canvas-scroll-thumb.active {
+  background: #1e293b;
+  cursor: grabbing;
+}
+
+.canvas-scrollbar.locked {
+  pointer-events: none !important;
+  opacity: 0.1 !important;
+  cursor: default !important;
+}
+
+.canvas-scrollbar.locked .canvas-scroll-thumb {
+  pointer-events: none !important;
+  cursor: default !important;
+}
+
+/* Floating, Parkable Quick-Toggle Puck */
+.floating-puck {
+  position: fixed;
+  right: calc(20px + env(safe-area-inset-right, 0px));
+  bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(203, 213, 225, 0.9);
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.16), 0 2px 6px -1px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  user-select: none;
+  touch-action: none !important;
+  transition: box-shadow 0.15s ease, background-color 0.2s ease, border-color 0.2s ease;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-main);
+}
+
+.floating-puck:hover { box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.22); }
+.floating-puck.dragging {
+  cursor: grabbing !important;
+  box-shadow: 0 16px 32px -4px rgba(37, 99, 235, 0.35) !important;
+  opacity: 0.95;
+}
+
+.floating-puck.mode-ink {
+  background: rgba(239, 246, 255, 0.95);
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
+.floating-puck.mode-navigate {
+  background: rgba(248, 250, 252, 0.95);
+  border-color: #64748b;
+  color: #334155;
+}
+
+.puck-icon { font-size: 1.1rem; line-height: 1; }
+.puck-label { font-weight: 600; letter-spacing: -0.2px; }
+.puck-drag-dots { color: var(--text-muted); font-size: 0.9rem; margin-left: 2px; }
+
+/* Dark Mode Overrides */
+body[data-theme="dark"] #canvas-container { background-color: var(--bg-color); }
+body[data-theme="dark"] .canvas-scroll-track { background: rgba(0, 0, 0, 0.35); }
+body[data-theme="dark"] .canvas-scrollbar {
+  background: rgba(40, 40, 40, 0.75);
+  border-color: var(--border-color);
+}
+
+body[data-theme="dark"] .canvas-scroll-thumb {
+  background: #4a4a4a;
+  border: 1px solid #383838;
+}
+
+body[data-theme="dark"] .canvas-scroll-thumb:hover { background: #5a5a5a; }
+
+body[data-theme="dark"] #floating-mode-puck,
+body[data-theme="dark"] .floating-puck {
+  background: #1e1e1e;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] #puck-label { color: var(--text-main); }
+body[data-theme="dark"] .puck-drag-dots { color: #737373; }

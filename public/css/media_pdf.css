@@ -1,0 +1,196 @@
+/* ==========================================================================
+   🖼️ MEDIA, IMAGES & PDF PRINTOUTS (< 350 lines)
+   ========================================================================== */
+
+.media-block-content {
+  padding: 6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.media-block-content img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 4px;
+  display: block;
+}
+
+/* Floating Toolbar for Embedded Images */
+.embedded-img-toolbar {
+  position: absolute;
+  top: -42px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 4px 6px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  z-index: 100;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.img-tool-btn {
+  background: transparent;
+  color: #f1f5f9;
+  border: none;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.img-tool-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.img-tool-btn.active {
+  background: var(--accent-color);
+  color: #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.img-tool-btn.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.8);
+  color: #ffffff;
+}
+
+.img-tool-divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 0 2px;
+}
+
+.embedded-img-resize-handle {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  width: 14px;
+  height: 14px;
+  background: var(--accent-color);
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  cursor: se-resize;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  z-index: 101;
+}
+
+/* PDF Printout Card & Slides */
+.pdf-printout-card {
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--card-bg);
+  overflow: visible;
+  margin-top: 6px;
+}
+
+.pdf-printout-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: var(--panel-sub);
+  border-bottom: 1px solid var(--border-color);
+  border-radius: 7px 7px 0 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.pdf-pages-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 16px 8px;
+  background: transparent;
+  max-height: none;
+  overflow: visible;
+  width: 100%;
+}
+
+.pdf-slide-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+  border-radius: 4px;
+  overflow: hidden;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.pdf-slide-header {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--panel-sub);
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: right;
+  user-select: none;
+}
+
+.pdf-canvas-wrapper {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  line-height: 1;
+}
+
+.pdf-page-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #ffffff;
+  image-rendering: auto;
+}
+
+.pdf-loading {
+  padding: 30px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.pdf-error {
+  padding: 16px;
+  color: #ef4444;
+  font-size: 12px;
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  border-radius: 4px;
+}
+
+/* Dark Mode Overrides */
+body[data-theme="dark"] .pdf-printout-card,
+body[data-theme="dark"] .pdf-slide-card {
+  background: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+body[data-theme="dark"] .pdf-printout-header,
+body[data-theme="dark"] .pdf-slide-header {
+  background: #242424;
+  border-color: var(--border-color);
+  color: var(--text-main);
+}

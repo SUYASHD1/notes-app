@@ -1,0 +1,223 @@
+/* ==========================================================================
+   📐 RESIZE BOUNDARIES & IN-BOX SKETCH (< 350 lines)
+   ========================================================================== */
+
+.resize-handle {
+  position: absolute;
+  z-index: 25;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  transition: opacity 0.15s ease;
+}
+
+.canvas-block.selected .resize-handle,
+.canvas-block:hover .resize-handle,
+.universal-note-container.selected .resize-handle,
+.universal-note-container:hover .resize-handle {
+  display: block;
+}
+
+.resize-handle:not(.canvas-block *):not(.universal-note-container *) {
+  display: none;
+}
+
+.handle-e {
+  top: 14px;
+  bottom: 14px;
+  right: -6px;
+  width: 12px;
+  cursor: ew-resize;
+}
+.handle-e::after {
+  content: '';
+  position: absolute;
+  top: calc(50% - 12px);
+  right: 4px;
+  width: 4px;
+  height: 24px;
+  border-radius: 2px;
+  background: var(--accent-color);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.handle-w {
+  top: 14px;
+  bottom: 14px;
+  left: -6px;
+  width: 12px;
+  cursor: ew-resize;
+}
+.handle-w::after {
+  content: '';
+  position: absolute;
+  top: calc(50% - 12px);
+  left: 4px;
+  width: 4px;
+  height: 24px;
+  border-radius: 2px;
+  background: var(--accent-color);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.handle-s {
+  bottom: -6px;
+  left: 14px;
+  right: 14px;
+  height: 12px;
+  cursor: ns-resize;
+}
+.handle-s::after {
+  content: '';
+  position: absolute;
+  left: calc(50% - 12px);
+  bottom: 4px;
+  width: 24px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--accent-color);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.handle-n {
+  top: -6px;
+  left: 14px;
+  right: 14px;
+  height: 12px;
+  cursor: ns-resize;
+}
+.handle-n::after {
+  content: '';
+  position: absolute;
+  left: calc(50% - 12px);
+  top: 4px;
+  width: 24px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--accent-color);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.universal-note-container.selected .handle-e::after,
+.universal-note-container.selected .handle-w::after,
+.universal-note-container.selected .handle-s::after,
+.universal-note-container.selected .handle-n::after,
+.handle-e:hover::after,
+.handle-w:hover::after,
+.handle-s:hover::after,
+.handle-n:hover::after {
+  opacity: 0.85;
+}
+
+.handle-nw, .handle-ne, .handle-se, .handle-sw {
+  width: 16px;
+  height: 16px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.handle-nw::before, .handle-ne::before, .handle-se::before, .handle-sw::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  background: #ffffff;
+  border: 1.5px solid var(--accent-color);
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  transition: transform 0.12s ease;
+}
+.handle-nw:hover::before, .handle-ne:hover::before, .handle-se:hover::before, .handle-sw:hover::before {
+  transform: scale(1.25);
+  background: var(--accent-color);
+}
+
+.handle-nw { top: -8px; left: -8px; cursor: nwse-resize; }
+.handle-ne { top: -8px; right: -8px; cursor: nesw-resize; }
+.handle-se { bottom: -8px; right: -8px; cursor: nwse-resize; }
+.handle-sw { bottom: -8px; left: -8px; cursor: nesw-resize; }
+
+/* In-Box Handwriting Canvas */
+.note-item-sketch-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  position: relative;
+  width: 100%;
+}
+
+.note-sketch-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: var(--panel-sub);
+  border-bottom: 1px solid var(--border-subtle);
+  user-select: none;
+}
+
+.note-sketch-stage {
+  position: relative;
+  width: 100%;
+  background-color: var(--card-bg);
+  background-image: radial-gradient(var(--grid-dot) 1px, transparent 1px);
+  background-size: 16px 16px;
+  overflow: hidden;
+  cursor: crosshair;
+  touch-action: none;
+  -webkit-touch-callout: none;
+}
+
+.note-sketch-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.note-sketch-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 2;
+  cursor: crosshair;
+  touch-action: none;
+  -webkit-touch-callout: none;
+}
+
+.note-sketch-resize-bar {
+  height: 14px;
+  background: var(--panel-sub);
+  border-top: 1px solid var(--border-subtle);
+  cursor: ns-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  transition: background 0.15s ease;
+  touch-action: none;
+  -webkit-touch-callout: none;
+}
+
+.note-sketch-resize-bar:hover { background: var(--dropdown-hover); }
+
+.resize-grip-line {
+  width: 36px;
+  height: 3px;
+  background: var(--border-color);
+  border-radius: 2px;
+}

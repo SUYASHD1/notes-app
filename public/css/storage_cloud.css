@@ -1,0 +1,173 @@
+/* ==========================================================================
+   ☁️ CLOUD SYNC & PWA INSTALL (< 350 lines)
+   ========================================================================== */
+
+.cloud-card { padding: 12px 16px; }
+
+.cloud-sync-details summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.cloud-sync-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.cloud-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cloud-summary-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cloud-summary-title strong {
+  font-size: 0.88rem;
+  color: var(--text-main);
+}
+
+.cloud-sub {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.cloud-chevron {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+}
+
+.cloud-sync-details[open] .cloud-chevron {
+  transform: rotate(180deg);
+}
+
+.cloud-form-content {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.cloud-form-content .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cloud-form-content label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.cloud-form-content input {
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  outline: none;
+  background: var(--card-bg);
+  color: var(--text-main);
+}
+
+.cloud-form-content input:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
+}
+
+.cloud-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+@media (max-width: 600px) {
+  .settings-modal-backdrop {
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0;
+  }
+  .settings-flyout-card {
+    max-width: 100vw;
+    border-radius: 20px 20px 0 0;
+    max-height: 85vh;
+  }
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* PWA Installation & Standalone Styles */
+.pwa-install-btn {
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  color: #6366f1;
+  transition: all 0.2s ease;
+}
+
+.pwa-install-btn:hover {
+  background: rgba(99, 102, 241, 0.25);
+  color: #4f46e5;
+  transform: translateY(-1px);
+}
+
+.highlight-pulse {
+  animation: pwaPulse 2s infinite ease-in-out;
+}
+
+@keyframes pwaPulse {
+  0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.5); }
+  70% { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+}
+
+/* iOS PWA Visual Guide Modal */
+#ios-install-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+#ios-install-modal.hidden {
+  display: none !important;
+}
+
+.ios-pwa-card {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPop {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
