@@ -1,22 +1,22 @@
 # 📓 Notes App — Current State & Knowledge Log
 
-> **Last Updated:** October 2026  
+> **Last Updated:** 24 October 2026  
 > **Status:** Fully Functional, PWA Standalone Enabled, Deployed to Production (Vercel)  
 > **Live Web Application:** [https://notes-app-topaz-six.vercel.app/](https://notes-app-topaz-six.vercel.app/)  
-> **Automated Test Suite:** `64 / 64 tests passed (100%)`
+> **Automated Test Suite:** `69 / 69 tests passed (100%)`
 
 ---
 
 ## 🌟 1. Project Overview & Vision
 This application is a freeform, ultra-fast note-taking system designed to combine the spatial freedom of **Microsoft OneNote** with the fluid, paper-like handwriting experience of **Notability** on iPad and Desktop.
 
-* **Desktop Experience:** Rich text typing, mouse/keyboard navigation, keyboard shortcuts, equation insertion, PDF annotations, multi-block management, hard drive folder mirroring, and one-click backups.
+* **Desktop Experience:** Rich text typing, MS Word-style ribbon formatting, mouse/keyboard navigation, equation insertion, PDF annotations, multi-block management, hard drive folder mirroring, and one-click backups.
 * **iPad Experience:** Zero-latency Apple Pencil inking, pressure-sensitive strokes, true palm rejection, smooth floating-toggle mode switching, and full touch-gesture navigation.
 * **Storage Independence:** Your notes belong to you. Data is stored on your device, with live storage breakdown, browser safe-lock, hard drive folder mirroring, and one-click file backups.
 
 ---
 
-## 🔍 2. Breakthroughs & Lessons Learned
+## 🔍 2. Breakthroughs, Bug Fixes & Lessons Learned
 
 ### 1. The 300ms Safari Delay & Rapid Writing Fix
 * **The Symptom:** In cursive writing (e.g. *"hii"*), lifting the Apple Pencil to place a dot on the *"i"* or cross a *"t"* would often fail unless the user paused briefly.
@@ -116,6 +116,34 @@ This application is a freeform, ultra-fast note-taking system designed to combin
   3. **Visual Link Rendering:** Markdown links are converted directly into clean, clickable styled blue links (`.note-link`) instead of showing raw brackets and URLs on screen.
   4. **1-to-1 Image URL Vaulting:** Replaced token-scanning in `vaultImagesInTextItem` with an exact URL-to-data-URL map. Every pasted image retains its own unique graphic.
 
+### 13. MS Word-Style Formatting Ribbon (Home vs. Insert Tabs)
+* **The Problem:** The top toolbar had become cluttered with text formatting and note creation buttons sitting side-by-side. On smaller displays, buttons overflowed off screen or crossed borders.
+* **The Solution:**
+  1. **Dual-Tab Ribbon (`#ribbon-bar`):**
+     * **Home Tab:** Houses all text formatting, typography controls, font family/size selectors, style buttons (B, I, U, S, color, highlight), and paragraph alignment/list tools.
+     * **Insert Tab:** Houses note and content generation tools: `+ New Note`, `🖼 Media`, `📑 PDF`, `✍ Sketch`, `⊞ Table`, `📈 Plot`, and `$fx Math`.
+  2. **Automatic Context Switching:** Clicking or typing inside any note text box automatically switches the ribbon to the **Home** tab so typography tools are immediately at hand.
+  3. **Attribute-Driven Tab Display:** Powered by `data-tab="home"` and `data-tab="insert"` attributes on `#ribbon-bar` with strict CSS rules, ensuring clean tab switching with zero layout collision.
+
+### 14. Infinite Canvas Boundaries & Spatial Containment
+* **The Problem:** In an unrestricted infinite canvas, arranging notes was difficult because content could wander endlessly to the left or top into negative coordinate voids.
+* **The Solution:**
+  1. **Fixed Left Margin ($x = 40\text{px}$):** The viewport is bounded so you cannot pan into the negative space to the left of your notes.
+  2. **Dynamic Right Boundary:** Provides a comfortable multi-column initial width ($2600\text{px} + 800\text{px}$ padding) that automatically expands when new notes are added towards the right.
+  3. **Endless Downward Scrolling:** Downward navigation is 100% infinite and unrestricted, behaving like a continuous physical notebook.
+
+### 15. Interactive & Draggable Spatial Scrollbars
+* **The Problem:** Users on a vast canvas had no sense of where they were located, and previous scrollbar implementations lacked physical handle thickness, making them invisible and unclickable.
+* **The Solution:**
+  1. **High-Contrast Visible Handles:** Added solid slate handles (`.canvas-scroll-thumb`) with rounded corners, proper cross-axis dimensions ($12\text{px}$ track height/width, $36\text{px}$ minimum thumb size), and grab/grabbing cursors.
+  2. **120fps Real-Time Dragging:** Dragging either handle moves the canvas smoothly with pointer capture and zero jitter. An `isDraggingScrollbar` guard prevents internal recalculations from fighting the user's drag gesture.
+  3. **Click-to-Jump Track Navigation:** Clicking anywhere along the empty track immediately centers the thumb and canvas view at that exact position.
+  4. **Mouse Wheel & Window Resize Synchronization:** Handles smoothly track mouse wheel scrolling and adjust their dimensions dynamically when the window is resized.
+  5. **Ink Mode Security Lock:** In Pen/Stylus mode, scrollbars are dimmed and completely disabled (`pointer-events: none`) so resting palms never trigger accidental movement.
+
+### 16. Edge Auto-Scrolling
+* **The Solution:** Moving the pointer near the outer edges ($60\text{px}$ margin) of the viewport while selecting text or dragging elements smoothly glides the canvas in that direction, making navigation effortless across large multi-block pages.
+
 ---
 
 ## 🚀 3. Features & Capabilities
@@ -130,13 +158,15 @@ This application is a freeform, ultra-fast note-taking system designed to combin
 * **Instant Single Dots:** Guaranteed capture for punctuation, decimal points, and dots on *"i"*.
 
 ### 🧭 B. Navigation & Workspace
-* **Infinite 2D Workspace:** Smooth inertia panning and pinch-to-zoom (10% to 500%).
-* **Zoom-to-Fit (Shift+1):** Automatically frames all your notes and drawings in the viewport.
-* **Draggable Floating Puck:** Quick-switch between Ink Mode and Navigate Mode; drag it anywhere on screen.
+* **Dual-Mode Workflow:** Quick-switch between **Navigate / Desktop Mode** and **✏️ Ink Mode** with the floating puck.
+* **Spatial Scrollbars:** Draggable horizontal and vertical track-bars indicating canvas position.
+* **Boundary Clamping:** Anchored left margin ($x \ge 40$) with endless downward canvas extension.
+* **Smooth Panning & Zooming:** Mouse wheel zoom, touchpad pinch, and Shift+1 zoom-to-fit.
 
 ### 📦 C. Universal Note Containers (Blocks)
-* **Freeform Placement:** Double-click anywhere to drop a note container.
-* **Mixed Media:** Markdown text, LaTeX math equations (KaTeX), multi-page PDF printouts with handwriting annotations, images with 8-point resize handles, dynamic tables, and interactive 2D function plotters.
+* **Freeform Placement:** Double-click anywhere on the canvas to place a note.
+* **Mixed Media:** Text, LaTeX equations (KaTeX), multi-page PDF printouts with ink annotations, images with 8-point resize handles, dynamic tables, and 2D function plotters.
+* **MS Word-Style Formatting Ribbon:** Dedicated Home tab for typography and Insert tab for multimedia.
 
 ### 💾 D. Storage & Data Hub
 * **Device Storage Vault:** Fast, sandboxed IndexedDB storage across 4 stores (`pages`, `hierarchy`, `assets`, `settings`).
@@ -151,25 +181,24 @@ This application is a freeform, ultra-fast note-taking system designed to combin
 
 | File | Primary Role |
 | :--- | :--- |
-| [public/index.html](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/index.html) | Main HTML layout, top bar, canvas viewport, and Storage & Data Hub settings flyout. |
-| [public/app.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/app.js) | Slim master application orchestrator importing modular UI, canvas, and block components. |
-| [public/styles.css](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/styles.css) | Modern glassmorphism UI styles, docked ribbon, floating puck, note boxes, and settings menu. |
+| [public/index.html](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/index.html) | Main HTML layout, dual-tab ribbon, canvas viewport, and Storage & Data Hub settings flyout. |
+| [public/app.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/app.js) | Master application orchestrator, event handlers, canvas transform loop, and scrollbar controller. |
+| [public/styles.css](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/styles.css) | Complete design system, glassmorphism ribbons, spatial scrollbars, and note container styles. |
 | `src/ui/` | Modular UI controllers: `toast.js`, `storage_settings_modal.js`, `sidebar.js`, `ink_palette.js`, `layout_puck.js`, `install_prompt.js`. |
 | [public/manifest.json](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/manifest.json) | Web App Manifest for standalone installation and home screen launching. |
-| [public/sw.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/sw.js) | Service Worker providing offline-first caching for Airplane Mode reliability. |
-| `public/icons/` | High-resolution Retina icons (180x180, 192x192, 512x512). |
+| [public/sw.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/sw.js) | Service Worker providing offline-first caching for Airplane Mode reliability (`v4.4.0`). |
 | `src/canvas/` | Math, viewport, stroke smoothing, gesture recognition, and eraser engines. |
 | `src/blocks/` | Universal note containers, text/latex, tables, math plots, and PDF printout managers. |
 | [src/storage/indexed_db.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/src/storage/indexed_db.js) | Full storage engine: IndexedDB vault, hard drive folder migration, live metrics, and backup/restore. |
-| [dev-server.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/dev-server.js) | Local development server with URL query-stripping and strict no-cache headers. |
-| `tests/` | 61 automated unit tests covering inking, geometry, storage, backups, PWA validity, file management, auto-numbering, and rich paste. |
+| [bugfix24Oct.md](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/bugfix24Oct.md) | Architectural bugfix roadmap for PDF on-demand virtualization, pinch-zoom anchoring, and boundary clamping. |
+| `tests/` | 69 automated unit tests covering inking, geometry, storage, backups, PWA validity, file management, auto-numbering, rich paste, and PDF layout. |
 
 ---
 
 ## 🧪 5. Automated Test Status
-* **Unit Tests Passing:** `64 / 64 tests passed (100%)`
+* **Unit Tests Passing:** `69 / 69 tests passed (100%)`
 * **File Management & Clean Canvas Verification:** Automated test suite verifies notebook, section, and page lifecycle (creation, renaming, cross-notebook move, copy/duplicate, cascading deletion, smart auto-numbering) and guarantees blank canvases for all new notes.
-* **Rich Paste & Stationary Zoom Verification:** Verified rich HTML to markdown conversion, embedded image rendering, and decoupled stationary pinch-to-zoom.
+* **Rich Paste & Typography Verification:** Verified rich HTML paste, embedded image rendering, and MS Word formatting preservation.
 * **Storage Hub Verification:** Verified modal opening, metrics calculation, backup download, and clean close.
 * **PWA Verification:** Manifest schema, icon asset verification, and service worker offline caching fully verified.
 * **Production Status:** Deployed live on Vercel at `https://notes-app-topaz-six.vercel.app/`.
