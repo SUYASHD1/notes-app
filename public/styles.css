@@ -1,9 +1,16 @@
 :root {
   --bg-color: #f8f9fa;
   --grid-line: #e2e8f0;
+  --grid-dot: #cbd5e1;
   --topbar-bg: #ffffff;
+  --panel-bg: #ffffff;
+  --panel-sub: #fafafa;
+  --card-bg: #ffffff;
+  --card-header: #f8fafc;
   --text-main: #1e293b;
+  --text-muted: #64748b;
   --border-color: #cbd5e1;
+  --border-subtle: #f1f5f9;
   --accent-color: #2563eb;
   --accent-hover: #1d4ed8;
   --accent-light: #eff6ff;
@@ -12,6 +19,29 @@
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   --radius: 6px;
 }
+
+[data-theme="dark"],
+body[data-theme="dark"] {
+  --bg-color: #282828;
+  --grid-line: rgba(255, 255, 255, 0.08);
+  --grid-dot: rgba(255, 255, 255, 0.08);
+  --topbar-bg: #1e1e1e;
+  --panel-bg: #1e1e1e;
+  --panel-sub: #222222;
+  --card-bg: #323232;
+  --card-header: #3a3a3a;
+  --text-main: #ededed;
+  --text-muted: #a5a5a5;
+  --border-color: #3f3f3f;
+  --border-subtle: #333333;
+  --accent-color: #3b82f6;
+  --accent-hover: #60a5fa;
+  --accent-light: rgba(59, 130, 246, 0.15);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+}
+
 
 * {
   box-sizing: border-box;
@@ -224,8 +254,9 @@ body, html {
   touch-action: none;
   -webkit-touch-callout: none;
   user-select: none;
-  /* OneNote subtle dot/grid pattern */
-  background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+  /* OneNote subtle dot/grid pattern adapting to theme */
+  background-color: var(--bg-color);
+  background-image: radial-gradient(var(--grid-dot) 1.2px, transparent 1.2px);
   background-size: 24px 24px;
 }
 
@@ -288,11 +319,12 @@ body, html {
 /* Blocks */
 .canvas-block {
   position: absolute;
-  background: #ffffff;
+  background: var(--card-bg, #ffffff);
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
   user-select: text;
+  color: var(--text-main);
 }
 
 .canvas-block.selected {
@@ -302,8 +334,8 @@ body, html {
 
 .block-handle {
   height: 18px;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--card-header, #f8fafc);
+  border-bottom: 1px solid var(--border-color);
   border-radius: var(--radius) var(--radius) 0 0;
   cursor: grab;
   display: flex;
@@ -1621,8 +1653,8 @@ body[data-mode="ipad"] #status-bar .zoom-pill {
 /* Universal Note Container */
 .universal-note-container {
   position: absolute;
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
   user-select: text;
@@ -1633,17 +1665,18 @@ body[data-mode="ipad"] #status-bar .zoom-pill {
   will-change: transform;
   transform: translate3d(0, 0, 0);
   transition: border-color 0.15s ease;
+  color: var(--text-main);
 }
 
 .universal-note-container.selected {
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 1.5px #4f46e5, 0 8px 24px rgba(79, 70, 229, 0.12);
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 1.5px var(--accent-color), 0 8px 24px rgba(59, 130, 246, 0.2);
 }
 
 .note-container-header {
   height: 36px;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--card-header, #f8fafc);
+  border-bottom: 1px solid var(--border-color);
   border-radius: 7px 7px 0 0;
   cursor: grab;
   display: flex;
@@ -1651,7 +1684,7 @@ body[data-mode="ipad"] #status-bar .zoom-pill {
   justify-content: space-between;
   padding: 0 10px;
   font-size: 0.84rem;
-  color: #475569;
+  color: var(--text-muted);
   user-select: none;
   touch-action: none;
   -webkit-touch-callout: none;
@@ -1669,14 +1702,14 @@ body[data-mode="ipad"] #status-bar .zoom-pill {
 }
 
 .mini-tool-btn {
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
+  background: var(--dropdown-bg, #ffffff);
+  border: 1px solid var(--border-color);
   padding: 3px 8px;
   font-size: 12.5px;
   font-weight: 500;
   border-radius: 5px;
   cursor: pointer;
-  color: #334155;
+  color: var(--text-main);
   display: inline-flex;
   align-items: center;
   gap: 3px;
@@ -1685,9 +1718,9 @@ body[data-mode="ipad"] #status-bar .zoom-pill {
 }
 
 .mini-tool-btn:hover {
-  background: #f1f5f9;
-  border-color: #94a3b8;
-  color: #0f172a;
+  background: var(--dropdown-hover, #f1f5f9);
+  border-color: var(--border-subtle);
+  color: var(--accent-hover);
 }
 
 .note-container-body {
@@ -3622,5 +3655,497 @@ body[data-mode="ipad"] .marquee-box {
   background: #cbd5e1;
   margin: 0 4px;
 }
+
+/* ==========================================================================
+   🌙 DARK MODE COMPONENT SYSTEM (Palette Centered on #282828 Charcoal)
+   ========================================================================== */
+
+/* Top Master App Bar */
+body[data-theme="dark"] #top-bar {
+  background: var(--topbar-bg);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+body[data-theme="dark"] #doc-title {
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] #doc-title:hover,
+body[data-theme="dark"] #doc-title:focus {
+  border-color: var(--border-color);
+  background: #2a2a2a;
+}
+
+body[data-theme="dark"] .notebook-dropdown-wrapper {
+  background: #242424;
+  border-color: var(--border-color);
+}
+
+body[data-theme="dark"] #notebook-select {
+  background: #242424;
+  color: var(--text-main);
+  border: none;
+}
+
+body[data-theme="dark"] .icon-btn,
+body[data-theme="dark"] .icon-btn-sm {
+  color: var(--text-main);
+  background: transparent;
+  border-color: var(--border-color);
+}
+
+body[data-theme="dark"] .icon-btn:hover,
+body[data-theme="dark"] .icon-btn-sm:hover {
+  background: #2e2e2e;
+  border-color: #4a4a4a;
+}
+
+body[data-theme="dark"] .badge {
+  background: rgba(52, 211, 153, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
+body[data-theme="dark"] .mode-pill-toggle {
+  background: #222222;
+  border: 1px solid var(--border-color);
+}
+
+body[data-theme="dark"] .pill-btn {
+  color: var(--text-muted);
+  background: transparent;
+}
+
+body[data-theme="dark"] .pill-btn:hover {
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] .pill-btn.active {
+  background: var(--accent-color);
+  color: #ffffff;
+}
+
+/* Dedicated Typography Ribbon */
+body[data-theme="dark"] #ribbon-bar {
+  background: var(--topbar-bg);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+body[data-theme="dark"] .ribbon-tabs-nav {
+  background: #262626;
+  border: 1px solid var(--border-color);
+}
+
+body[data-theme="dark"] .ribbon-tab-btn {
+  color: var(--text-muted);
+}
+
+body[data-theme="dark"] .ribbon-tab-btn:hover {
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] .ribbon-tab-btn.active {
+  background: #333333;
+  color: #60a5fa;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+body[data-theme="dark"] #ribbon-bar .btn,
+body[data-theme="dark"] #ribbon-bar .fmt-btn,
+body[data-theme="dark"] .fmt-btn {
+  background: #282828;
+  color: var(--text-main);
+  border-color: var(--border-color);
+}
+
+body[data-theme="dark"] #ribbon-bar .fmt-btn:hover,
+body[data-theme="dark"] #ribbon-bar .btn:hover,
+body[data-theme="dark"] .fmt-btn:hover {
+  background: #383838;
+  border-color: #4a4a4a;
+}
+
+body[data-theme="dark"] #ribbon-bar .fmt-btn.active,
+body[data-theme="dark"] #ribbon-bar .btn.active,
+body[data-theme="dark"] .fmt-btn.active {
+  background: rgba(59, 130, 246, 0.22);
+  border-color: var(--accent-color);
+  color: #60a5fa;
+}
+
+body[data-theme="dark"] #ribbon-bar select {
+  background: #282828;
+  color: var(--text-main);
+  border-color: var(--border-color);
+}
+
+body[data-theme="dark"] .v-divider,
+body[data-theme="dark"] .v-divider-sm {
+  background: var(--border-color);
+}
+
+body[data-theme="dark"] .color-picker-wrapper:hover {
+  background: #333333;
+  border-color: #4a4a4a;
+}
+
+/* 2-Tier Navigation Sidebar */
+body[data-theme="dark"] #app-sidebar {
+  background: var(--panel-bg);
+  border-right: 1px solid var(--border-color);
+}
+
+body[data-theme="dark"] #sections-column {
+  background: var(--panel-sub);
+  border-right: 1px solid var(--border-color);
+}
+
+body[data-theme="dark"] #pages-column {
+  background: var(--panel-bg);
+}
+
+body[data-theme="dark"] .sidebar-header {
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-muted);
+}
+
+body[data-theme="dark"] .mini-btn {
+  color: var(--text-muted);
+}
+
+body[data-theme="dark"] .mini-btn:hover {
+  background: #333333;
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] .search-box {
+  border-bottom: 1px solid var(--border-color);
+}
+
+body[data-theme="dark"] .search-box input {
+  background: #282828;
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+}
+
+body[data-theme="dark"] .search-box input:focus {
+  border-color: var(--accent-color);
+  outline: none;
+}
+
+body[data-theme="dark"] .section-item,
+body[data-theme="dark"] .page-item {
+  color: var(--text-muted);
+}
+
+body[data-theme="dark"] .section-item:hover,
+body[data-theme="dark"] .page-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] .section-item.active {
+  background: rgba(124, 58, 237, 0.18);
+  color: #c4b5fd;
+  border-left: 3px solid #8b5cf6;
+}
+
+body[data-theme="dark"] .page-item.active {
+  background: rgba(59, 130, 246, 0.18);
+  color: #93c5fd;
+  border-left: 3px solid #3b82f6;
+}
+
+body[data-theme="dark"] .page-item.subpage {
+  color: #888888;
+}
+
+body[data-theme="dark"] .item-meta {
+  color: #737373;
+}
+
+/* Canvas & Note Blocks */
+body[data-theme="dark"] .canvas-block,
+body[data-theme="dark"] .universal-note-container {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] .canvas-block.selected,
+body[data-theme="dark"] .universal-note-container.selected {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 1.5px var(--accent-color), 0 8px 24px rgba(0, 0, 0, 0.55);
+}
+
+body[data-theme="dark"] .block-handle,
+body[data-theme="dark"] .note-container-header {
+  background: var(--card-header);
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-muted);
+}
+
+body[data-theme="dark"] .mini-tool-btn {
+  background: #2a2a2a;
+  border-color: var(--border-color);
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] .mini-tool-btn:hover {
+  background: #383838;
+  border-color: #4a4a4a;
+  color: #60a5fa;
+}
+
+body[data-theme="dark"] .block-handle-dots {
+  color: #737373;
+}
+
+body[data-theme="dark"] .block-delete-btn,
+body[data-theme="dark"] .note-item-delete {
+  color: #737373;
+}
+
+body[data-theme="dark"] .block-delete-btn:hover,
+body[data-theme="dark"] .note-item-delete:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+body[data-theme="dark"] .text-block-content,
+body[data-theme="dark"] .note-item-text {
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] .text-block-content h1,
+body[data-theme="dark"] .text-block-content h2,
+body[data-theme="dark"] .text-block-content h3,
+body[data-theme="dark"] .note-item-text h1,
+body[data-theme="dark"] .note-item-text h2,
+body[data-theme="dark"] .note-item-text h3 {
+  color: #ffffff;
+}
+
+body[data-theme="dark"] .text-block-content p,
+body[data-theme="dark"] .text-block-content li,
+body[data-theme="dark"] .note-item-text p,
+body[data-theme="dark"] .note-item-text li {
+  color: #d4d4d8;
+}
+
+body[data-theme="dark"] .text-block-content code,
+body[data-theme="dark"] .note-item-text code {
+  background: #252525;
+  color: #93c5fd;
+  border: 1px solid #3f3f3f;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+body[data-theme="dark"] .note-item-text blockquote {
+  border-left-color: #4a4a4a;
+  color: #a1a1aa;
+}
+
+body[data-theme="dark"] .note-item-text[contenteditable="true"]:empty::before,
+body[data-theme="dark"] .note-item-text:empty::before {
+  color: #71717a;
+}
+
+
+body[data-theme="dark"] .note-link {
+  color: #60a5fa;
+}
+
+body[data-theme="dark"] .note-link:hover {
+  color: #93c5fd;
+  text-decoration: underline;
+}
+
+/* Math Formulas & Tables */
+body[data-theme="dark"] .katex-display,
+body[data-theme="dark"] .latex-block {
+  background: #252525;
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--accent-color);
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+body[data-theme="dark"] .katex {
+  color: #ededed;
+}
+
+body[data-theme="dark"] .table-block table,
+body[data-theme="dark"] .table-block th,
+body[data-theme="dark"] .table-block td {
+  border-color: var(--border-color);
+}
+
+body[data-theme="dark"] .table-block th {
+  background: #383838;
+  color: #ffffff;
+}
+
+body[data-theme="dark"] .table-block td {
+  background: #2b2b2b;
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] .plot-block-content {
+  background: #252525;
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] .plot-control-row input,
+body[data-theme="dark"] .plot-control-row select {
+  background: #2f2f2f;
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+}
+
+body[data-theme="dark"] .inbox-canvas-wrapper {
+  background: rgba(45, 45, 45, 0.6);
+  border-color: #4a4a4a;
+}
+
+body[data-theme="dark"] .inbox-canvas-label {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+}
+
+/* Spatial Scrollbars in Dark Mode */
+body[data-theme="dark"] .canvas-scroll-track {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+body[data-theme="dark"] .canvas-scroll-thumb {
+  background: #4a4a4a;
+  border: 1px solid #383838;
+}
+
+body[data-theme="dark"] .canvas-scroll-thumb:hover {
+  background: #5a5a5a;
+}
+
+/* Floating Navigation / Ink Mode Puck */
+body[data-theme="dark"] #floating-mode-puck {
+  background: #1e1e1e;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] #puck-label {
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] .puck-drag-dots {
+  color: #737373;
+}
+
+/* Floating Rich Text Toolbar */
+body[data-theme="dark"] .floating-toolbar {
+  background: #262626;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+}
+
+body[data-theme="dark"] .floating-toolbar select {
+  background: #333333;
+  color: var(--text-main);
+  border-color: var(--border-color);
+}
+
+/* Zoom Popover */
+body[data-theme="dark"] #zoom-popover {
+  background: #252525;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+body[data-theme="dark"] #zoom-popover button {
+  background: #2e2e2e;
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+}
+
+body[data-theme="dark"] #zoom-popover button:hover {
+  background: #383838;
+}
+
+/* Storage & Vault Settings Flyout Card */
+body[data-theme="dark"] .settings-flyout,
+body[data-theme="dark"] #storage-settings-modal .modal-content,
+body[data-theme="dark"] .storage-settings-card {
+  background: #242424;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7);
+}
+
+body[data-theme="dark"] .settings-flyout-header,
+body[data-theme="dark"] .modal-header {
+  border-bottom: 1px solid var(--border-color);
+}
+
+body[data-theme="dark"] .settings-section-title {
+  color: #60a5fa;
+}
+
+body[data-theme="dark"] .metric-card,
+body[data-theme="dark"] .storage-stat-pill {
+  background: #2e2e2e;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] .folder-explorer-tree,
+body[data-theme="dark"] .file-tree-container {
+  background: #1c1c1c;
+  border: 1px solid var(--border-color);
+}
+
+body[data-theme="dark"] .tree-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+body[data-theme="dark"] .tree-item.selected {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+/* Ink Palette */
+body[data-theme="dark"] .ink-palette {
+  background: #252525;
+  border-color: var(--border-color);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+body[data-theme="dark"] .ink-size-btn,
+body[data-theme="dark"] .ink-eraser-size-btn {
+  border-color: var(--border-color);
+  background: #2f2f2f;
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] .ink-size-btn.active,
+body[data-theme="dark"] .ink-eraser-size-btn.active {
+  border-color: var(--accent-color);
+  background: rgba(59, 130, 246, 0.25);
+  color: #60a5fa;
+}
+
+/* Toast Notification */
+body[data-theme="dark"] .toast {
+  background: #1e1e1e;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
 
 

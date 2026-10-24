@@ -144,6 +144,19 @@ This application is a freeform, ultra-fast note-taking system designed to combin
 ### 16. Edge Auto-Scrolling
 * **The Solution:** Moving the pointer near the outer edges ($60\text{px}$ margin) of the viewport while selecting text or dragging elements smoothly glides the canvas in that direction, making navigation effortless across large multi-block pages.
 
+### 17. Executive Dark Mode (#282828 Palette) & Inking Contrast Adaptation
+* **The Goal:** A dark mode designed for hours of fatigue-free writing, centered on a warm charcoal base (`#282828`) instead of glaring, high-strain pure black (`#000000`).
+* **The Solution:**
+  1. **Harmonious Palette System:**
+     - **Canvas Paper:** Deep warm charcoal `#282828` with subtle micro-dot alignment grid (`rgba(255, 255, 255, 0.08)`).
+     - **Top Ribbon & Sidebar:** Elevated deep slate `#1e1e1e` and `#222222` with clean `#3f3f3f` borders.
+     - **Floating Note Cards:** Gentle elevated `#323232` with high-contrast text (`#ededed` / `#d1d5db`), dark headers (`#3a3a3a`), and blue formula containers.
+  2. **Smart Inking Adaptation:**
+     - When dark mode is active, the primary pen swatch automatically switches from black (`#0f172a`) to soft cream white (`#f5f5f5`) so handwritten notes stand out with zero manual color tweaking.
+     - Highlighters and colored pens remain luminous and vibrant over dark notes.
+  3. **Modular Theme Controller:** Implemented in `src/ui/theme_controller.js` (and mirrored in `public/src/ui/theme_controller.js`). Supports instant toggling via the `🌙` / `☀️` button in the top bar, persists the user's choice to the device vault settings store, and updates system `theme-color` meta tags.
+  4. **Automated Verification:** Verified across all 74 unit tests and profiled directly in Microsoft Edge using Puppeteer with 0 console errors.
+
 ---
 
 ## 🚀 3. Features & Capabilities
@@ -162,6 +175,7 @@ This application is a freeform, ultra-fast note-taking system designed to combin
 * **Spatial Scrollbars:** Draggable horizontal and vertical track-bars indicating canvas position.
 * **Boundary Clamping:** Anchored left margin ($x \ge 40$) with endless downward canvas extension.
 * **Smooth Panning & Zooming:** Mouse wheel zoom, touchpad pinch, and Shift+1 zoom-to-fit.
+* **Executive Dark Mode:** One-click toggle between crisp daylight mode and eye-comfort `#282828` charcoal dark mode.
 
 ### 📦 C. Universal Note Containers (Blocks)
 * **Freeform Placement:** Double-click anywhere on the canvas to place a note.
@@ -181,24 +195,23 @@ This application is a freeform, ultra-fast note-taking system designed to combin
 
 | File | Primary Role |
 | :--- | :--- |
-| [public/index.html](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/index.html) | Main HTML layout, dual-tab ribbon, canvas viewport, and Storage & Data Hub settings flyout. |
+| [public/index.html](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/index.html) | Main HTML layout, dual-tab ribbon, canvas viewport, dark mode toggle, and Storage & Data Hub settings flyout. |
 | [public/app.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/app.js) | Master application orchestrator, event handlers, canvas transform loop, and scrollbar controller. |
-| [public/styles.css](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/styles.css) | Complete design system, glassmorphism ribbons, spatial scrollbars, and note container styles. |
-| `src/ui/` | Modular UI controllers: `toast.js`, `storage_settings_modal.js`, `sidebar.js`, `ink_palette.js`, `layout_puck.js`, `install_prompt.js`. |
+| [public/styles.css](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/styles.css) | Complete design system, `#282828` dark mode system, glassmorphism ribbons, and note container styles (`v4.6.0`). |
+| `src/ui/` | Modular UI controllers: `theme_controller.js`, `toast.js`, `storage_settings_modal.js`, `sidebar.js`, `ink_palette.js`, `layout_puck.js`, `install_prompt.js`. |
 | [public/manifest.json](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/manifest.json) | Web App Manifest for standalone installation and home screen launching. |
-| [public/sw.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/sw.js) | Service Worker providing offline-first caching for Airplane Mode reliability (`v4.5.0`). |
+| [public/sw.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/public/sw.js) | Service Worker providing offline-first caching for Airplane Mode reliability (`v4.6.0`). |
 | `src/canvas/` | Math, viewport, stroke smoothing, gesture recognition, and eraser engines. |
 | `src/blocks/` | Universal note containers, text/latex, tables, math plots, and PDF printout managers. |
 | [src/storage/indexed_db.js](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/src/storage/indexed_db.js) | Full storage engine: IndexedDB vault, hard drive folder migration, live metrics, and backup/restore. |
 | [CodeORG.md](file:///c:/Users/suyas/Desktop/antigravity/Just%20in%20time/Notes%20App/CodeORG.md) | Architectural guidelines, modularization principles, and maintenance standards. |
-| `tests/` | 71 automated unit tests covering inking, geometry, storage, backups, PWA validity, file management, auto-numbering, rich paste, PDF layout, and viewport boundaries. |
+| `tests/` | 74 automated unit tests covering inking, geometry, storage, backups, PWA validity, dark/light themes, file management, auto-numbering, rich paste, PDF layout, and viewport boundaries. |
 
 ---
 
 ## 🧪 5. Automated Test Status
-* **Unit Tests Passing:** `71 / 71 tests passed (100%)`
-* **File Management & Clean Canvas Verification:** Automated test suite verifies notebook, section, and page lifecycle (creation, renaming, cross-notebook move, copy/duplicate, cascading deletion, smart auto-numbering) and guarantees blank canvases for all new notes.
-* **Rich Paste & Typography Verification:** Verified rich HTML paste, embedded image rendering, and MS Word formatting preservation.
-* **Storage Hub Verification:** Verified modal opening, metrics calculation, backup download, and clean close.
-* **PWA Verification:** Manifest schema, icon asset verification, and service worker offline caching fully verified.
+* **Unit Tests Passing:** `74 / 74 tests passed (100%)`
+* **Theme Switching & Ink Adaptation:** Automated tests verify persistent theme switching between `#282828` dark mode and daylight mode, and automatic pen swatch adaptation.
+* **Browser Verification with Microsoft Edge & Puppeteer:** Verified 0 console errors, instant theme toggling, and clean visual contrast across all note containers.
 * **Production Status:** Deployed live on Vercel at `https://notes-app-topaz-six.vercel.app/`.
+

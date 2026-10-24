@@ -43,7 +43,8 @@ import {
   setupEdgeAutoScroll,
   registerActiveDragCallback,
   unregisterActiveDragCallback,
-  setupRibbonTabs
+  setupRibbonTabs,
+  setupThemeController
 } from './src/core.js';
 
 // Global State
@@ -185,6 +186,9 @@ async function initApp() {
   // PWA Offline-First Service Worker & Install Management
   registerServiceWorker(showToast);
   setupInstallPrompt({ showToast });
+
+  // Theme Controller (Dark Mode by default based on #282828)
+  setupThemeController({ state, showToast });
 
   await loadActivePageDocument();
   renderAll();

@@ -32,6 +32,8 @@ export { setupInkPaletteControls } from './ui/ink_palette.js';
 export { setupLayoutSwitcher, setMode, setupFloatingModePuck } from './ui/layout_puck.js';
 export { setupInstallPrompt, registerServiceWorker, showIOSInstallModal, isStandaloneMode, isIOSDevice } from './ui/install_prompt.js';
 export { setupRibbonTabs } from './ui/ribbon_controller.js';
+export { getPreferredTheme, applyTheme, toggleTheme, setupThemeController, THEME_DARK, THEME_LIGHT } from './ui/theme_controller.js';
+
 
 // Backward compatibility alias for StrokeEngine
 import { StrokeRenderer } from './canvas/stroke_renderer.js';
