@@ -1,0 +1,119 @@
+/* ==========================================================================
+   💾 STORAGE HUB - DARK MODE THEME (< 350 lines)
+   ========================================================================== */
+
+/* Dark Mode Overrides */
+body[data-theme="dark"] .settings-flyout-card {
+  background: rgba(34, 34, 34, 0.98);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 1px 1px rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] .settings-header {
+  background: linear-gradient(180deg, #2a2a2a, #222222);
+  border-bottom: 1px solid var(--border-color);
+}
+
+body[data-theme="dark"] .settings-header h3 { color: #ffffff; }
+body[data-theme="dark"] .settings-sub { color: var(--text-muted); }
+body[data-theme="dark"] .settings-close-btn {
+  background: #2a2a2a;
+  border-color: var(--border-color);
+  color: var(--text-muted);
+}
+
+body[data-theme="dark"] .settings-close-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+body[data-theme="dark"] .settings-card {
+  background: #282828;
+  border-color: var(--border-color);
+}
+
+body[data-theme="dark"] .location-details-box {
+  background: #202020;
+  border-color: var(--border-color);
+}
+
+body[data-theme="dark"] .metric-box {
+  background: #222222;
+  border-color: var(--border-color);
+}
+
+body[data-theme="dark"] .metric-box:hover { background: #2a2a2a; }
+
+.settings-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.settings-body::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+body[data-theme="dark"] .settings-flyout,
+body[data-theme="dark"] #storage-settings-modal .modal-content,
+body[data-theme="dark"] .storage-settings-card {
+  background: #242424;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7);
+}
+
+body[data-theme="dark"] .settings-flyout-header,
+body[data-theme="dark"] .modal-header {
+  border-bottom: 1px solid var(--border-color);
+}
+
+body[data-theme="dark"] .settings-section-title {
+  color: #60a5fa;
+}
+
+body[data-theme="dark"] .metric-card,
+body[data-theme="dark"] .storage-stat-pill {
+  background: #2e2e2e;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] .settings-card:hover {
+  border-color: #4a4a4a;
+}
+
+body[data-theme="dark"] .settings-card-header h4 {
+  color: #ffffff;
+}
+
+body[data-theme="dark"] .settings-desc {
+  color: #d1d5db;
+}
+
+body[data-theme="dark"] .loc-label {
+  color: var(--text-muted);
+}
+
+body[data-theme="dark"] .loc-val {
+  color: #ededed;
+}
+
+body[data-theme="dark"] .loc-val.font-mono {
+  color: #93c5fd;
+}
+
+body[data-theme="dark"] .metric-number {
+  color: #60a5fa;
+}
+
+body[data-theme="dark"] .metric-label {
+  color: var(--text-muted);
+}
+
+body[data-theme="dark"] .storage-pill {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}

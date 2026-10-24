@@ -235,3 +235,89 @@ body[data-theme="dark"] .toast {
   transition: all 0.16s ease;
 }
 
+
+/* Master Visibility & Utility Classes */
+.hidden {
+  display: none !important;
+}
+
+.w-full {
+  width: 100%;
+  justify-content: center;
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border-color);
+}
+
+.btn-ghost:hover {
+  background: var(--dropdown-hover);
+}
+
+.shape-toast {
+  position: fixed;
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e293b;
+  color: #f8fafc;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  pointer-events: none;
+}
+
+/* Accent and Secondary Glass Buttons */
+.btn-accent-gradient:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+}
+
+.file-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+/* Floating Mode Puck & Popovers */
+body[data-theme="dark"] #floating-mode-puck {
+  background: rgba(30, 41, 59, 0.85);
+  border-color: var(--border-color);
+}
+
+body[data-theme="dark"] .floating-toolbar select {
+  background: var(--card-bg);
+  border-color: var(--border-color);
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] #zoom-popover {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
+}
+
+body[data-theme="dark"] #zoom-popover button {
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] #zoom-popover button:hover {
+  background: var(--dropdown-hover);
+}
+
+body[data-theme="dark"] .btn-secondary-glass {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border-color);
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] .btn-secondary-glass:hover {
+  background: rgba(255, 255, 255, 0.15);
+}

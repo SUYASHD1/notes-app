@@ -226,3 +226,47 @@ body[data-theme="dark"] .explorer-count-badge {
   background: rgba(255, 255, 255, 0.08);
   color: var(--text-muted);
 }
+
+body[data-theme="dark"] .folder-explorer-tree,
+body[data-theme="dark"] .file-tree-container {
+  background: #1c1c1c;
+  border: 1px solid var(--border-color);
+}
+
+body[data-theme="dark"] .tree-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+body[data-theme="dark"] .tree-item.selected {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+body[data-theme="dark"] .folder-explorer-card {
+  background: #222222;
+  border-color: var(--border-color);
+}
+
+body[data-theme="dark"] .folder-tree-view {
+  background: #1a1a1a;
+  border-color: var(--border-color);
+}
+
+body[data-theme="dark"] .tree-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+body[data-theme="dark"] .tree-row.selected {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+body[data-theme="dark"] .folder-tree-actions button {
+  background: #2e2e2e;
+  border-color: var(--border-color);
+  color: var(--text-main);
+}
+
+body[data-theme="dark"] .folder-tree-actions button:hover {
+  background: #383838;
+}

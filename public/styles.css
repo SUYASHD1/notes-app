@@ -4,6 +4,7 @@
    ========================================================================== */
 
 @import './css/theme.css';
+@import './css/layout_modes.css';
 @import './css/topbar.css';
 @import './css/ribbon.css';
 @import './css/ink_tools.css';
@@ -12,8 +13,11 @@
 @import './css/canvas.css';
 @import './css/status_bar.css';
 @import './css/notes.css';
+@import './css/notes_typography.css';
 @import './css/resize_handles.css';
 @import './css/math_blocks.css';
 @import './css/media_pdf.css';
+@import './css/media_crop.css';
 @import './css/storage_hub.css';
+@import './css/storage_hub_dark.css';
 @import './css/storage_cloud.css';

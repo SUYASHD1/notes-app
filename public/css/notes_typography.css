@@ -1,0 +1,167 @@
+/* ==========================================================================
+   ✍️ NOTE TYPOGRAPHY, RICH CONTENT & EMBEDS (< 350 lines)
+   ========================================================================== */
+
+.text-block-content {
+  padding: 10px 12px;
+  min-height: 48px;
+  outline: none;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.text-block-content p {
+  margin-bottom: 6px;
+}
+
+.note-item-text::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.note-image-container {
+  position: relative;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 12px auto;
+  display: block;
+  user-select: none;
+  transition: box-shadow 0.2s ease, outline 0.15s ease;
+  border-radius: 8px;
+}
+
+.note-image-container.wrap-center {
+  display: block;
+  margin: 12px auto;
+  clear: both;
+  text-align: center;
+}
+
+.note-image-container.wrap-center img {
+  margin: 0 auto;
+}
+
+.note-image-container.wrap-left {
+  float: left;
+  margin: 6px 16px 12px 0;
+  clear: left;
+  display: block;
+}
+
+.note-image-container.wrap-right {
+  float: right;
+  margin: 6px 0 12px 16px;
+  clear: right;
+  display: block;
+}
+
+.note-image-container.selected-image {
+  outline: 2px solid #6366f1;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+}
+
+.note-embedded-image,
+.note-item-text img,
+.universal-note-container img {
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 8px;
+  display: block;
+  object-fit: contain;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.note-item-text a.note-link,
+.note-link {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 2.5px;
+  cursor: pointer;
+  word-break: break-word;
+  transition: color 0.15s ease;
+}
+
+.note-item-text a.note-link:hover,
+.note-link:hover {
+  color: #1d4ed8;
+}
+
+.note-bullet-item {
+  list-style-type: disc;
+  margin-left: 24px;
+  margin-bottom: 4px;
+}
+
+.note-numbered-item {
+  list-style-type: decimal;
+  margin-left: 24px;
+  margin-bottom: 4px;
+}
+
+.note-item-text.raw-code-mode {
+  font-family: 'Consolas', 'Fira Code', 'Monaco', monospace !important;
+  font-size: 13.5px !important;
+  line-height: 1.5 !important;
+  color: #0f172a !important;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  padding: 8px 10px;
+  white-space: pre-wrap;
+}
+
+.note-item-media {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 8px;
+  border: 1px solid #e2e8f0;
+  position: relative;
+}
+
+.note-item-media-caption {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-align: center;
+}
+
+body[data-theme="dark"] .text-block-content h1,
+body[data-theme="dark"] .text-block-content h2,
+body[data-theme="dark"] .text-block-content h3,
+body[data-theme="dark"] .note-item-text h1,
+body[data-theme="dark"] .note-item-text h2,
+body[data-theme="dark"] .note-item-text h3 {
+  color: #ffffff;
+}
+
+body[data-theme="dark"] .text-block-content p,
+body[data-theme="dark"] .text-block-content li,
+body[data-theme="dark"] .note-item-text p,
+body[data-theme="dark"] .note-item-text li {
+  color: #d4d4d8;
+}
+
+body[data-theme="dark"] .text-block-content code,
+body[data-theme="dark"] .note-item-text code {
+  background: #252525;
+  color: #93c5fd;
+  border: 1px solid #3f3f3f;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+body[data-theme="dark"] .note-link {
+  color: #60a5fa;
+}
+
+body[data-theme="dark"] .note-link:hover {
+  color: #93c5fd;
+  text-decoration: underline;
+}
