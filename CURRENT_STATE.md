@@ -193,6 +193,14 @@ This application is a freeform, ultra-fast note-taking system designed to combin
   5. **Massive Orchestrator Reduction:** `public/app.js` reduced from **4,028 lines down to 699 lines** (a total reduction of **3,329 lines / 82.6%**).
   6. **Automated Test Shield:** 100% of all automated tests passing (**76 / 76 tests**), including unit tests and the live Puppeteer visual browser test.
 
+### 21. Prototype & Redundant Assets Archive (Phase 4 Completed — v4.7.4)
+* **The Goal:** Remove old experimental files that cause search friction and confusion during development, keeping only production files in the main workspace.
+* **The Solution:**
+  1. Ran dependency safety scan to guarantee no production files in `public/` or `src/` import or depend on `prototype/`.
+  2. Safely compressed `prototype/` into `archive/prototype_legacy.zip` (83.7 KB) so early development experiments remain preserved in storage.
+  3. Cleaned up the loose `prototype/` folder from the root workspace.
+  4. Verified all 76 automated tests pass with 100% success.
+
 ---
 
 ## 🚀 3. Features & Capabilities
