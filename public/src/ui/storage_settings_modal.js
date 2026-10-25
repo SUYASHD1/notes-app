@@ -234,8 +234,8 @@ export function setupStorageSettingsModal({
         if (loadActivePageDocument) await loadActivePageDocument();
         if (renderAll) renderAll();
         await updateStorageSettingsView();
-        renderExplorerTree();
-        showToast(`✅ Restored ${res.pagesRestored} pages and ${res.notebooksRestored} notebooks!`);
+        const conflictNote = res.conflictsResolved > 0 ? ` (${res.conflictsResolved} conflicting notes saved safely as copies)` : '';
+        showToast(`✅ Restored ${res.pagesRestored} pages across ${res.notebooksRestored} notebooks!${conflictNote}`);
       } catch (err) {
         alert('Failed to read or parse backup file: ' + err.message);
       }

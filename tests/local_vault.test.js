@@ -174,3 +174,60 @@ test('LocalVault computes live storage metrics and breakdown', async () => {
   assert.equal(metrics.blocksCount, 2);
   assert.ok(metrics.formattedUsage);
 });
+
+test('LocalVault Smart Merge: keeps both copies when page ID or content conflicts', async () => {
+  const vault = new LocalVault('TestDB_SmartMerge');
+
+  // Existing current state with today's edits
+  await vault.saveHierarchy({
+    notebooks: [{ id: 'nb_active', name: 'Current Active Notebook' }],
+    sections: [{ id: 'sec_today', notebookId: 'nb_active', name: 'Today Section' }],
+    pages: [{ id: 'page_shared', sectionId: 'sec_today', title: 'Shared Note (Today New Edit)' }]
+  });
+
+  await vault.savePage('page_shared', {
+    id: 'page_shared',
+    title: 'Shared Note (Today New Edit)',
+    blocks: [{ id: 'b1', content: 'Updated today with fresh ideas' }]
+  });
+
+  // Older backup payload that has an older version of 'page_shared' and an additional notebook
+  const oldBackup = {
+    appName: 'NotesApp',
+    hierarchy: {
+      notebooks: [
+        { id: 'nb_active', name: 'Current Active Notebook' },
+        { id: 'nb_archive', name: 'Archived Notebook' }
+      ],
+      sections: [
+        { id: 'sec_today', notebookId: 'nb_active', name: 'Today Section' },
+        { id: 'sec_old', notebookId: 'nb_archive', name: 'Old Section' }
+      ],
+      pages: [
+        { id: 'page_shared', sectionId: 'sec_today', title: 'Shared Note (Last Week)' },
+        { id: 'page_old', sectionId: 'sec_old', title: 'Old History' }
+      ]
+    },
+    pages: [
+      { id: 'page_shared', title: 'Shared Note (Last Week)', blocks: [{ id: 'b1', content: 'Last week content' }] },
+      { id: 'page_old', title: 'Old History', blocks: [{ id: 'b2', content: 'Historic data' }] }
+    ]
+  };
+
+  const res = await vault.importFullBackup(oldBackup);
+  assert.equal(res.success, true);
+  assert.equal(res.conflictsResolved, 1, 'Should resolve 1 conflicting page by keeping both');
+
+  // Verify current note is NOT destroyed or overwritten
+  const currentDoc = await vault.loadPage('page_shared');
+  assert.equal(currentDoc.title, 'Shared Note (Today New Edit)');
+  assert.equal(currentDoc.blocks[0].content, 'Updated today with fresh ideas');
+
+  // Verify merged hierarchy has both notebooks and all pages
+  const hier = await vault.loadHierarchy();
+  assert.equal(hier.notebooks.length, 2, 'Should keep both active and incoming notebooks');
+  assert.ok(hier.pages.some(p => p.id === 'page_shared'));
+  assert.ok(hier.pages.some(p => p.id === 'page_old'));
+  assert.ok(hier.pages.some(p => p.title.includes('(Restored)')));
+});
+

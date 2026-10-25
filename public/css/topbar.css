@@ -14,12 +14,21 @@
   justify-content: space-between;
   box-shadow: var(--shadow-sm);
   z-index: 100;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+#top-bar::-webkit-scrollbar {
+  display: none;
 }
 
 .header-left, .header-right {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
 }
 
 .app-branding {
