@@ -294,3 +294,27 @@ font[face*="Georgia"], [style*="Georgia"] { font-family: 'Georgia', 'Times New R
 font[face*="Calibri"], [style*="Calibri"] { font-family: 'Calibri', 'Segoe UI', sans-serif !important; }
 font[face*="Segoe UI"], [style*="Segoe UI"] { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important; }
 
+/* Embedded Rich Text Tables */
+.note-item-text table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 10px 0;
+  font-size: 0.95em;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+.note-item-text th, .note-item-text td {
+  border: 1px solid var(--border-color);
+  padding: 6px 10px;
+  text-align: left;
+}
+.note-item-text th {
+  background: var(--panel-sub, #f8fafc);
+  font-weight: 600;
+  color: var(--text-main);
+}
+body[data-theme="dark"] .note-item-text th { background: #2a2a2a; color: #f1f5f9; }
+body[data-theme="dark"] .note-item-text tr:nth-child(even) td { background: rgba(255, 255, 255, 0.02); }
+
+

@@ -4,29 +4,31 @@ import { AddBlockCommand } from '../core/history.js';
 import { vaultExternalImage, vaultImagesInTextItem } from './media_renderer.js';
 import { openImageCropper } from './image_cropper.js';
 
-function extractTableFromHtml(html) {
-  if (typeof DOMParser === 'undefined') return null;
-  try {
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    const table = doc.querySelector('table');
-    if (!table) return null;
-    const trs = Array.from(table.querySelectorAll('tr'));
-    if (trs.length === 0) return null;
-    const rows = trs.map(tr => Array.from(tr.querySelectorAll('th, td')).map(td => td.textContent.trim())).filter(r => r.length > 0);
-    return rows.length > 0 ? rows : null;
-  } catch (_) {
+function extractStandaloneTable(htmlData, plainText) {
+  if (htmlData && htmlData.includes('<table') && typeof DOMParser !== 'undefined') {
+    try {
+      const doc = new DOMParser().parseFromString(htmlData, 'text/html');
+      const table = doc.querySelector('table');
+      if (table) {
+        const bodyText = (doc.body ? doc.body.textContent : doc.textContent || '').trim();
+        const tableText = (table.textContent || '').trim();
+        const hasHeadings = !!doc.querySelector('h1, h2, h3, h4, h5, h6');
+        const hasLongParagraphs = Array.from(doc.querySelectorAll('p, div, li')).some(el => !table.contains(el) && el.textContent.trim().length > 40);
+        if (!hasHeadings && !hasLongParagraphs && (bodyText.length - tableText.length < 80)) {
+          const rows = Array.from(table.querySelectorAll('tr')).map(tr => Array.from(tr.querySelectorAll('th, td')).map(td => td.textContent.trim())).filter(r => r.length > 0);
+          return rows.length > 0 ? rows : null;
+        }
+      }
+    } catch (_) {}
     return null;
   }
-}
-
-function extractTableFromText(text) {
-  if (!text || !text.includes('\t') || !text.includes('\n')) return null;
-  const lines = text.trim().split(/\r?\n/).filter(Boolean);
-  if (lines.length < 2) return null;
-  const rows = lines.map(l => l.split('\t').map(c => c.trim()));
-  const colCount = rows[0].length;
-  if (colCount >= 2 && rows.every(r => r.length === colCount)) {
-    return rows;
+  if (!htmlData && plainText && plainText.includes('\t') && plainText.includes('\n')) {
+    const lines = plainText.trim().split(/\r?\n/).filter(Boolean);
+    if (lines.length >= 2) {
+      const rows = lines.map(l => l.split('\t').map(c => c.trim()));
+      const colCount = rows[0].length;
+      if (colCount >= 2 && rows.every(r => r.length === colCount)) return rows;
+    }
   }
   return null;
 }
@@ -324,24 +326,14 @@ export function renderTextItem(parentEl, item, headerEl, containerBlock, deps = 
       }
     }
 
-    // Check for copied Table (from Web, Word, Excel, or Google Sheets)
-    const tableData = (htmlData && htmlData.includes('<table'))
-      ? extractTableFromHtml(htmlData)
-      : (plainText ? extractTableFromText(plainText) : null);
-
+    // Check for pure standalone spreadsheet or table paste (from Excel, Google Sheets, etc.)
+    const tableData = extractStandaloneTable(htmlData, plainText);
     if (tableData && containerBlock) {
       e.preventDefault();
       const currentItemIndex = (containerBlock.items || []).indexOf(item);
-      const newTableItem = {
-        id: 'item_tbl_' + Date.now(),
-        type: 'table',
-        data: tableData
-      };
-      if (currentItemIndex !== -1) {
-        containerBlock.items.splice(currentItemIndex + 1, 0, newTableItem);
-      } else {
-        containerBlock.items.push(newTableItem);
-      }
+      const newTableItem = { id: 'item_tbl_' + Date.now(), type: 'table', data: tableData };
+      if (currentItemIndex !== -1) containerBlock.items.splice(currentItemIndex + 1, 0, newTableItem);
+      else containerBlock.items.push(newTableItem);
       if (saveActivePageDocument) saveActivePageDocument();
       if (renderAll) renderAll();
       if (showToast) showToast('⊞ Converted copied grid into interactive Table (+Row, +Col)');
