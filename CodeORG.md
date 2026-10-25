@@ -26,15 +26,17 @@ To keep this system clean and maintainable as it grows, we follow **Four Golden 
 
 ---
 
-## 📜 2. The Five Golden Rules
+## 📜 2. The Six Golden Rules
 
-### Rule 1: The 350-Line Limit (Fast Search & Easy Debugging)
-- **Hard Ceiling: 350 Lines Maximum per file.**
-- Any file (JavaScript, CSS, or HTML) that exceeds **350 lines** requires immediate organization into smaller modules.
+### Rule 1: The Pragmatic "Buffer Zone" (Target ~350 Lines, Max 450 Buffer)
+- **Primary Target: Aim for ~350 Lines per file.**
+- **The Buffer Zone (Option A):** A grace buffer up to **450 lines** is permitted if a component has a single, cohesive responsibility (for example, `sidebar.js` at 398 lines or `indexed_db.js` at 425 lines).
+- **Hard Ceiling: 450 Lines Maximum.** Zero files across the codebase may ever exceed 450 lines.
 - **Why this rule exists:**
-  - When files grow past 350 lines, finding a simple button or color requires searching through thousands of lines.
+  - When files grow past 450 lines, finding a simple button or color requires searching through thousands of lines.
   - Old and new code start fighting each other, creating duplicate styles and difficult-to-trace bugs.
-  - At 200–300 lines, you or an AI assistant can read and understand the entire file in just 2 mouse scrolls.
+  - At 200–350 lines, you or an AI assistant can read and understand the entire file in just 2 mouse scrolls.
+  - The buffer zone prevents *artificial over-fragmentation* (splitting a single cohesive component into tiny unnatural pieces), while strictly banning oversized multi-responsibility files.
 - **The 30-Second Test:** If you cannot find where a visual style, button, or calculation lives within 30 seconds, the file is officially too big and must be split.
 
 ### Rule 2: Zero Hardcoded Colors (The Single Source of Truth for Design)
@@ -49,21 +51,34 @@ Our project has two twin engine folders that work hand-in-hand:
 
 > **Whenever you add or update an engine helper in `src/`, make sure the matching file in `public/src/` is updated as well!** This guarantees our automated tests always reflect the exact code running on your iPad and PC.
 
-### Rule 4: Test Before You Ship (The 75-Test Shield: Logic + Puppeteer Visual)
-- We have an automated test suite of **75 tests** in the `tests/` directory.
+### Rule 4: Test Before You Ship (The 76-Test Shield: Logic + Puppeteer Visual)
+- We have an automated test suite of **76 tests** in the `tests/` directory.
 - Running `node --test tests/*.test.js` takes **~3 seconds** and checks:
-  - 74 Unit Tests: Handwriting, bounding boxes, storage, backups, PDF layout, LaTeX math, dark mode, and canvas boundaries.
+  - 75 Unit Tests: Handwriting, bounding boxes, storage, backups, PDF layout, LaTeX math, dark mode, and canvas boundaries.
   - 1 Puppeteer Visual Safety Net (`tests/visual_smoke.test.js`): Headless Microsoft Edge/Chrome test verifying that flyouts stay closed by default, transparent drawing layers don't block clicks, and note boundary resize cursors trigger on hover.
-- **Rule:** Before any change is marked as complete, you must run the tests and verify that `75 / 75 tests passed (100%)`.
+- **Rule:** Before any change is marked as complete, you must run the tests and verify that `76 / 76 tests passed (100%)`.
 
 ### Rule 5: Always Bump the Version Number (The Anti-Cache Guarantee)
 - Web browsers and Apple's iPad Safari aggressively cache files on disk to save data.
 - If you change a `.js` or `.css` file without updating the version query, the user's iPad will keep running the old cached code.
 - **Whenever you make a visual or logic update:**
-  1. Bump the query in `public/index.html` (e.g. `styles.css?v=4.6.1` and `app.js?v=4.6.1`).
-  2. Bump `CACHE_NAME` in `public/sw.js` (e.g. `notes-app-cache-v4.6.1`).
+  1. Bump the query in `public/index.html` (e.g. `styles.css?v=4.7.6` and `app.js?v=4.7.6`).
+  2. Bump `CACHE_NAME` in `public/sw.js` (e.g. `notes-app-cache-v4.7.6`).
   3. Update `PRECACHE_ASSETS` in `public/sw.js` with the new version string.
   This forces the browser to discard outdated files and download the fresh update immediately.
+
+### Rule 6: The "Permanent Shell" Architecture (`public/index.html`)
+- **`index.html` holds strictly the permanent layout frame:**
+  - Top Master App Bar (always visible)
+  - Navigation Sidebar (always visible)
+  - 2D Canvas Workspace & Scrollbars (always visible)
+  - Ribbon Formatting Bar (always visible)
+  - Bottom Status Bar (always visible)
+- **Target Size:** `index.html` must remain under **~350 lines** permanently.
+- **The Scalability Law for Popups & Dialogs:**
+  - Never paste 100–200 lines of modal markup directly into `index.html`.
+  - Every popup dialog, flyout card, or floating tool (like the Storage Hub, future Audio Recorder, PDF Export, or Page Recovery) must live in its own self-contained component module (e.g., `src/ui/storage_settings_template.js`) and mount itself dynamically on startup or on demand.
+  - **The Long-Term Benefit:** As the app grows from 5 features to 50 features, `index.html` stays permanently lightweight (~300 lines) with zero dead or ghost code.
 
 ---
 
