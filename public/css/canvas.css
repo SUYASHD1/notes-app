@@ -185,7 +185,7 @@
   cursor: pointer;
   user-select: none;
   touch-action: none !important;
-  transition: box-shadow 0.15s ease, background-color 0.2s ease, border-color 0.2s ease;
+  transition: width 0.2s ease, padding 0.2s ease, box-shadow 0.15s ease, background-color 0.2s ease, border-color 0.2s ease, border-radius 0.2s ease;
   font-weight: 600;
   font-size: 0.85rem;
   color: var(--text-main);
@@ -196,6 +196,60 @@
   cursor: grabbing !important;
   box-shadow: 0 16px 32px -4px rgba(37, 99, 235, 0.35) !important;
   opacity: 0.95;
+  transition: none !important;
+}
+
+/* Edge Docking Styles */
+.floating-puck.docked-left {
+  left: 0 !important;
+  right: auto !important;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left: none;
+  padding: 7px 8px;
+  box-shadow: 2px 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.floating-puck.docked-right {
+  right: 0 !important;
+  left: auto !important;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right: none;
+  padding: 7px 8px;
+  box-shadow: -2px 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.floating-puck.docked-left .puck-label,
+.floating-puck.docked-left .puck-drag-dots,
+.floating-puck.docked-right .puck-label,
+.floating-puck.docked-right .puck-drag-dots {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  margin: 0;
+  pointer-events: none;
+  transition: max-width 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, margin 0.2s ease;
+}
+
+.floating-puck.docked-left:hover,
+.floating-puck.docked-right:hover {
+  padding: 7px 13px;
+}
+
+.floating-puck.docked-left:hover .puck-label,
+.floating-puck.docked-right:hover .puck-label {
+  max-width: 90px;
+  opacity: 1;
+  margin-left: 6px;
+}
+
+.floating-puck.docked-left:hover .puck-drag-dots,
+.floating-puck.docked-right:hover .puck-drag-dots {
+  max-width: 25px;
+  opacity: 0.7;
+  margin-left: 2px;
 }
 
 .floating-puck.mode-ink {
@@ -239,3 +293,5 @@ body[data-theme="dark"] .floating-puck {
 
 body[data-theme="dark"] #puck-label { color: var(--text-main); }
 body[data-theme="dark"] .puck-drag-dots { color: #737373; }
+body[data-theme="dark"] .floating-puck.docked-left { border-left: none !important; }
+body[data-theme="dark"] .floating-puck.docked-right { border-right: none !important; }

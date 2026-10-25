@@ -250,5 +250,24 @@ export function setupStorageSettingsModal({
     showToast('☁ Cloudflare R2 credentials verified! Delta sync ready.');
   });
 
+  // Display & Interface Preferences: Floating Mode Switch Button
+  const puckToggle = document.getElementById('toggle-floating-puck');
+  const floatingPuck = document.getElementById('floating-mode-puck');
+  if (puckToggle) {
+    const isPuckVisible = localStorage.getItem('notes_show_mode_puck') !== 'false';
+    puckToggle.checked = isPuckVisible;
+    if (floatingPuck) {
+      floatingPuck.style.display = isPuckVisible ? 'flex' : 'none';
+    }
+    puckToggle.addEventListener('change', () => {
+      const show = puckToggle.checked;
+      localStorage.setItem('notes_show_mode_puck', show ? 'true' : 'false');
+      if (floatingPuck) {
+        floatingPuck.style.display = show ? 'flex' : 'none';
+      }
+      showToast(show ? '🔘 Floating mode button enabled on canvas' : '👁️ Floating mode button hidden (switch modes anytime from top bar)');
+    });
+  }
+
   return { updateStorageSettingsView, renderExplorerTree };
 }

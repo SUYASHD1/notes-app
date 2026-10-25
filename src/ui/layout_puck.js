@@ -81,18 +81,35 @@ export function setupFloatingModePuck({ state, onToggleMode }) {
   const puck = document.getElementById('floating-mode-puck');
   if (!puck) return;
 
-  // Restore saved position anywhere on left/right/edges
+  // 1. Check user preference from storage & visual settings
+  const isPuckVisible = localStorage.getItem('notes_show_mode_puck') !== 'false';
+  puck.style.display = isPuckVisible ? 'flex' : 'none';
+
+  // 2. Restore saved position & dock state anywhere on left/right/edges
   try {
     const saved = JSON.parse(localStorage.getItem('notes_puck_pos') || 'null');
-    if (saved && typeof saved.x === 'number' && typeof saved.y === 'number') {
-      const maxX = Math.max(10, window.innerWidth - 130);
-      const maxY = Math.max(10, window.innerHeight - 50);
-      const clampedX = Math.min(maxX, Math.max(10, saved.x));
+    if (saved && typeof saved.y === 'number') {
+      const maxY = Math.max(50, window.innerHeight - 50);
       const clampedY = Math.min(maxY, Math.max(50, saved.y));
-      puck.style.left = `${clampedX}px`;
       puck.style.top = `${clampedY}px`;
-      puck.style.right = 'auto';
       puck.style.bottom = 'auto';
+
+      if (saved.docked === 'left') {
+        puck.classList.add('docked-left');
+        puck.classList.remove('docked-right');
+        puck.style.left = '0px';
+        puck.style.right = 'auto';
+      } else if (saved.docked === 'right') {
+        puck.classList.add('docked-right');
+        puck.classList.remove('docked-left');
+        puck.style.left = 'auto';
+        puck.style.right = '0px';
+      } else if (typeof saved.x === 'number') {
+        const maxX = Math.max(10, window.innerWidth - 130);
+        const clampedX = Math.min(maxX, Math.max(10, saved.x));
+        puck.style.left = `${clampedX}px`;
+        puck.style.right = 'auto';
+      }
     }
   } catch (_) {}
 
@@ -118,6 +135,9 @@ export function setupFloatingModePuck({ state, onToggleMode }) {
     const dx = e.clientX - puckStartPointer.x;
     const dy = e.clientY - puckStartPointer.y;
     if (Math.hypot(dx, dy) > 5) {
+      if (!hasMoved) {
+        puck.classList.remove('docked-left', 'docked-right');
+      }
       hasMoved = true;
     }
 
@@ -127,7 +147,7 @@ export function setupFloatingModePuck({ state, onToggleMode }) {
     // Clamp inside window boundaries with generous touch margin
     const maxX = window.innerWidth - puck.offsetWidth - 8;
     const maxY = window.innerHeight - puck.offsetHeight - 8;
-    newX = Math.min(maxX, Math.max(8, newX));
+    newX = Math.min(maxX, Math.max(0, newX));
     newY = Math.min(maxY, Math.max(48, newY));
 
     puck.style.left = `${newX}px`;
@@ -148,10 +168,33 @@ export function setupFloatingModePuck({ state, onToggleMode }) {
     } catch (_) {}
 
     if (hasMoved) {
-      // User parked it! Save position
+      // Check if dragged near left or right edge for docking
       const r = puck.getBoundingClientRect();
+      const dockThreshold = 45;
+      let docked = null;
+
+      if (r.left <= dockThreshold) {
+        docked = 'left';
+        puck.classList.add('docked-left');
+        puck.classList.remove('docked-right');
+        puck.style.left = '0px';
+        puck.style.right = 'auto';
+      } else if (window.innerWidth - r.right <= dockThreshold) {
+        docked = 'right';
+        puck.classList.add('docked-right');
+        puck.classList.remove('docked-left');
+        puck.style.left = 'auto';
+        puck.style.right = '0px';
+      } else {
+        puck.classList.remove('docked-left', 'docked-right');
+      }
+
       try {
-        localStorage.setItem('notes_puck_pos', JSON.stringify({ x: Math.round(r.left), y: Math.round(r.top) }));
+        localStorage.setItem('notes_puck_pos', JSON.stringify({
+          x: Math.round(r.left),
+          y: Math.round(r.top),
+          docked
+        }));
       } catch (_) {}
     } else {
       // Quick tap! Toggle between Navigate and Ink modes

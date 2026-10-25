@@ -1,6 +1,6 @@
 # 📓 Notes App — Current State & Knowledge Log
 
-> **Last Updated:** 25 October 2026 (v4.8.1)  
+> **Last Updated:** 25 October 2026 (v4.8.2)  
 > **Status:** Fully Functional, PWA Standalone Enabled, Deployed to Production (Vercel)  
 > **Live Web Application:** [https://notes-app-topaz-six.vercel.app/](https://notes-app-topaz-six.vercel.app/)  
 > **Automated Test Suite:** `77 / 77 tests passed (100%)`
@@ -200,6 +200,20 @@ This application is a freeform, ultra-fast note-taking system designed to combin
   2. Safely compressed `prototype/` into `archive/prototype_legacy.zip` (83.7 KB) so early development experiments remain preserved in storage.
   3. Cleaned up the loose `prototype/` folder from the root workspace.
   4. Verified all 76 automated tests pass with 100% success.
+
+### 22. Canvas Polish, Table/Image Duality Unification & Status Bar Integration (v4.8.1)
+* **Decluttered Note Headers:** Removed redundant inline insertion buttons; preserved clean drag dots `:::` and delete `×`.
+* **Keyboard Navigation:** Added keyboard `Delete`/`Backspace` container removal and `Escape` deselect.
+* **Unified Object Handling:** Automatically parses clipboard HTML tables into native interactive `type: 'table'` items with dynamic `+ Row` / `+ Col` buttons; added `✂ Crop` support for all embedded images.
+* **Cohesive Ghost Scrollbars:** Subtly integrated the horizontal canvas scrollbar directly into the bottom status bar between the notebook breadcrumb and zoom controls.
+
+### 23. Floating Mode Switch Enhancements: Edge Docking & Visibility Preference (v4.8.2)
+* **The Problem:** The floating mode button between Navigate and Ink modes hovered permanently over canvas content and could block notes when users preferred clean reading or typing.
+* **The Solution:**
+  1. **Smart Edge Docking:** Dragging the puck near the left or right edge of the screen automatically snaps it into a slim, unobtrusive side tab.
+  2. **Micro-Expansion on Hover:** Hovering over the edge-docked tab smoothly slides it out to show its label and controls; tapping it immediately toggles modes.
+  3. **Display Preference Setting:** Added a new **Display & Interface Preferences** section to the **Storage & Vault Settings** flyout (`#toggle-floating-puck`). Users can toggle the floating button on or off anytime.
+  4. **Persistent Preference:** Remembers visibility and edge dock position across app reloads via local storage (`notes_show_mode_puck` and `notes_puck_pos`).
 
 ---
 

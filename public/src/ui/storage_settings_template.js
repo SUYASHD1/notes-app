@@ -180,7 +180,29 @@ export function getStorageSettingsModalHTML() {
             </div>
           </div>
 
-          <!-- Section 5: Cloud Sync (Collapsible) -->
+          <!-- Section 5: Display & Interface Preferences -->
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <div class="card-icon-title">
+                <span class="card-emoji">🎨</span>
+                <div>
+                  <h4>Display &amp; Interface Preferences</h4>
+                  <p class="card-sub">Customize on-screen controls and visual helpers</p>
+                </div>
+              </div>
+            </div>
+            <div class="location-details-box" style="margin-top: 10px;">
+              <label class="pref-toggle-row" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;">
+                <div>
+                  <strong style="font-size: 0.9rem; color: var(--text-main);">Floating Mode Switch Button</strong>
+                  <div style="font-size: 0.8rem; color: var(--text-muted);">Quick-switch button between Navigate and Ink modes on canvas</div>
+                </div>
+                <input type="checkbox" id="toggle-floating-puck" checked style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent-color, #2563eb);">
+              </label>
+            </div>
+          </div>
+
+          <!-- Section 6: Cloud Sync (Collapsible) -->
           <div class="settings-card cloud-card">
             <details class="cloud-sync-details">
               <summary class="cloud-summary">
