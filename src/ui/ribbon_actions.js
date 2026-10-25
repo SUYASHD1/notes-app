@@ -26,15 +26,7 @@ export function setupRibbonControls(options) {
   let lastRenderedZoom = Math.round(state.viewport.zoom * 100);
 
   // --- Container Item Creation Actions ---
-  const {
-    actionAddNote,
-    actionBrowseMedia,
-    actionBrowsePdf,
-    actionInsertTable,
-    actionInsertPlot,
-    actionInsertSketch,
-    actionInsertMath
-  } = createContainerActions(options);
+  const { actionAddNote, actionBrowseMedia, actionBrowsePdf, actionInsertTable, actionInsertPlot, actionInsertSketch, actionInsertMath } = createContainerActions(options);
 
   // Default tool is auto-select & pan
   state.activeTool = state.activeTool || 'select';
@@ -56,9 +48,14 @@ export function setupRibbonControls(options) {
 
   function restoreTextSelection() {
     if (lastActiveRange) {
+      const scrollX = window.scrollX;
+      const scrollY = window.scrollY;
       const sel = window.getSelection();
       sel.removeAllRanges();
       sel.addRange(lastActiveRange);
+      if (window.scrollX !== scrollX || window.scrollY !== scrollY) {
+        window.scrollTo(scrollX, scrollY);
+      }
     }
   }
 
@@ -73,7 +70,7 @@ export function setupRibbonControls(options) {
   ['ribbon-color', 'ribbon-font', 'ribbon-font-size', 'ribbon-heading'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
-      el.addEventListener('focus', captureTextSelection);
+      el.addEventListener('focus', captureTextSelection, { preventScroll: true });
       el.addEventListener('pointerdown', captureTextSelection);
     }
   });
@@ -212,18 +209,22 @@ export function setupRibbonControls(options) {
       ribbonColorBar.style.backgroundColor = val;
       ribbonColorBar.style.boxShadow = `0 1px 5px ${val}66`;
     }
+    fontColorPalette?.querySelectorAll('.fc-swatch').forEach(s => s.classList.remove('active'));
+    fontColorPalette?.querySelector('.fc-custom-btn')?.classList.add('active');
     fontColorPalette?.classList.add('hidden');
     applyFontColor(val);
   });
 
-  document.addEventListener('click', (e) => {
+  const dismissPalettes = (e) => {
     if (!e.target.closest('#highlighter-palette') && !e.target.closest('#ribbon-highlight-dropdown-btn')) {
       highlightPalette?.classList.add('hidden');
     }
     if (!e.target.closest('#font-color-palette') && !e.target.closest('#ribbon-font-color-dropdown-btn')) {
       fontColorPalette?.classList.add('hidden');
     }
-  });
+  };
+  document.addEventListener('pointerdown', dismissPalettes);
+  document.addEventListener('click', dismissPalettes);
 
   document.addEventListener('selectionchange', () => {
     if (isHighlightMode) {
@@ -258,13 +259,18 @@ export function setupRibbonControls(options) {
     captureTextSelection();
   });
 
-  // Font Family, Font Size, Heading Style
+  // Font Family, Font Size, Heading Style (Master Switch 2: Frozen Ground)
   document.getElementById('ribbon-font')?.addEventListener('change', (e) => {
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
     restoreTextSelection();
     document.execCommand('fontName', false, e.target.value);
     captureTextSelection();
+    if (window.scrollX !== scrollX || window.scrollY !== scrollY) window.scrollTo(scrollX, scrollY);
   });
   document.getElementById('ribbon-font-size')?.addEventListener('change', (e) => {
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
     restoreTextSelection();
     const sel = window.getSelection();
     if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
@@ -275,11 +281,15 @@ export function setupRibbonControls(options) {
       range.insertNode(span);
     }
     captureTextSelection();
+    if (window.scrollX !== scrollX || window.scrollY !== scrollY) window.scrollTo(scrollX, scrollY);
   });
   document.getElementById('ribbon-heading')?.addEventListener('change', (e) => {
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
     restoreTextSelection();
     document.execCommand('formatBlock', false, `<${e.target.value}>`);
     captureTextSelection();
+    if (window.scrollX !== scrollX || window.scrollY !== scrollY) window.scrollTo(scrollX, scrollY);
   });
 
   // Live Ribbon Active State Synchronization (subtle blue glow for active commands)

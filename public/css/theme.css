@@ -30,6 +30,13 @@
   --accent-hover: #1d4ed8;
   --accent-light: #eff6ff;
 
+  /* Master Switch 1: Universal Tone (Light Mode) */
+  --active-glow-blue: #38bdf8;
+  --active-glow-bg: rgba(56, 189, 248, 0.16);
+  --active-glow-border: rgba(56, 189, 248, 0.45);
+  --active-glow-text: #0284c7;
+  --active-glow-shadow: 0 0 10px rgba(56, 189, 248, 0.28);
+
   /* Elevation Shadows */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
@@ -80,6 +87,14 @@ body[data-theme="dark"] {
   --accent-color: #3b82f6;
   --accent-hover: #60a5fa;
   --accent-light: rgba(59, 130, 246, 0.15);
+
+  /* Master Switch 1: Universal Tone (Dark Mode) */
+  --active-glow-blue: #38bdf8;
+  --active-glow-bg: rgba(56, 189, 248, 0.22);
+  --active-glow-border: rgba(56, 189, 248, 0.55);
+  --active-glow-text: #38bdf8;
+  --active-glow-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+
   --scrollbar-thumb: rgba(255, 255, 255, 0.25);
   --scrollbar-thumb-hover: rgba(255, 255, 255, 0.5);
   --scrollbar-thumb-active: rgba(255, 255, 255, 0.8);

@@ -1,9 +1,9 @@
 # 📓 Notes App — Current State & Knowledge Log
 
-> **Last Updated:** 25 October 2026 (v4.8.6)  
+> **Last Updated:** 25 October 2026 (v4.8.7)  
 > **Status:** Fully Functional, PWA Standalone Enabled, Deployed to Production (Vercel)  
 > **Live Web Application:** [https://notes-app-topaz-six.vercel.app/](https://notes-app-topaz-six.vercel.app/)  
-> **Automated Test Suite:** `77 / 77 tests passed (100%)`
+> **Automated Test Suite:** `78 / 78 tests passed (100%)`
 
 ---
 
@@ -246,7 +246,19 @@ This application is a freeform, ultra-fast note-taking system designed to combin
 ### 26. Global Theme-Adaptive Font Colors, Two-in-One Text Color Tool & Subtle Bluish Active Halo (v4.8.6)
 * **Global Theme-Adaptive Font Colors:** Extended the color-shifting architecture to text. Dark navy blues, crimson reds, deep forest greens, purples, warm ambers, and blacks automatically soften in dark mode into luminous, high-comfort night shades (sky blue, soft coral, fresh mint, lilac lavender, warm peach, and cream white) with 100% legibility and zero glare. The underlying document data remains pristine.
 * **Unified Two-in-One Font Color Tool (`A`):** Upgraded the font color button to match the Highlighter standard: clicking the letter `A` instantly applies the loaded color, while the companion dropdown chevron opens a curated quick-palette (Default, Royal Blue, Crimson, Forest Green, Purple, Warm Amber, plus custom color picker) with an active color indicator bar beneath the icon.
-* **Universal Subtle Bluish Halo Glow:** Replaced clunky square borders on active tools with a soft, breathing bluish-indigo halo glow (`rgba(99, 102, 241, 0.22)`) across text formatting buttons (`B`, `I`, `U`, `S`), alignment buttons, list buttons, and navigation/ink mode toggles.
+* **Universal Subtle Bluish Halo Glow:** Replaced clunky square borders on active tools with a soft, breathing bluish-indigo halo glow across text formatting buttons (`B`, `I`, `U`, `S`), alignment buttons, list buttons, and navigation/ink mode toggles.
+
+### 27. The Great Patch — Master Behavioral Switches, Vector Craftsmanship & Chisel Highlighting (v4.8.7)
+* **Universal Tone Key (Master Switch 1):** Unified all active buttons, tabs ("Navigate", "Home"), and format toggles under a single, cohesive sky-blue halo token (`--active-glow-blue: #38bdf8`), completely eliminating the dark blue vs. light blue tone mismatch.
+* **Frozen Ground Key (Master Switch 2):** Locked viewport camera and window scroll during dropdown interactions (`#ribbon-font`, `#ribbon-font-size`, `#ribbon-heading`) using `{ preventScroll: true }` and anchor restoration, eliminating annoying camera jumps.
+* **Clean Slate Key (Master Switch 6):** Removed old legacy `.color-picker-wrapper` container rules that forced a vertical column layout. Replaced with clean horizontal side-by-side flex layout matching the Highlighter standard: the letter `A` and chevron dropdown arrow sit cleanly side-by-side with zero blocked clicks.
+* **Two-Way Mirror Key (Master Switch 3):** Any color change immediately lights up an illuminated color bar on the button and a soft, glowing active ring around the selected swatch, providing clear visual feedback on which color is active.
+* **Polite Guest Key (Master Switch 5):** Centralized mutual dismissal ensures opening the font color palette instantly closes the highlighter palette, and vice versa. Clicking outside dismisses open palettes immediately.
+* **Vector Ink Icons Craftsmanship:** Replaced archaic emoji glyphs (`🖊`, `🖍`, `🧹`) with crisp, scalable vector SVG geometry for Pen, Highlighter, and Eraser.
+* **Authentic Chisel Tip for Highlighters:** Dynamic `data-ink-tool="highlighter"` attribute automatically transforms the round `.size-dot` previews into an authentic angled, slanted chisel-nib silhouette.
+* **Realistic Highlighting Breadth:** Scaled highlighter strokes from thin pencil-like widths to real-world highlighter sweeps (14px, 20px, 28px, 38px) for effortless, natural text coverage.
+* **Custom Palette Launcher (`🎨`):** Replaced the raw black browser input box at the end of the ink palette with an elegant frosted launcher button.
+* **Automated Safety Shield in Microsoft Edge:** Verified 100% pass across all 78 automated tests (`node --test tests/*.test.js`), including live browser testing and visual screenshot validation in Microsoft Edge.
 
 ---
 

@@ -13,8 +13,11 @@ export function setupInkPaletteControls({
   const penControls = document.getElementById('pen-controls-cluster');
   const eraserControls = document.getElementById('eraser-controls-cluster');
 
+  const ribbonInkGroup = document.getElementById('ribbon-ink-group');
+
   const activatePen = () => {
     state.inkTool = 'pen';
+    ribbonInkGroup?.setAttribute('data-ink-tool', 'pen');
     penBtn?.classList.add('active');
     highlighterBtn?.classList.remove('active');
     eraserBtn?.classList.remove('active');
@@ -26,6 +29,7 @@ export function setupInkPaletteControls({
 
   const activateHighlighter = () => {
     state.inkTool = 'highlighter';
+    ribbonInkGroup?.setAttribute('data-ink-tool', 'highlighter');
     highlighterBtn?.classList.add('active');
     penBtn?.classList.remove('active');
     eraserBtn?.classList.remove('active');
@@ -82,11 +86,12 @@ export function setupInkPaletteControls({
     });
   });
 
-  // Custom Color Input
+  // Custom Color Input & Launcher Button
   const customColor = document.getElementById('ink-color-custom');
   if (customColor) {
     customColor.addEventListener('input', (e) => {
       document.querySelectorAll('.ink-swatch').forEach(s => s.classList.remove('active'));
+      customColor.closest('.ink-custom-btn')?.classList.add('active');
       state.inkColor = e.target.value;
       if (state.inkTool === 'eraser') activatePen();
     });

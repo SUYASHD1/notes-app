@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Notes">
   <link rel="apple-touch-icon" href="./icons/logo.svg">
-  <link rel="stylesheet" href="./styles.css?v=4.8.4">
+  <link rel="stylesheet" href="./styles.css?v=4.8.7">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -84,8 +84,6 @@
         </div>
         <span class="badge" id="storage-status">Local Saved</span>
       </div>
-
-
 
       <!-- Right: Navigate vs. Ink Mode & Settings -->
       <div class="header-right">
@@ -182,7 +180,7 @@
           <button id="ribbon-strike" class="fmt-btn" title="Strikethrough">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 7.5C17.5 5 15.5 3.5 12 3.5C8 3.5 6.5 5.5 6.5 7.5C6.5 12 17.5 11 17.5 16.5C17.5 19 15.5 20.5 12 20.5C7.5 20.5 6 18.5 6 16.5"></path><line x1="3" y1="12" x2="21" y2="12"></line></svg>
           </button>
-          <div class="color-picker-wrapper font-color-picker-wrapper" id="color-picker-wrapper" title="Font Color">
+          <div class="font-color-picker-wrapper" id="font-color-picker-wrapper" title="Font Color">
             <button id="ribbon-font-color-btn" class="fmt-btn font-color-main-btn" title="Font Color (Click to apply color)">
               <span class="color-picker-label">A</span>
               <div class="color-bar-indicator" id="ribbon-color-bar" style="background:#0f172a;"></div>
@@ -260,9 +258,18 @@
       <div id="ribbon-ink-group" class="ribbon-mode-group" style="display:none;">
         <!-- Tool Switcher (Pen vs Highlighter vs Eraser) -->
         <div class="ribbon-cluster ink-tool-switcher">
-          <button id="ink-tool-pen" class="ink-pill-btn active" title="Pen (Draw with Stylus/Mouse)">🖊 Pen</button>
-          <button id="ink-tool-highlighter" class="ink-pill-btn" title="Highlighter (Semi-transparent)">🖍 Highlighter</button>
-          <button id="ink-tool-eraser" class="ink-pill-btn" title="Eraser">🧹 Eraser</button>
+          <button id="ink-tool-pen" class="ink-pill-btn active" title="Pen (Draw with Stylus/Mouse)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg>
+            <span>Pen</span>
+          </button>
+          <button id="ink-tool-highlighter" class="ink-pill-btn" title="Highlighter (Semi-transparent)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11-6 6v3h9l3-3"></path><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"></path></svg>
+            <span>Highlighter</span>
+          </button>
+          <button id="ink-tool-eraser" class="ink-pill-btn" title="Eraser">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path><path d="M22 21H7"></path><path d="m5 11 9 9"></path></svg>
+            <span>Eraser</span>
+          </button>
         </div>
 
         <div class="v-divider"></div>
@@ -293,7 +300,10 @@
             <button class="ink-swatch" data-color="#16a34a" style="background:#16a34a;" title="Green"></button>
             <button class="ink-swatch" data-color="#9333ea" style="background:#9333ea;" title="Purple"></button>
             <button class="ink-swatch" data-color="#facc15" style="background:#facc15;" title="Highlighter"></button>
-            <input type="color" id="ink-color-custom" value="#0f172a" class="ink-color-custom-input" title="Custom Color">
+            <label class="ink-swatch ink-custom-btn" title="Custom Color">
+              <span style="font-size:11px;">🎨</span>
+              <input type="color" id="ink-color-custom" value="#0f172a" style="position:absolute; opacity:0; width:100%; height:100%; cursor:pointer; top:0; left:0;">
+            </label>
           </div>
         </div>
 
@@ -430,6 +440,6 @@
     <!-- Storage & Data Hub Settings Modal is dynamically mounted by storage_settings_modal.js -->
   </div>
 
-  <script type="module" src="./app.js?v=4.8.1"></script>
+  <script type="module" src="./app.js?v=4.8.7"></script>
 </body>
 </html>

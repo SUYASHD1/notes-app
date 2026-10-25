@@ -50,7 +50,7 @@
 .ribbon-tab-btn:hover { color: var(--text-main); }
 .ribbon-tab-btn.active {
   background: var(--card-bg);
-  color: var(--accent-color);
+  color: var(--active-glow-text);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
@@ -116,11 +116,11 @@
 .fmt-btn.active,
 .highlighter-main-btn.active,
 .font-color-main-btn.active {
-  background: rgba(99, 102, 241, 0.14) !important;
-  border-color: rgba(99, 102, 241, 0.4) !important;
-  color: #4338ca !important;
+  background: var(--active-glow-bg) !important;
+  border-color: var(--active-glow-border) !important;
+  color: var(--active-glow-text) !important;
   font-weight: 600;
-  box-shadow: 0 0 8px rgba(99, 102, 241, 0.22) !important;
+  box-shadow: var(--active-glow-shadow) !important;
 }
 
 .btn-action { font-size: 0.8rem; padding: 4px 8px; }
@@ -155,10 +155,15 @@
   color: var(--text-main);
   cursor: pointer;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  transition: border-color 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .ribbon-font-cluster select:hover { border-color: var(--border-color); }
+.ribbon-font-cluster select:focus {
+  outline: none;
+  border-color: var(--active-glow-blue);
+  box-shadow: 0 0 0 2px var(--active-glow-bg);
+}
 
 .ribbon-style-cluster, .ribbon-align-cluster {
   display: flex;
@@ -171,36 +176,7 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-.color-picker-wrapper {
-  position: relative;
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 6px;
-  border: 1px solid transparent;
-  cursor: pointer;
-  padding: 3px 0;
-  transition: all 0.15s ease;
-}
 
-.color-picker-wrapper:hover {
-  background: var(--dropdown-hover);
-  border-color: var(--border-color);
-  transform: translateY(-1px);
-}
-
-.color-picker-wrapper input[type="color"] {
-  position: absolute;
-  opacity: 0;
-  width: 100%;
-  height: 100%;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-}
 
 .color-picker-label {
   font-weight: 700;
@@ -309,8 +285,9 @@
 
 .hl-swatch.active,
 .fc-swatch.active {
-  outline: 2px solid var(--accent-color, #6366f1);
-  outline-offset: 1px;
+  outline: 2px solid var(--active-glow-blue) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 8px var(--active-glow-blue) !important;
 }
 
 .hl-clear-btn,
@@ -373,7 +350,7 @@ body[data-theme="dark"] .ribbon-tab-btn { color: var(--text-muted); }
 body[data-theme="dark"] .ribbon-tab-btn:hover { color: var(--text-main); }
 body[data-theme="dark"] .ribbon-tab-btn.active {
   background: #333333;
-  color: #60a5fa;
+  color: var(--active-glow-text);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
@@ -391,7 +368,12 @@ body[data-theme="dark"] .fmt-btn:hover { background: rgba(255, 255, 255, 0.08); 
 
 body[data-theme="dark"] #ribbon-bar .fmt-btn.active,
 body[data-theme="dark"] #ribbon-bar .btn.active,
-body[data-theme="dark"] .fmt-btn.active { background: rgba(99, 102, 241, 0.22); border-color: rgba(99, 102, 241, 0.45); color: #818cf8; }
+body[data-theme="dark"] .fmt-btn.active {
+  background: var(--active-glow-bg) !important;
+  border-color: var(--active-glow-border) !important;
+  color: var(--active-glow-text) !important;
+  box-shadow: var(--active-glow-shadow) !important;
+}
 
 body[data-theme="dark"] .highlighter-picker-wrapper,
 body[data-theme="dark"] .font-color-picker-wrapper { background: transparent; border-color: transparent; box-shadow: none; }
@@ -429,6 +411,10 @@ body[data-theme="dark"] .font-color-palette {
 
 body[data-theme="dark"] .ribbon-font-cluster select { background: #242424; border-color: rgba(255, 255, 255, 0.12); color: var(--text-main); }
 body[data-theme="dark"] .ribbon-font-cluster select:hover { border-color: #4a4a4a; }
-body[data-theme="dark"] .color-picker-wrapper:hover { background: #333333; border-color: #4a4a4a; }
+body[data-theme="dark"] .ribbon-font-cluster select:focus {
+  outline: none;
+  border-color: var(--active-glow-blue);
+  box-shadow: 0 0 0 2px var(--active-glow-bg);
+}
 body[data-theme="dark"] .color-bar-indicator { background: #f5f5f5; box-shadow: 0 1px 4px rgba(255, 255, 255, 0.25); }
 body[data-theme="dark"] .floating-toolbar { background: #222222; border-color: var(--border-color); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); }

@@ -124,7 +124,9 @@ export function setupInkingInteractions(options) {
       const isHighlighter = state.inkTool === 'highlighter';
 
       if (isHighlighter) {
-        liveStrokeWidth = Math.max(12, (state.inkWidth * 3 * currentZoom) * (0.8 + worldPos.pressure * 0.4));
+        const hlMap = { 1: 14, 3: 20, 6: 28, 10: 38 };
+        const baseW = hlMap[state.inkWidth] || Math.max(14, state.inkWidth * 3.6);
+        liveStrokeWidth = baseW * currentZoom * (0.85 + worldPos.pressure * 0.3);
         const hlColor = state.inkColor === '#0f172a' ? '#facc15' : state.inkColor;
         ctx.globalAlpha = 0.45;
         ctx.strokeStyle = hlColor;
@@ -204,7 +206,9 @@ export function setupInkingInteractions(options) {
           const isHighlighter = state.inkTool === 'highlighter';
 
           if (isHighlighter) {
-            ctx.lineWidth = Math.max(12, (state.inkWidth * 3 * currentZoom) * (0.8 + p1.pressure * 0.4));
+            const hlMap = { 1: 14, 3: 20, 6: 28, 10: 38 };
+            const baseW = hlMap[state.inkWidth] || Math.max(14, state.inkWidth * 3.6);
+            ctx.lineWidth = baseW * currentZoom * (0.85 + p1.pressure * 0.3);
           } else {
             ctx.lineWidth = Math.max(0.5, (state.inkWidth * currentZoom) * (0.6 + p1.pressure * 0.8));
           }

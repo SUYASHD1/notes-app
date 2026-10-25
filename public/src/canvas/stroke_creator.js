@@ -70,8 +70,9 @@ export function finalizeStroke(options) {
   const isHighlighter = state.inkTool === 'highlighter';
   const pointPressure = points[0]?.pressure || 0.5;
   const calculatedDotWidth = state.inkWidth * (0.6 + pointPressure * 0.8);
+  const hlWidthMap = { 1: 14, 3: 20, 6: 28, 10: 38 };
   const worldWidth = isHighlighter
-    ? Math.max(12, Math.round(((state.inkWidth * 3 * currentZoom) / currentZoom) * 100) / 100)
+    ? (hlWidthMap[state.inkWidth] || Math.max(14, state.inkWidth * 3.6))
     : Math.max(0.5, (liveStrokeWidth ? (liveStrokeWidth / currentZoom) : calculatedDotWidth));
 
   const strokeColor = isHighlighter
