@@ -1,4 +1,5 @@
 import { renderExplorerTree as modularRenderExplorerTree } from './explorer_tree.js';
+import { getStorageSettingsModalHTML } from './storage_settings_template.js';
 // Storage & Data Hub Settings Flyout Module
 // Manages storage metrics, hard drive folder picker, safe migration, full backups, and Notebook & File Explorer
 
@@ -12,7 +13,15 @@ export function setupStorageSettingsModal({
   loadActivePageDocument,
   renderAll
 }) {
-  const modal = document.getElementById('storage-settings-modal');
+  let modal = document.getElementById('storage-settings-modal');
+  if (!modal && typeof document !== 'undefined') {
+    const tempContainer = document.createElement('div');
+    tempContainer.innerHTML = getStorageSettingsModalHTML().trim();
+    modal = tempContainer.firstElementChild;
+    const appContainer = document.getElementById('app-container') || document.body;
+    if (appContainer) appContainer.appendChild(modal);
+  }
+
   const openBtn = document.getElementById('btn-storage-settings');
   const closeBtn = document.getElementById('btn-close-storage-settings');
   const locationBadge = document.getElementById('storage-location-badge');

@@ -45,6 +45,7 @@ export { getPageStorageKey, createPageStorageManager } from './storage/page_stor
 
 export { showToast } from './ui/toast.js';
 export { setupStorageSettingsModal } from './ui/storage_settings_modal.js';
+export { getStorageSettingsModalHTML } from './ui/storage_settings_template.js';
 export { renderExplorerTree } from './ui/explorer_tree.js';
 export { initHierarchy, saveHierarchy, renderHierarchyUI, setupSidebarControls, createDefaultHierarchy } from './ui/sidebar.js';
 export { setupInkPaletteControls } from './ui/ink_palette.js';

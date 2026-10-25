@@ -202,6 +202,12 @@ We are systematically restructuring all files that exceed the **350-line limit**
   - **`src/ui/sidebar.js`:** Maintained intact at 398 lines as an approved single-responsibility navigation module safely within the grace buffer.
 - **Two-Door House Parity:** All new modules mirrored 100% character-for-character between `src/` and `public/src/` (56 total files verified).
 - **Zero Violations:** Zero files exceed 450 lines in the entire project.
+### ✅ Phase 6: HTML Modularization & Permanent Shell Architecture (COMPLETED — v4.7.6)
+- **`public/index.html`:** Reduced from 560 lines down to **337 lines** (comfortably under the 350-line ceiling).
+  - Adopted the **"Permanent Shell"** architectural standard: `index.html` holds strictly the permanent layout (Top Bar, Ribbon, Canvas, Sidebar).
+  - Extracted the 224-line Storage & Data Hub settings flyout into a self-contained component template in `src/ui/storage_settings_template.js` (224 lines) and mirrored in `public/src/ui/storage_settings_template.js`.
+  - Popups and modal dialogs are dynamically mounted upon startup by their feature modules, establishing a scalable pattern for all future features (Audio note recorder, export dialogs, tag managers).
+- **Two-Door House Parity:** 57 of 57 files matched character-for-character with 0 mismatches.
 - **Verification:** All 76 automated tests passing at 100%.
 
 ---
@@ -213,7 +219,7 @@ We are systematically restructuring all files that exceed the **350-line limit**
 - [x] Two-Door House parity verification script passes with 0 mismatches.
 - [x] All 76 automated tests pass (`node --test tests/*.test.js`).
 - [x] Visual browser verification performed (no stuck menus, boundary cursors active).
-- [x] Version number bumped in `index.html` and `sw.js` (v4.7.5).
+- [x] Version number bumped in `index.html` and `sw.js` (v4.7.6).
 - [x] Changes logged clearly into `CURRENT_STATE.md`.
 
 

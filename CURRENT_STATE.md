@@ -1,6 +1,6 @@
 # 📓 Notes App — Current State & Knowledge Log
 
-> **Last Updated:** 25 October 2026 (v4.7.5)  
+> **Last Updated:** 25 October 2026 (v4.7.6)  
 > **Status:** Fully Functional, PWA Standalone Enabled, Deployed to Production (Vercel)  
 > **Live Web Application:** [https://notes-app-topaz-six.vercel.app/](https://notes-app-topaz-six.vercel.app/)  
 > **Automated Test Suite:** `76 / 76 tests passed (100%)`
@@ -298,6 +298,16 @@ Following the pragmatic Option A buffer zone (≤ 450 lines max, target ≤ 350 
 4. **`src/ui/sidebar.js` (398 lines):** Kept intact as a cohesive, single-responsibility component safely within the 450-line grace buffer.
 5. **Zero Over-Limit Violations:** Zero files exceed 450 lines across the entire codebase.
 6. **Automated Verification:** 76 / 76 automated tests passing at 100% across all modules.
+
+---
+
+## 🏛️ 9. Permanent Shell Architecture & HTML Modularization (v4.7.6)
+
+Following component-driven scalability and the **"Permanent Shell"** architecture:
+1. **`public/index.html` (337 lines):** Shrunk from 560 lines down to **337 lines** (comfortably under the 350-line ceiling). `index.html` now acts strictly as the permanent visual shell (Top Bar, Ribbon, Canvas, Sidebar).
+2. **`src/ui/storage_settings_template.js` (224 lines):** Extracted the full Storage & Data Hub settings popup dialog into a dedicated, self-contained template module mirrored in `public/src/ui/storage_settings_template.js`.
+3. **Dynamic Mounting:** `storage_settings_modal.js` now dynamically mounts the dialog upon startup, ensuring all future modals (Export, Audio, etc.) follow a clean modular component pattern with zero index.html clutter.
+4. **Verification:** All 76 automated tests passing at 100%, with exact Two-Door House parity across all 57 files.
 
 ---
 
