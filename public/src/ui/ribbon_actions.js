@@ -107,7 +107,7 @@ export function setupRibbonControls(options) {
   let activeHighlightColor = '#fef08a';
   let isHighlightMode = false;
   const highlightBtn = document.getElementById('ribbon-highlight');
-  const highlightGlow = document.getElementById('ribbon-highlight-glow');
+  const highlightBar = document.getElementById('ribbon-highlight-bar');
   const highlightDropBtn = document.getElementById('ribbon-highlight-dropdown-btn');
   const highlightPalette = document.getElementById('highlighter-palette');
 
@@ -141,7 +141,17 @@ export function setupRibbonControls(options) {
 
   highlightDropBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
-    highlightPalette?.classList.toggle('hidden');
+    if (!highlightPalette) return;
+    const isHidden = highlightPalette.classList.contains('hidden');
+    if (isHidden) {
+      const wrapper = highlightDropBtn.closest('#highlighter-picker-wrapper') || highlightDropBtn;
+      const rect = wrapper.getBoundingClientRect();
+      highlightPalette.style.top = `${rect.bottom + 6}px`;
+      highlightPalette.style.left = `${Math.max(10, rect.left - 10)}px`;
+      highlightPalette.classList.remove('hidden');
+    } else {
+      highlightPalette.classList.add('hidden');
+    }
   });
 
   highlightPalette?.querySelectorAll('.hl-swatch').forEach(btn => {
@@ -149,8 +159,9 @@ export function setupRibbonControls(options) {
       e.stopPropagation();
       const col = btn.getAttribute('data-color') || '#fef08a';
       activeHighlightColor = col;
-      if (highlightGlow) {
-        highlightGlow.style.backgroundColor = col === 'transparent' ? 'transparent' : col;
+      if (highlightBar) {
+        highlightBar.style.backgroundColor = col === 'transparent' ? '#cbd5e1' : col;
+        highlightBar.style.boxShadow = col === 'transparent' ? 'none' : `0 1px 5px ${col}88`;
       }
       highlightPalette.querySelectorAll('.hl-swatch').forEach(s => s.classList.remove('active'));
       btn.classList.add('active');
@@ -160,7 +171,7 @@ export function setupRibbonControls(options) {
   });
 
   document.addEventListener('click', (e) => {
-    if (!e.target.closest('#highlighter-picker-wrapper')) {
+    if (!e.target.closest('#highlighter-palette') && !e.target.closest('#ribbon-highlight-dropdown-btn')) {
       highlightPalette?.classList.add('hidden');
     }
   });
@@ -342,23 +353,19 @@ export function setupRibbonControls(options) {
     }
   });
 
-  // Ribbon (Layout A) Actions
-  document.getElementById('btn-add-note')?.addEventListener('click', actionAddNote);
-  document.getElementById('btn-browse-media')?.addEventListener('click', actionBrowseMedia);
-  document.getElementById('btn-browse-pdf')?.addEventListener('click', actionBrowsePdf);
-  document.getElementById('btn-insert-sketch')?.addEventListener('click', actionInsertSketch);
-  document.getElementById('btn-insert-table')?.addEventListener('click', actionInsertTable);
-  document.getElementById('btn-insert-plot')?.addEventListener('click', actionInsertPlot);
-  document.getElementById('btn-add-math')?.addEventListener('click', actionInsertMath);
-
-  // Floating Capsule (Layout B) Actions
-  document.getElementById('cap-note')?.addEventListener('click', actionAddNote);
-  document.getElementById('cap-sketch')?.addEventListener('click', actionInsertSketch);
-  document.getElementById('cap-media')?.addEventListener('click', actionBrowseMedia);
-  document.getElementById('cap-pdf')?.addEventListener('click', actionBrowsePdf);
-  document.getElementById('cap-table')?.addEventListener('click', actionInsertTable);
-  document.getElementById('cap-plot')?.addEventListener('click', actionInsertPlot);
-  document.getElementById('cap-math')?.addEventListener('click', actionInsertMath);
+  // Ribbon (Layout A) & Capsule (Layout B) Insert Action Bindings
+  const insertMap = {
+    note: actionAddNote, media: actionBrowseMedia, pdf: actionBrowsePdf,
+    sketch: actionInsertSketch, table: actionInsertTable, plot: actionInsertPlot, math: actionInsertMath
+  };
+  ['btn-add-note', 'btn-browse-media', 'btn-browse-pdf', 'btn-insert-sketch', 'btn-insert-table', 'btn-insert-plot', 'btn-add-math'].forEach(id => {
+    const key = id.replace('btn-add-', '').replace('btn-browse-', '').replace('btn-insert-', '');
+    if (insertMap[key]) document.getElementById(id)?.addEventListener('click', insertMap[key]);
+  });
+  ['note', 'sketch', 'media', 'pdf', 'table', 'plot', 'math'].forEach(k => {
+    document.getElementById(`cap-${k}`)?.addEventListener('click', insertMap[k]);
+    if (k !== 'note') document.getElementById(`pal-${k}`)?.addEventListener('click', insertMap[k]);
+  });
 
   // Floating Palette (Layout C) Actions
   document.getElementById('pal-select')?.addEventListener('click', () => {
@@ -372,12 +379,6 @@ export function setupRibbonControls(options) {
     document.querySelectorAll('.pal-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('pal-select')?.classList.add('active');
   });
-  document.getElementById('pal-sketch')?.addEventListener('click', actionInsertSketch);
-  document.getElementById('pal-media')?.addEventListener('click', actionBrowseMedia);
-  document.getElementById('pal-pdf')?.addEventListener('click', actionBrowsePdf);
-  document.getElementById('pal-table')?.addEventListener('click', actionInsertTable);
-  document.getElementById('pal-plot')?.addEventListener('click', actionInsertPlot);
-  document.getElementById('pal-math')?.addEventListener('click', actionInsertMath);
 
   // Native Local Media File Input Handler
   if (mediaFileInput) {

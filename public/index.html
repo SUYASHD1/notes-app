@@ -188,15 +188,15 @@
             <input type="color" id="ribbon-color" value="#0f172a" title="Font Color">
           </div>
           <div class="highlighter-picker-wrapper" id="highlighter-picker-wrapper" title="Highlight Tool">
-            <button id="ribbon-highlight" class="fmt-btn" title="Highlight (Click to apply or toggle highlight mode)">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 20h9"></path>
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+            <button id="ribbon-highlight" class="fmt-btn highlighter-main-btn" title="Highlight Tool (Click to highlight selection, or click to toggle highlight mode)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m9 11-6 6v3h9l3-3"></path>
+                <path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"></path>
               </svg>
-              <span class="highlighter-swatch-glow" id="ribbon-highlight-glow" style="background:#fef08a;"></span>
+              <div class="color-bar-indicator" id="ribbon-highlight-bar" style="background:#fef08a;"></div>
             </button>
-            <button id="ribbon-highlight-dropdown-btn" class="fmt-btn dropdown-arrow-btn" title="Choose Highlighter Color">
-              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            <button id="ribbon-highlight-dropdown-btn" class="dropdown-chevron-btn" title="Choose Highlighter Color">
+              <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
             <div id="highlighter-palette" class="highlighter-palette hidden">
               <button class="hl-swatch active" data-color="#fef08a" style="background:#fef08a;" title="Soft Yellow"></button>
