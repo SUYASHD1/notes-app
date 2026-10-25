@@ -1,6 +1,6 @@
 # 📓 Notes App — Current State & Knowledge Log
 
-> **Last Updated:** 25 October 2026 (v4.8.4)  
+> **Last Updated:** 25 October 2026 (v4.8.5)  
 > **Status:** Fully Functional, PWA Standalone Enabled, Deployed to Production (Vercel)  
 > **Live Web Application:** [https://notes-app-topaz-six.vercel.app/](https://notes-app-topaz-six.vercel.app/)  
 > **Automated Test Suite:** `77 / 77 tests passed (100%)`
@@ -237,6 +237,11 @@ This application is a freeform, ultra-fast note-taking system designed to combin
 * **Instant Native Startup Animation (Pre-Cached at $t = 0$):** Embedded the initial splash overlay directly into `index.html` with instant theme detection so the animation renders on millisecond zero directly from browser cache, dissolving cleanly once the canvas is ready.
 * **Fluid iPad Ribbon Swiping:** Enabled horizontal touch swiping (`overflow-x: auto; -webkit-overflow-scrolling: touch`) and flex-shrink protection on the ribbon bar so icons never get clipped or lost on narrow tablet viewports.
 * **Edge-to-Edge Canvas on iPad:** Completely eliminated the bottom grey desktop status bar in iPad/Ink mode, giving maximum vertical writing space.
+
+### 25. Theme-Adaptive Dynamic Highlighting & Borderless Dark Mode Ribbon (v4.8.5)
+* **Borderless Dark Mode Ribbon:** Cleaned up the dark mode toolbar styling by removing heavy dark grey boxes and borders around individual buttons (`B`, `I`, `U`, `S`, font color, highlighter, align, and lists). The dark mode ribbon now feels completely flat, borderless, seamless, and elegant, matching the clean minimalist design of Light Mode.
+* **Theme-Adaptive Dynamic Highlighting:** Existing and new highlighted notes automatically adjust their appearance to match the active theme. In Light Mode, highlights display as fresh, cheerful pastels with dark text. When toggled to Dark Mode, those exact same highlights instantly transform into soothing, luminous midnight tones (midnight amber, emerald sage, velvet rose, twilight azure, and warm terracotta) with light readable text, eliminating eye strain without altering or corrupting the underlying saved document HTML.
+* **Harmonious Dark Highlighter Palette:** The highlighter color picker dropdown in dark mode displays rich, midnight-luminous swatches matching the dark mode aesthetic, avoiding harsh neon glare.
 
 ---
 

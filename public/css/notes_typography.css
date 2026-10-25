@@ -165,3 +165,54 @@ body[data-theme="dark"] .note-link:hover {
   color: #93c5fd;
   text-decoration: underline;
 }
+
+/* 🌙 Theme-Adaptive Dynamic Highlighting (Automatic Mode Transformation) */
+body[data-theme="dark"] .note-item-text [style*="254, 240, 138"],
+body[data-theme="dark"] .note-item-text [style*="#fef08a"],
+body[data-theme="dark"] .text-block-content [style*="254, 240, 138"],
+body[data-theme="dark"] .text-block-content [style*="#fef08a"] {
+  background-color: var(--hl-yellow) !important;
+  color: #fef9c3 !important;
+  border-radius: 3px;
+  padding: 1px 3px;
+}
+
+body[data-theme="dark"] .note-item-text [style*="187, 247, 208"],
+body[data-theme="dark"] .note-item-text [style*="#bbf7d0"],
+body[data-theme="dark"] .text-block-content [style*="187, 247, 208"],
+body[data-theme="dark"] .text-block-content [style*="#bbf7d0"] {
+  background-color: var(--hl-green) !important;
+  color: #dcfce7 !important;
+  border-radius: 3px;
+  padding: 1px 3px;
+}
+
+body[data-theme="dark"] .note-item-text [style*="251, 207, 232"],
+body[data-theme="dark"] .note-item-text [style*="#fbcfe8"],
+body[data-theme="dark"] .text-block-content [style*="251, 207, 232"],
+body[data-theme="dark"] .text-block-content [style*="#fbcfe8"] {
+  background-color: var(--hl-pink) !important;
+  color: #fce7f3 !important;
+  border-radius: 3px;
+  padding: 1px 3px;
+}
+
+body[data-theme="dark"] .note-item-text [style*="186, 230, 253"],
+body[data-theme="dark"] .note-item-text [style*="#bae6fd"],
+body[data-theme="dark"] .text-block-content [style*="186, 230, 253"],
+body[data-theme="dark"] .text-block-content [style*="#bae6fd"] {
+  background-color: var(--hl-blue) !important;
+  color: #e0f2fe !important;
+  border-radius: 3px;
+  padding: 1px 3px;
+}
+
+body[data-theme="dark"] .note-item-text [style*="254, 215, 170"],
+body[data-theme="dark"] .note-item-text [style*="#fed7aa"],
+body[data-theme="dark"] .text-block-content [style*="254, 215, 170"],
+body[data-theme="dark"] .text-block-content [style*="#fed7aa"] {
+  background-color: var(--hl-peach) !important;
+  color: #ffedd5 !important;
+  border-radius: 3px;
+  padding: 1px 3px;
+}
