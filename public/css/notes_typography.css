@@ -286,3 +286,11 @@ body[data-theme="dark"] .text-block-content [style*="color: rgb(75, 85, 99)"],
 body[data-theme="dark"] .text-block-content [style*="color: #4b5563"] {
   color: var(--tc-gray) !important;
 }
+
+/* Explicit Font Family Application (Guarantees visual application across all browsers) */
+font[face*="Caveat"], [style*="Caveat"] { font-family: 'Caveat', cursive, sans-serif !important; }
+font[face*="Fira Code"], [style*="Fira Code"] { font-family: 'Fira Code', 'Consolas', monospace !important; }
+font[face*="Georgia"], [style*="Georgia"] { font-family: 'Georgia', 'Times New Roman', serif !important; }
+font[face*="Calibri"], [style*="Calibri"] { font-family: 'Calibri', 'Segoe UI', sans-serif !important; }
+font[face*="Segoe UI"], [style*="Segoe UI"] { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important; }
+

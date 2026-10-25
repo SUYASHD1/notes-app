@@ -70,8 +70,15 @@ export function setupRibbonControls(options) {
   ['ribbon-color', 'ribbon-font', 'ribbon-font-size', 'ribbon-heading'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
-      el.addEventListener('focus', captureTextSelection, { preventScroll: true });
-      el.addEventListener('pointerdown', captureTextSelection);
+      el.addEventListener('focus', captureTextSelection);
+      el.addEventListener('pointerdown', () => {
+        captureTextSelection();
+        const sx = window.scrollX, sy = window.scrollY, rb = document.getElementById('ribbon-bar'), rx = rb?.scrollLeft || 0;
+        requestAnimationFrame(() => {
+          if (window.scrollX !== sx || window.scrollY !== sy) window.scrollTo(sx, sy);
+          if (rb && rb.scrollLeft !== rx) rb.scrollLeft = rx;
+        });
+      });
     }
   });
 
@@ -186,10 +193,24 @@ export function setupRibbonControls(options) {
     }
   });
 
-  fontColorPalette?.querySelectorAll('.fc-swatch:not(.fc-custom-btn)').forEach(btn => {
+  const resetDefaultBtn = document.getElementById('fc-reset-default');
+  resetDefaultBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const defCol = isDark ? '#f1f5f9' : '#18181b';
+    activeFontColor = defCol;
+    if (ribbonColorBar) {
+      ribbonColorBar.style.backgroundColor = defCol;
+      ribbonColorBar.style.boxShadow = 'none';
+    }
+    fontColorPalette?.querySelectorAll('.fc-swatch').forEach(s => s.classList.remove('active'));
+    applyFontColor(defCol);
+  });
+
+  fontColorPalette?.querySelectorAll('.fc-swatch').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const col = btn.getAttribute('data-color') || '#0f172a';
+      const col = btn.getAttribute('data-color') || '#18181b';
       activeFontColor = col;
       if (ribbonColorBar) {
         ribbonColorBar.style.backgroundColor = col;
@@ -197,7 +218,6 @@ export function setupRibbonControls(options) {
       }
       fontColorPalette.querySelectorAll('.fc-swatch').forEach(s => s.classList.remove('active'));
       btn.classList.add('active');
-      fontColorPalette.classList.add('hidden');
       applyFontColor(col);
     });
   });
@@ -210,8 +230,6 @@ export function setupRibbonControls(options) {
       ribbonColorBar.style.boxShadow = `0 1px 5px ${val}66`;
     }
     fontColorPalette?.querySelectorAll('.fc-swatch').forEach(s => s.classList.remove('active'));
-    fontColorPalette?.querySelector('.fc-custom-btn')?.classList.add('active');
-    fontColorPalette?.classList.add('hidden');
     applyFontColor(val);
   });
 
@@ -260,36 +278,63 @@ export function setupRibbonControls(options) {
   });
 
   // Font Family, Font Size, Heading Style (Master Switch 2: Frozen Ground)
+  const lockScrolls = (fn) => {
+    const sx = window.scrollX, sy = window.scrollY, rb = document.getElementById('ribbon-bar'), rx = rb?.scrollLeft || 0;
+    fn();
+    if (window.scrollX !== sx || window.scrollY !== sy) window.scrollTo(sx, sy);
+    if (rb && rb.scrollLeft !== rx) rb.scrollLeft = rx;
+  };
+
   document.getElementById('ribbon-font')?.addEventListener('change', (e) => {
-    const scrollX = window.scrollX;
-    const scrollY = window.scrollY;
-    restoreTextSelection();
-    document.execCommand('fontName', false, e.target.value);
-    captureTextSelection();
-    if (window.scrollX !== scrollX || window.scrollY !== scrollY) window.scrollTo(scrollX, scrollY);
+    const val = e.target.value;
+    lockScrolls(() => {
+      restoreTextSelection();
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+        const range = sel.getRangeAt(0), span = document.createElement('span');
+        span.style.fontFamily = val;
+        span.appendChild(range.extractContents());
+        range.insertNode(span);
+        const nr = document.createRange();
+        nr.selectNodeContents(span);
+        sel.removeAllRanges();
+        sel.addRange(nr);
+      } else {
+        document.execCommand('fontName', false, val);
+      }
+      captureTextSelection();
+    });
+    e.target.blur();
   });
+
   document.getElementById('ribbon-font-size')?.addEventListener('change', (e) => {
-    const scrollX = window.scrollX;
-    const scrollY = window.scrollY;
-    restoreTextSelection();
-    const sel = window.getSelection();
-    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
-      const span = document.createElement('span');
-      span.style.fontSize = e.target.value;
-      const range = sel.getRangeAt(0);
-      span.appendChild(range.extractContents());
-      range.insertNode(span);
-    }
-    captureTextSelection();
-    if (window.scrollX !== scrollX || window.scrollY !== scrollY) window.scrollTo(scrollX, scrollY);
+    const val = e.target.value;
+    lockScrolls(() => {
+      restoreTextSelection();
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+        const range = sel.getRangeAt(0), span = document.createElement('span');
+        span.style.fontSize = val;
+        span.appendChild(range.extractContents());
+        range.insertNode(span);
+        const nr = document.createRange();
+        nr.selectNodeContents(span);
+        sel.removeAllRanges();
+        sel.addRange(nr);
+      }
+      captureTextSelection();
+    });
+    e.target.blur();
   });
+
   document.getElementById('ribbon-heading')?.addEventListener('change', (e) => {
-    const scrollX = window.scrollX;
-    const scrollY = window.scrollY;
-    restoreTextSelection();
-    document.execCommand('formatBlock', false, `<${e.target.value}>`);
-    captureTextSelection();
-    if (window.scrollX !== scrollX || window.scrollY !== scrollY) window.scrollTo(scrollX, scrollY);
+    const val = e.target.value;
+    lockScrolls(() => {
+      restoreTextSelection();
+      document.execCommand('formatBlock', false, `<${val}>`);
+      captureTextSelection();
+    });
+    e.target.blur();
   });
 
   // Live Ribbon Active State Synchronization (subtle blue glow for active commands)
@@ -377,66 +422,6 @@ export function setupRibbonControls(options) {
     document.querySelectorAll('.pal-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('pal-select')?.classList.add('active');
   });
-
-  // Native Local Media File Input Handler
-  if (mediaFileInput) {
-    mediaFileInput.addEventListener('change', (e) => {
-      const file = e.target.files && e.target.files[0];
-      if (file) {
-        showToast(`🖼 Loading media "${file.name}"...`);
-        const reader = new FileReader();
-        reader.onload = async (loadEvt) => {
-          const dataUrl = loadEvt.target.result;
-          const targetContainer = getOrCreateActiveContainer();
-          const itemId = 'item_img_' + Date.now();
-          targetContainer.items.push({
-            id: itemId,
-            type: 'image',
-            src: dataUrl,
-            caption: file.name
-          });
-          await saveAssetIDB(itemId, dataUrl);
-          saveActivePageDocument();
-          renderAll();
-          showToast(`🖼 Added media "${file.name}"`);
-        };
-        reader.readAsDataURL(file);
-      }
-      mediaFileInput.value = '';
-    });
-  }
-
-  // Native Local PDF File Input Handler (OneNote Slide Printout)
-  if (pdfFileInput) {
-    pdfFileInput.addEventListener('change', (e) => {
-      const file = e.target.files && e.target.files[0];
-      if (file) {
-        showToast(`⏳ Loading PDF "${file.name}"...`);
-        const reader = new FileReader();
-        reader.onload = async (loadEvt) => {
-          const dataUrl = loadEvt.target.result;
-          const targetContainer = getOrCreateActiveContainer();
-          if ((targetContainer.width || 540) < 780) {
-            targetContainer.width = 780;
-          }
-          const itemId = 'item_pdf_' + Date.now();
-          targetContainer.items.push({
-            id: itemId,
-            type: 'pdf',
-            title: file.name,
-            dataUrl: dataUrl,
-            totalPages: 1
-          });
-          await saveAssetIDB(itemId, dataUrl);
-          saveActivePageDocument();
-          renderAll();
-          showToast(`📑 Loaded PDF "${file.name}" (OneNote Printout)`);
-        };
-        reader.readAsDataURL(file);
-      }
-      pdfFileInput.value = '';
-    });
-  }
-
   return { actionAddNote, actionBrowseMedia, actionBrowsePdf, actionInsertTable, actionInsertPlot, actionInsertSketch, actionInsertMath };
 }
+

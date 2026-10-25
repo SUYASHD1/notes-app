@@ -14,6 +14,7 @@ export function createContainerActions(options) {
     saveActivePageDocument,
     createNewNoteContainer,
     getOrCreateActiveContainer,
+    saveAssetIDB,
     AddBlockCommand
   } = options;
 
@@ -96,6 +97,53 @@ export function createContainerActions(options) {
     saveActivePageDocument();
     renderAll();
     showToast('$fx Added LaTeX Equation to Note');
+  }
+
+  // Native Local Media File Input Handler
+  if (mediaFileInput) {
+    mediaFileInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (file) {
+        showToast(`🖼 Loading media "${file.name}"...`);
+        const reader = new FileReader();
+        reader.onload = async (loadEvt) => {
+          const dataUrl = loadEvt.target.result;
+          const targetContainer = getOrCreateActiveContainer();
+          const itemId = 'item_img_' + Date.now();
+          targetContainer.items.push({ id: itemId, type: 'image', src: dataUrl, caption: file.name });
+          if (saveAssetIDB) await saveAssetIDB(itemId, dataUrl);
+          saveActivePageDocument();
+          renderAll();
+          showToast(`🖼 Added media "${file.name}"`);
+        };
+        reader.readAsDataURL(file);
+      }
+      mediaFileInput.value = '';
+    });
+  }
+
+  // Native Local PDF File Input Handler (OneNote Slide Printout)
+  if (pdfFileInput) {
+    pdfFileInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (file) {
+        showToast(`⏳ Loading PDF "${file.name}"...`);
+        const reader = new FileReader();
+        reader.onload = async (loadEvt) => {
+          const dataUrl = loadEvt.target.result;
+          const targetContainer = getOrCreateActiveContainer();
+          if ((targetContainer.width || 540) < 780) targetContainer.width = 780;
+          const itemId = 'item_pdf_' + Date.now();
+          targetContainer.items.push({ id: itemId, type: 'pdf', title: file.name, dataUrl: dataUrl, totalPages: 1 });
+          if (saveAssetIDB) await saveAssetIDB(itemId, dataUrl);
+          saveActivePageDocument();
+          renderAll();
+          showToast(`📑 Loaded PDF "${file.name}" (OneNote Printout)`);
+        };
+        reader.readAsDataURL(file);
+      }
+      pdfFileInput.value = '';
+    });
   }
 
   return {

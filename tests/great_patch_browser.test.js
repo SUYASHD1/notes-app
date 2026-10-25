@@ -137,26 +137,36 @@ test('The Great Patch: Comprehensive Browser Testing in Microsoft Edge', async (
     });
     assert.ok(fontColorLayout.isSideBySide, `Font color button and chevron dropdown must sit side-by-side horizontally: ${JSON.stringify(fontColorLayout)}`);
 
-    // 3. Master Key 6 & 3: Opening Font Color Dropdown and Choosing a Color
+    // 3. Master Key 6 & 3: Opening Font Color Dropdown and Choosing a Color (Zero-stress palette)
     await page.click('#ribbon-font-color-dropdown-btn');
     const isFontPaletteOpen = await page.evaluate(() => {
       const p = document.getElementById('font-color-palette');
-      return p && !p.classList.contains('hidden');
+      const swatches = p?.querySelectorAll('.fc-swatch');
+      const resetBtn = document.getElementById('fc-reset-default');
+      return p && !p.classList.contains('hidden') && swatches.length === 12 && !!resetBtn;
     });
-    assert.ok(isFontPaletteOpen, 'Font color palette must be visible after clicking chevron');
+    assert.ok(isFontPaletteOpen, 'Font color palette must be visible with 12 swatches and Automatic button');
 
-    // Click blue swatch (#1d4ed8)
-    await page.click('.fc-swatch[data-color="#1d4ed8"]');
+    // Click blue swatch (#2563eb)
+    await page.click('.fc-swatch[data-color="#2563eb"]');
     const colorBarState = await page.evaluate(() => {
       const bar = document.getElementById('ribbon-color-bar');
       const palette = document.getElementById('font-color-palette');
       return {
         barBg: bar.style.backgroundColor,
-        paletteHidden: palette.classList.contains('hidden')
+        paletteOpen: !palette.classList.contains('hidden')
       };
     });
-    assert.equal(colorBarState.barBg, 'rgb(29, 78, 216)', 'Indicator bar must update to royal blue');
-    assert.ok(colorBarState.paletteHidden, 'Font color palette must close after picking swatch');
+    assert.equal(colorBarState.barBg, 'rgb(37, 99, 235)', 'Indicator bar must update to royal blue #2563eb');
+    assert.ok(colorBarState.paletteOpen, 'Font color palette must remain open while clicking swatches so user tests colors without stress');
+
+    // Click Automatic default button
+    await page.click('#fc-reset-default');
+    const resetState = await page.evaluate(() => {
+      const bar = document.getElementById('ribbon-color-bar');
+      return bar.style.backgroundColor;
+    });
+    assert.ok(resetState.includes('24') || resetState.includes('27') || resetState.includes('241'), 'Reset button must restore default theme color');
 
     // 4. Master Key 5: Polite Guest Mutual Dismissal
     await page.click('#ribbon-highlight-dropdown-btn');
@@ -181,12 +191,29 @@ test('The Great Patch: Comprehensive Browser Testing in Microsoft Edge', async (
     });
     assert.ok(allClosed, 'Outside clicks must dismiss open palettes immediately');
 
-    // 5. Master Key 2: Frozen Ground (Zero Scroll Jumps on Select)
+    // 5. Master Key 2: Frozen Ground & Font Family Styling
+    await page.evaluate(() => {
+      const textEl = document.querySelector('.note-item-text');
+      textEl.focus();
+      const r = document.createRange();
+      r.selectNodeContents(textEl);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(r);
+    });
+
     const scrollBefore = await page.evaluate(() => ({ x: window.scrollX, y: window.scrollY }));
-    await page.select('#ribbon-font-size', '20px');
+    await page.select('#ribbon-font', "'Georgia', 'Times New Roman', serif");
     const scrollAfter = await page.evaluate(() => ({ x: window.scrollX, y: window.scrollY }));
-    assert.equal(scrollBefore.x, scrollAfter.x, 'Window scroll X must remain frozen');
-    assert.equal(scrollBefore.y, scrollAfter.y, 'Window scroll Y must remain frozen');
+    assert.equal(scrollBefore.x, scrollAfter.x, 'Window scroll X must remain frozen on font select');
+    assert.equal(scrollBefore.y, scrollAfter.y, 'Window scroll Y must remain frozen on font select');
+
+    const fontApplied = await page.evaluate(() => {
+      const textEl = document.querySelector('.note-item-text');
+      const styledSpan = textEl.querySelector('span[style*="font-family"]');
+      return styledSpan ? getComputedStyle(styledSpan).fontFamily : getComputedStyle(textEl).fontFamily;
+    });
+    assert.ok(fontApplied.toLowerCase().includes('georgia'), `Font Georgia must be applied: ${fontApplied}`);
 
     // 6. Master Key 4: Ink Mode Vector Icons, Chisel Tip, and Custom Palette Launcher
     await page.click('#btn-mode-ipad');

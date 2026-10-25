@@ -1,6 +1,6 @@
 # 📓 Notes App — Current State & Knowledge Log
 
-> **Last Updated:** 25 October 2026 (v4.8.7)  
+> **Last Updated:** 25 October 2026 (v4.8.8)  
 > **Status:** Fully Functional, PWA Standalone Enabled, Deployed to Production (Vercel)  
 > **Live Web Application:** [https://notes-app-topaz-six.vercel.app/](https://notes-app-topaz-six.vercel.app/)  
 > **Automated Test Suite:** `78 / 78 tests passed (100%)`
@@ -394,12 +394,19 @@ Following component-driven scalability and the **"Permanent Shell"** architectur
    - 77 / 77 automated tests passing (100%).
    - Exact Two-Door House parity across all 57 JavaScript engine files with 0 mismatches.
    - Zero files exceed the 450-line ceiling across the codebase.
-8. **Bottom Status Bar Scrollbar Integration (v4.8.1):**
-   - Integrated the horizontal spatial scrollbar directly inside the bottom status bar between the location breadcrumb and the zoom pill.
-   - The drawing canvas paper is now 100% free of bottom bars, preventing accidental palm taps and giving the bottom bar a cohesive, professional software aesthetic.
+### 9. Aurora Folio 12 Solid Colors, Non-Closing Color Palette & Font Styles (v4.8.8):
+* **Persistent, Zero-Stress Font Palette:** Clicking a color swatch in the palette no longer disappears instantly. Users can freely test and sample multiple colors on their notes without repeatedly re-opening the menu. The palette only dismisses when clicking outside or clicking the chevron again.
+* **Aurora Folio 12 Solid Colors & Automatic Default:** Installed a clean, Office-inspired three-tier palette structured as:
+  1. **Automatic Color:** Dedicated top button restoring natural contrast text (Charcoal Black `#18181b` in light mode, Snow White `#f1f5f9` in dark mode).
+  2. **12 Solid Colors Grid:** 6x2 grid of carefully curated colors (Charcoal Black, Slate Grey, Crimson Red, Coral Orange, Warm Amber, Forest Green, Mint Teal, Sky Blue, Royal Blue, Deep Purple, Velvet Rose, Warm Mocha).
+  3. **More Colors Launcher:** Bottom button launching the full custom color wheel.
+* **Font Styles Engine Fix:** Removed the aggressive universal `* { font-family }` reset that was overriding applied fonts back to system font. Integrated Google Fonts for `Caveat` (Handwriting) and `Fira Code` (Monospace), and ensured `<span style="font-family: ...">` is applied cleanly.
+* **Frozen Ground Across Dropdowns:** Added scroll-locking helpers (`lockScrolls`) and immediate auto-blur on font family, font size, and heading styles to eliminate viewport jumping when choosing options.
+* **Modular Cleanliness:** Separated palette styling into `public/css/palettes.css` (152 lines), keeping all CSS files strictly under the 350-line target and all JS files below the 450-line buffer.
 
 ---
 
 * **Production Status:** Deployed live on Vercel at `https://notes-app-topaz-six.vercel.app/`.
+
 
 
