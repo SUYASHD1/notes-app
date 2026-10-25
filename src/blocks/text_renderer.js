@@ -42,6 +42,9 @@ export function renderTextItem(parentEl, item, headerEl, containerBlock, deps = 
   textDiv.className = 'note-item-text';
   textDiv.setAttribute('data-placeholder', 'Type note here...');
   textDiv.contentEditable = 'true';
+  if (containerBlock?.fontFamily) textDiv.style.fontFamily = containerBlock.fontFamily;
+  if (containerBlock?.lineHeight) textDiv.style.lineHeight = containerBlock.lineHeight;
+  if (containerBlock?.letterSpacing) textDiv.style.letterSpacing = containerBlock.letterSpacing;
 
   const serializeTextContent = (el) => {
     if (!el) return '';

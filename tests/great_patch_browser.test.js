@@ -191,7 +191,7 @@ test('The Great Patch: Comprehensive Browser Testing in Microsoft Edge', async (
     });
     assert.ok(allClosed, 'Outside clicks must dismiss open palettes immediately');
 
-    // 5. Master Key 2: Frozen Ground & Font Family Styling
+    // 5. Master Key 2: Canva-style Custom Font Dropdown, Spacing Popover & Full Box Font Application
     await page.evaluate(() => {
       const textEl = document.querySelector('.note-item-text');
       textEl.focus();
@@ -203,17 +203,73 @@ test('The Great Patch: Comprehensive Browser Testing in Microsoft Edge', async (
     });
 
     const scrollBefore = await page.evaluate(() => ({ x: window.scrollX, y: window.scrollY }));
-    await page.select('#ribbon-font', "'Georgia', 'Times New Roman', serif");
+    
+    // Open Canva-style Font Dropdown
+    await page.click('#ribbon-font-btn');
+    const isFontMenuOpen = await page.evaluate(() => {
+      const p = document.getElementById('font-family-palette');
+      return p && !p.classList.contains('hidden');
+    });
+    assert.ok(isFontMenuOpen, 'Canva-style font family dropdown must be open');
+
+    // Select Georgia
+    await page.click('.font-item[data-font*="Georgia"]');
     const scrollAfter = await page.evaluate(() => ({ x: window.scrollX, y: window.scrollY }));
     assert.equal(scrollBefore.x, scrollAfter.x, 'Window scroll X must remain frozen on font select');
     assert.equal(scrollBefore.y, scrollAfter.y, 'Window scroll Y must remain frozen on font select');
 
-    const fontApplied = await page.evaluate(() => {
+    const fontCheck = await page.evaluate(() => {
       const textEl = document.querySelector('.note-item-text');
       const styledSpan = textEl.querySelector('span[style*="font-family"]');
-      return styledSpan ? getComputedStyle(styledSpan).fontFamily : getComputedStyle(textEl).fontFamily;
+      const label = document.getElementById('ribbon-font-label')?.textContent.trim();
+      return {
+        fontFamily: styledSpan ? getComputedStyle(styledSpan).fontFamily : getComputedStyle(textEl).fontFamily,
+        label
+      };
     });
-    assert.ok(fontApplied.toLowerCase().includes('georgia'), `Font Georgia must be applied: ${fontApplied}`);
+    assert.ok(fontCheck.fontFamily.toLowerCase().includes('georgia'), `Font Georgia must be applied: ${fontCheck.fontFamily}`);
+    assert.equal(fontCheck.label, 'Georgia', 'Font label button must reflect selected font name');
+
+    // Test Spacing Popover
+    await page.click('#ribbon-spacing-btn');
+    const isSpacingOpen = await page.evaluate(() => {
+      const p = document.getElementById('spacing-palette');
+      return p && !p.classList.contains('hidden');
+    });
+    assert.ok(isSpacingOpen, 'Spacing palette must open on button click');
+
+    // Apply Line Spacing 1.8
+    await page.click('.sp-pill-btn[data-val="1.8"]');
+    const spacingCheck = await page.evaluate(() => {
+      const textEl = document.querySelector('.note-item-text');
+      return textEl.style.lineHeight || getComputedStyle(textEl).lineHeight;
+    });
+    assert.ok(spacingCheck, 'Line spacing must be applied');
+
+    // Close spacing palette
+    await page.click('#canvas-world');
+
+    // Test Full-Box Font Application (when entire note box is clicked with no text range selection)
+    await page.evaluate(() => {
+      window.getSelection()?.removeAllRanges();
+      const cont = document.querySelector('.universal-note-container');
+      cont?.click();
+    });
+    await page.click('#ribbon-font-btn');
+    await page.click('.font-item[data-font*="Caveat"]');
+    const containerFontCheck = await page.evaluate(() => {
+      const cont = document.querySelector('.universal-note-container');
+      const text = cont?.querySelector('.note-item-text');
+      return {
+        contFont: cont?.style.fontFamily,
+        textFont: text?.style.fontFamily || getComputedStyle(text).fontFamily
+      };
+    });
+    assert.ok(
+      containerFontCheck.contFont.toLowerCase().includes('caveat') ||
+      containerFontCheck.textFont.toLowerCase().includes('caveat'),
+      `Full box font must apply Caveat to container and inner text: ${JSON.stringify(containerFontCheck)}`
+    );
 
     // 6. Master Key 4: Ink Mode Vector Icons, Chisel Tip, and Custom Palette Launcher
     await page.click('#btn-mode-ipad');

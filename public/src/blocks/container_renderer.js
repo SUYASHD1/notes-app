@@ -43,6 +43,9 @@ export function renderBlocks(deps = {}) {
     } else {
       el.style.minHeight = '';
     }
+    if (block.fontFamily) el.style.fontFamily = block.fontFamily;
+    if (block.lineHeight) el.style.lineHeight = block.lineHeight;
+    if (block.letterSpacing) el.style.letterSpacing = block.letterSpacing;
 
     el.addEventListener('mousedown', (e) => {
       if (state.mode === 'ipad') return;

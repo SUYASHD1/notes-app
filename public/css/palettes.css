@@ -145,8 +145,183 @@
 
 /* Dark Mode Overrides for Palettes */
 body[data-theme="dark"] .highlighter-palette,
-body[data-theme="dark"] .font-color-palette {
+body[data-theme="dark"] .font-color-palette,
+body[data-theme="dark"] .font-menu,
+body[data-theme="dark"] .spacing-menu {
   background: #242424;
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
 }
+
+body[data-theme="dark"] .font-select-btn {
+  background: #242424;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: var(--text-main);
+}
+
+/* Canva-Style Font Family Dropdown Menu */
+.font-dropdown-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.font-select-btn {
+  height: 32px;
+  padding: 0 10px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.84rem;
+  color: var(--text-main);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: all 0.15s ease;
+  min-width: 105px;
+  justify-content: space-between;
+}
+
+.font-select-btn:hover {
+  background: var(--dropdown-hover);
+  border-color: var(--border-color);
+}
+
+.font-select-btn.active {
+  border-color: var(--active-glow-blue) !important;
+  box-shadow: 0 0 0 2px var(--active-glow-bg) !important;
+}
+
+.font-menu {
+  position: fixed;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 195px;
+  z-index: 10000;
+  backdrop-filter: blur(12px);
+}
+
+.font-menu.hidden {
+  display: none !important;
+}
+
+.font-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  transition: all 0.12s ease;
+  text-align: left;
+}
+
+.font-item:hover {
+  background: var(--dropdown-hover);
+  border-color: var(--border-color);
+}
+
+.font-item.active {
+  background: var(--active-glow-bg) !important;
+  border-color: var(--active-glow-border) !important;
+  color: var(--active-glow-text) !important;
+  font-weight: 600;
+}
+
+.font-item-badge {
+  font-size: 10px;
+  padding: 2px 5px;
+  background: var(--panel-sub);
+  color: var(--text-muted);
+  border-radius: 4px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+/* Compact Spacing Popover */
+.spacing-picker-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.spacing-menu {
+  position: fixed;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 200px;
+  z-index: 10000;
+  backdrop-filter: blur(12px);
+}
+
+.spacing-menu.hidden {
+  display: none !important;
+}
+
+.sp-section-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+
+.sp-btn-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sp-pill-btn {
+  flex: 1;
+  height: 27px;
+  padding: 0 6px;
+  background: var(--panel-sub);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-main);
+  transition: all 0.12s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sp-pill-btn:hover {
+  background: var(--dropdown-hover);
+  border-color: var(--border-color);
+}
+
+.sp-pill-btn.active {
+  background: var(--active-glow-bg) !important;
+  border-color: var(--active-glow-border) !important;
+  color: var(--active-glow-text) !important;
+  font-weight: 600;
+  box-shadow: 0 0 6px var(--active-glow-blue) !important;
+}
+
+.sp-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 2px 0;
+}
+
