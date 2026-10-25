@@ -79,29 +79,13 @@ export function setupRibbonControls(options) {
   });
 
   // Typography buttons
-  document.getElementById('ribbon-bold')?.addEventListener('click', () => {
-    restoreTextSelection();
-    document.execCommand('bold');
-    syncRibbonActiveStates();
-    captureTextSelection();
-  });
-  document.getElementById('ribbon-italic')?.addEventListener('click', () => {
-    restoreTextSelection();
-    document.execCommand('italic');
-    syncRibbonActiveStates();
-    captureTextSelection();
-  });
-  document.getElementById('ribbon-underline')?.addEventListener('click', () => {
-    restoreTextSelection();
-    document.execCommand('underline');
-    syncRibbonActiveStates();
-    captureTextSelection();
-  });
-  document.getElementById('ribbon-strike')?.addEventListener('click', () => {
-    restoreTextSelection();
-    document.execCommand('strikeThrough');
-    syncRibbonActiveStates();
-    captureTextSelection();
+  [['ribbon-bold', 'bold'], ['ribbon-italic', 'italic'], ['ribbon-underline', 'underline'], ['ribbon-strike', 'strikeThrough']].forEach(([id, cmd]) => {
+    document.getElementById(id)?.addEventListener('click', () => {
+      restoreTextSelection();
+      document.execCommand(cmd);
+      syncRibbonActiveStates();
+      captureTextSelection();
+    });
   });
   // Interactive Smart Highlighter System
   let activeHighlightColor = '#fef08a';
@@ -142,6 +126,7 @@ export function setupRibbonControls(options) {
   highlightDropBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
     if (!highlightPalette) return;
+    fontColorPalette?.classList.add('hidden');
     const isHidden = highlightPalette.classList.contains('hidden');
     if (isHidden) {
       const wrapper = highlightDropBtn.closest('#highlighter-picker-wrapper') || highlightDropBtn;
@@ -170,9 +155,73 @@ export function setupRibbonControls(options) {
     });
   });
 
+  const fontColorBtn = document.getElementById('ribbon-font-color-btn');
+  const fontColorDropBtn = document.getElementById('ribbon-font-color-dropdown-btn');
+  const fontColorPalette = document.getElementById('font-color-palette');
+  const ribbonColorBar = document.getElementById('ribbon-color-bar');
+  const ribbonColorInput = document.getElementById('ribbon-color');
+  let activeFontColor = '#0f172a';
+
+  function applyFontColor(color) {
+    restoreTextSelection();
+    document.execCommand('foreColor', false, color);
+    captureTextSelection();
+  }
+
+  fontColorBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    applyFontColor(activeFontColor);
+  });
+
+  fontColorDropBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!fontColorPalette) return;
+    highlightPalette?.classList.add('hidden');
+    const isHidden = fontColorPalette.classList.contains('hidden');
+    if (isHidden) {
+      const wrapper = fontColorDropBtn.closest('.font-color-picker-wrapper') || fontColorDropBtn;
+      const rect = wrapper.getBoundingClientRect();
+      fontColorPalette.style.top = `${rect.bottom + 6}px`;
+      fontColorPalette.style.left = `${Math.max(10, rect.left - 10)}px`;
+      fontColorPalette.classList.remove('hidden');
+    } else {
+      fontColorPalette.classList.add('hidden');
+    }
+  });
+
+  fontColorPalette?.querySelectorAll('.fc-swatch:not(.fc-custom-btn)').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const col = btn.getAttribute('data-color') || '#0f172a';
+      activeFontColor = col;
+      if (ribbonColorBar) {
+        ribbonColorBar.style.backgroundColor = col;
+        ribbonColorBar.style.boxShadow = `0 1px 5px ${col}88`;
+      }
+      fontColorPalette.querySelectorAll('.fc-swatch').forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      fontColorPalette.classList.add('hidden');
+      applyFontColor(col);
+    });
+  });
+
+  ribbonColorInput?.addEventListener('input', (e) => {
+    const val = e.target.value;
+    activeFontColor = val;
+    if (ribbonColorBar) {
+      ribbonColorBar.style.backgroundColor = val;
+      ribbonColorBar.style.boxShadow = `0 1px 5px ${val}66`;
+    }
+    fontColorPalette?.classList.add('hidden');
+    applyFontColor(val);
+  });
+
   document.addEventListener('click', (e) => {
     if (!e.target.closest('#highlighter-palette') && !e.target.closest('#ribbon-highlight-dropdown-btn')) {
       highlightPalette?.classList.add('hidden');
+    }
+    if (!e.target.closest('#font-color-palette') && !e.target.closest('#ribbon-font-color-dropdown-btn')) {
+      fontColorPalette?.classList.add('hidden');
     }
   });
 
@@ -180,56 +229,29 @@ export function setupRibbonControls(options) {
     if (isHighlightMode) {
       const sel = window.getSelection();
       if (sel && !sel.isCollapsed && sel.rangeCount > 0) {
-        const range = sel.getRangeAt(0);
-        const node = range.commonAncestorContainer;
+        const node = sel.getRangeAt(0).commonAncestorContainer;
         const textBlock = (node.nodeType === 1 ? node : node.parentElement)?.closest('.note-item-text');
-        if (textBlock) {
-          applyHighlight(activeHighlightColor);
-        }
+        if (textBlock) applyHighlight(activeHighlightColor);
       }
     }
   });
-  const ribbonColorInput = document.getElementById('ribbon-color');
-  const ribbonColorBar = document.getElementById('ribbon-color-bar');
-  ribbonColorInput?.addEventListener('input', (e) => {
-    const val = e.target.value;
-    if (ribbonColorBar) {
-      ribbonColorBar.style.backgroundColor = val;
-      ribbonColorBar.style.boxShadow = `0 1px 5px ${val}66`;
-    }
-    restoreTextSelection();
-    document.execCommand('foreColor', false, val);
-    captureTextSelection();
+
+  // Alignment and List buttons
+  const cmdMap = {
+    'ribbon-align-left': 'justifyLeft',
+    'ribbon-align-center': 'justifyCenter',
+    'ribbon-align-right': 'justifyRight',
+    'ribbon-bullet': 'insertUnorderedList',
+    'ribbon-num': 'insertOrderedList'
+  };
+  Object.entries(cmdMap).forEach(([id, cmd]) => {
+    document.getElementById(id)?.addEventListener('click', () => {
+      restoreTextSelection();
+      document.execCommand(cmd);
+      captureTextSelection();
+    });
   });
 
-  // Alignment buttons
-  document.getElementById('ribbon-align-left')?.addEventListener('click', () => {
-    restoreTextSelection();
-    document.execCommand('justifyLeft');
-    captureTextSelection();
-  });
-  document.getElementById('ribbon-align-center')?.addEventListener('click', () => {
-    restoreTextSelection();
-    document.execCommand('justifyCenter');
-    captureTextSelection();
-  });
-  document.getElementById('ribbon-align-right')?.addEventListener('click', () => {
-    restoreTextSelection();
-    document.execCommand('justifyRight');
-    captureTextSelection();
-  });
-
-  // Lists & Checkboxes
-  document.getElementById('ribbon-bullet')?.addEventListener('click', () => {
-    restoreTextSelection();
-    document.execCommand('insertUnorderedList');
-    captureTextSelection();
-  });
-  document.getElementById('ribbon-num')?.addEventListener('click', () => {
-    restoreTextSelection();
-    document.execCommand('insertOrderedList');
-    captureTextSelection();
-  });
   document.getElementById('ribbon-task')?.addEventListener('click', () => {
     restoreTextSelection();
     document.execCommand('insertHTML', false, '<label class="checklist-item"><input type="checkbox"> &nbsp;</label>');
@@ -260,29 +282,22 @@ export function setupRibbonControls(options) {
     captureTextSelection();
   });
 
-  // Live Ribbon Active State Synchronization (like MS Word Home Tab)
+  // Live Ribbon Active State Synchronization (subtle blue glow for active commands)
   function syncRibbonActiveStates() {
-    const boldBtn = document.getElementById('ribbon-bold');
-    const italicBtn = document.getElementById('ribbon-italic');
-    const underBtn = document.getElementById('ribbon-underline');
-    const strikeBtn = document.getElementById('ribbon-strike');
-    const alignLeftBtn = document.getElementById('ribbon-align-left');
-    const alignCenterBtn = document.getElementById('ribbon-align-center');
-    const alignRightBtn = document.getElementById('ribbon-align-right');
-    const bulletBtn = document.getElementById('ribbon-bullet');
-    const numBtn = document.getElementById('ribbon-num');
-    const headingSelect = document.getElementById('ribbon-heading');
-
     try {
-      if (boldBtn) boldBtn.classList.toggle('active', document.queryCommandState('bold'));
-      if (italicBtn) italicBtn.classList.toggle('active', document.queryCommandState('italic'));
-      if (underBtn) underBtn.classList.toggle('active', document.queryCommandState('underline'));
-      if (strikeBtn) strikeBtn.classList.toggle('active', document.queryCommandState('strikeThrough'));
-      if (alignLeftBtn) alignLeftBtn.classList.toggle('active', document.queryCommandState('justifyLeft'));
-      if (alignCenterBtn) alignCenterBtn.classList.toggle('active', document.queryCommandState('justifyCenter'));
-      if (alignRightBtn) alignRightBtn.classList.toggle('active', document.queryCommandState('justifyRight'));
-      if (bulletBtn) bulletBtn.classList.toggle('active', document.queryCommandState('insertUnorderedList'));
-      if (numBtn) numBtn.classList.toggle('active', document.queryCommandState('insertOrderedList'));
+      [
+        ['ribbon-bold', 'bold'],
+        ['ribbon-italic', 'italic'],
+        ['ribbon-underline', 'underline'],
+        ['ribbon-strike', 'strikeThrough'],
+        ['ribbon-align-left', 'justifyLeft'],
+        ['ribbon-align-center', 'justifyCenter'],
+        ['ribbon-align-right', 'justifyRight'],
+        ['ribbon-bullet', 'insertUnorderedList'],
+        ['ribbon-num', 'insertOrderedList']
+      ].forEach(([id, cmd]) => {
+        document.getElementById(id)?.classList.toggle('active', !!document.queryCommandState(cmd));
+      });
     } catch (_) {}
 
     // Check heading level
@@ -308,49 +323,22 @@ export function setupRibbonControls(options) {
   });
 
   // Setup draggable scrollbars, auto-scrolling, and Word ribbon tabs
-  setupScrollbarDragging({
-    state,
-    container,
-    world,
-    onTransformChange: () => {
-      const currentZoomPercent = Math.round(state.viewport.zoom * 100);
-      if (currentZoomPercent !== lastRenderedZoom) {
-        lastRenderedZoom = currentZoomPercent;
-        if (zoomIndicator) zoomIndicator.textContent = currentZoomPercent + '%';
-      }
-    },
-    onSave: () => debouncedSave(800)
-  });
-  setupEdgeAutoScroll({
-    state,
-    container,
-    world,
-    onTransformChange: () => {
-      const currentZoomPercent = Math.round(state.viewport.zoom * 100);
-      if (currentZoomPercent !== lastRenderedZoom) {
-        lastRenderedZoom = currentZoomPercent;
-        if (zoomIndicator) zoomIndicator.textContent = currentZoomPercent + '%';
-      }
+  const onZoomSync = () => {
+    const curZoom = Math.round(state.viewport.zoom * 100);
+    if (curZoom !== lastRenderedZoom) {
+      lastRenderedZoom = curZoom;
+      if (zoomIndicator) zoomIndicator.textContent = `${curZoom}%`;
     }
-  });
+  };
+  setupScrollbarDragging({ state, container, world, onTransformChange: onZoomSync, onSave: () => debouncedSave(800) });
+  setupEdgeAutoScroll({ state, container, world, onTransformChange: onZoomSync });
   setupRibbonTabs();
 
   document.getElementById('btn-undo')?.addEventListener('click', () => {
-    if (state.history.canUndo()) {
-      state.history.undo();
-      saveActivePageDocument();
-      renderAll();
-      showToast('↺ Undone');
-    }
+    if (state.history.canUndo()) { state.history.undo(); saveActivePageDocument(); renderAll(); showToast('↺ Undone'); }
   });
-
   document.getElementById('btn-redo')?.addEventListener('click', () => {
-    if (state.history.canRedo()) {
-      state.history.redo();
-      saveActivePageDocument();
-      renderAll();
-      showToast('↻ Redone');
-    }
+    if (state.history.canRedo()) { state.history.redo(); saveActivePageDocument(); renderAll(); showToast('↻ Redone'); }
   });
 
   // Ribbon (Layout A) & Capsule (Layout B) Insert Action Bindings

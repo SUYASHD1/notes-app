@@ -182,10 +182,26 @@
           <button id="ribbon-strike" class="fmt-btn" title="Strikethrough">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 7.5C17.5 5 15.5 3.5 12 3.5C8 3.5 6.5 5.5 6.5 7.5C6.5 12 17.5 11 17.5 16.5C17.5 19 15.5 20.5 12 20.5C7.5 20.5 6 18.5 6 16.5"></path><line x1="3" y1="12" x2="21" y2="12"></line></svg>
           </button>
-          <div class="color-picker-wrapper" id="color-picker-wrapper" title="Font Color">
-            <span class="color-picker-label">A</span>
-            <div class="color-bar-indicator" id="ribbon-color-bar"></div>
-            <input type="color" id="ribbon-color" value="#0f172a" title="Font Color">
+          <div class="color-picker-wrapper font-color-picker-wrapper" id="color-picker-wrapper" title="Font Color">
+            <button id="ribbon-font-color-btn" class="fmt-btn font-color-main-btn" title="Font Color (Click to apply color)">
+              <span class="color-picker-label">A</span>
+              <div class="color-bar-indicator" id="ribbon-color-bar" style="background:#0f172a;"></div>
+            </button>
+            <button id="ribbon-font-color-dropdown-btn" class="dropdown-chevron-btn" title="Choose Font Color">
+              <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div id="font-color-palette" class="font-color-palette hidden">
+              <button class="fc-swatch active" data-color="#0f172a" style="background:#0f172a;" title="Default Text"></button>
+              <button class="fc-swatch" data-color="#1d4ed8" style="background:#1d4ed8;" title="Royal Blue"></button>
+              <button class="fc-swatch" data-color="#b91c1c" style="background:#b91c1c;" title="Crimson Red"></button>
+              <button class="fc-swatch" data-color="#15803d" style="background:#15803d;" title="Forest Green"></button>
+              <button class="fc-swatch" data-color="#7e22ce" style="background:#7e22ce;" title="Purple"></button>
+              <button class="fc-swatch" data-color="#c2410c" style="background:#c2410c;" title="Warm Amber"></button>
+              <label class="fc-swatch fc-custom-btn" title="Custom Color">
+                <span style="font-size:11px;">🎨</span>
+                <input type="color" id="ribbon-color" value="#0f172a" style="position:absolute; opacity:0; width:100%; height:100%; cursor:pointer; top:0; left:0;">
+              </label>
+            </div>
           </div>
           <div class="highlighter-picker-wrapper" id="highlighter-picker-wrapper" title="Highlight Tool">
             <button id="ribbon-highlight" class="fmt-btn highlighter-main-btn" title="Highlight Tool (Click to highlight selection, or click to toggle highlight mode)">

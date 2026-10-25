@@ -1,6 +1,6 @@
 # 📓 Notes App — Current State & Knowledge Log
 
-> **Last Updated:** 25 October 2026 (v4.8.5)  
+> **Last Updated:** 25 October 2026 (v4.8.6)  
 > **Status:** Fully Functional, PWA Standalone Enabled, Deployed to Production (Vercel)  
 > **Live Web Application:** [https://notes-app-topaz-six.vercel.app/](https://notes-app-topaz-six.vercel.app/)  
 > **Automated Test Suite:** `77 / 77 tests passed (100%)`
@@ -242,6 +242,11 @@ This application is a freeform, ultra-fast note-taking system designed to combin
 * **Borderless Dark Mode Ribbon:** Cleaned up the dark mode toolbar styling by removing heavy dark grey boxes and borders around individual buttons (`B`, `I`, `U`, `S`, font color, highlighter, align, and lists). The dark mode ribbon now feels completely flat, borderless, seamless, and elegant, matching the clean minimalist design of Light Mode.
 * **Theme-Adaptive Dynamic Highlighting:** Existing and new highlighted notes automatically adjust their appearance to match the active theme. In Light Mode, highlights display as fresh, cheerful pastels with dark text. When toggled to Dark Mode, those exact same highlights instantly transform into soothing, luminous midnight tones (midnight amber, emerald sage, velvet rose, twilight azure, and warm terracotta) with light readable text, eliminating eye strain without altering or corrupting the underlying saved document HTML.
 * **Harmonious Dark Highlighter Palette:** The highlighter color picker dropdown in dark mode displays rich, midnight-luminous swatches matching the dark mode aesthetic, avoiding harsh neon glare.
+
+### 26. Global Theme-Adaptive Font Colors, Two-in-One Text Color Tool & Subtle Bluish Active Halo (v4.8.6)
+* **Global Theme-Adaptive Font Colors:** Extended the color-shifting architecture to text. Dark navy blues, crimson reds, deep forest greens, purples, warm ambers, and blacks automatically soften in dark mode into luminous, high-comfort night shades (sky blue, soft coral, fresh mint, lilac lavender, warm peach, and cream white) with 100% legibility and zero glare. The underlying document data remains pristine.
+* **Unified Two-in-One Font Color Tool (`A`):** Upgraded the font color button to match the Highlighter standard: clicking the letter `A` instantly applies the loaded color, while the companion dropdown chevron opens a curated quick-palette (Default, Royal Blue, Crimson, Forest Green, Purple, Warm Amber, plus custom color picker) with an active color indicator bar beneath the icon.
+* **Universal Subtle Bluish Halo Glow:** Replaced clunky square borders on active tools with a soft, breathing bluish-indigo halo glow (`rgba(99, 102, 241, 0.22)`) across text formatting buttons (`B`, `I`, `U`, `S`), alignment buttons, list buttons, and navigation/ink mode toggles.
 
 ---
 

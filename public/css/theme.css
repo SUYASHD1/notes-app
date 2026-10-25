@@ -48,6 +48,15 @@
   --hl-pink: #fbcfe8;
   --hl-blue: #bae6fd;
   --hl-peach: #fed7aa;
+
+  /* Adaptive Text Color Tokens (Light Mode - Deep & Legible) */
+  --tc-default: #0f172a;
+  --tc-blue: #1d4ed8;
+  --tc-red: #b91c1c;
+  --tc-green: #15803d;
+  --tc-purple: #7e22ce;
+  --tc-orange: #c2410c;
+  --tc-gray: #4b5563;
 }
 
 /* 🌙 Dark Mode System (Centered on #282828 Charcoal) */
@@ -85,6 +94,15 @@ body[data-theme="dark"] {
   --hl-pink: rgba(244, 63, 94, 0.42);
   --hl-blue: rgba(59, 130, 246, 0.42);
   --hl-peach: rgba(249, 115, 22, 0.42);
+
+  /* Adaptive Text Color Tokens (Dark Mode - Radiant & Luminous) */
+  --tc-default: #f1f5f9;
+  --tc-blue: #93c5fd;
+  --tc-red: #fca5a5;
+  --tc-green: #86efac;
+  --tc-purple: #d8b4fe;
+  --tc-orange: #fdba74;
+  --tc-gray: #cbd5e1;
 }
 
 /* Global Reset & Base Typography */
