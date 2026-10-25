@@ -19,13 +19,7 @@
 }
 
 body[data-mode="ipad"] #status-bar {
-  pointer-events: none;
-  opacity: 0.72;
-}
-
-body[data-mode="ipad"] #status-bar .zoom-pill {
-  cursor: default;
-  background: var(--panel-sub);
+  display: none !important;
 }
 
 .status-left {

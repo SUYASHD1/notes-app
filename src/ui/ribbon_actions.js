@@ -36,25 +36,8 @@ export function setupRibbonControls(options) {
     actionInsertMath
   } = createContainerActions(options);
 
-  // Select Tool vs Hand Tool Toggle
-  const btnSelect = document.getElementById('btn-tool-select');
-  const btnHand = document.getElementById('btn-tool-hand');
-  if (btnSelect && btnHand) {
-    btnSelect.addEventListener('click', () => {
-      state.activeTool = 'select';
-      btnSelect.classList.add('active');
-      btnHand.classList.remove('active');
-      if (container) container.style.cursor = 'default';
-      showToast('↖ Select Tool: Click to select, drag to marquee');
-    });
-    btnHand.addEventListener('click', () => {
-      state.activeTool = 'hand';
-      btnHand.classList.add('active');
-      btnSelect.classList.remove('active');
-      if (container) container.style.cursor = 'grab';
-      showToast('✋ Hand Tool: Drag canvas to pan freely');
-    });
-  }
+  // Default tool is auto-select & pan
+  state.activeTool = state.activeTool || 'select';
 
   // Persistent text selection keeper across dropdowns & color pickers
   let lastActiveRange = null;
@@ -82,16 +65,10 @@ export function setupRibbonControls(options) {
   document.addEventListener('selectionchange', captureTextSelection);
   document.addEventListener('pointerup', captureTextSelection);
 
-  // Prevent focus theft on format buttons so contentEditable stays active
-  const fmtButtons = [
-    'ribbon-bold', 'ribbon-italic', 'ribbon-underline', 'ribbon-strike',
-    'ribbon-highlight', 'ribbon-bullet', 'ribbon-num', 'ribbon-task',
-    'ribbon-align-left', 'ribbon-align-center', 'ribbon-align-right'
-  ];
-  fmtButtons.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('mousedown', (e) => e.preventDefault());
-  });
+  // Prevent focus theft so contentEditable stays active
+  ['ribbon-bold', 'ribbon-italic', 'ribbon-underline', 'ribbon-strike', 'ribbon-highlight',
+   'ribbon-bullet', 'ribbon-num', 'ribbon-task', 'ribbon-align-left', 'ribbon-align-center', 'ribbon-align-right'
+  ].forEach(id => document.getElementById(id)?.addEventListener('mousedown', (e) => e.preventDefault()));
 
   ['ribbon-color', 'ribbon-font', 'ribbon-font-size', 'ribbon-heading'].forEach(id => {
     const el = document.getElementById(id);
@@ -126,11 +103,80 @@ export function setupRibbonControls(options) {
     syncRibbonActiveStates();
     captureTextSelection();
   });
-  document.getElementById('ribbon-highlight')?.addEventListener('click', () => {
+  // Interactive Smart Highlighter System
+  let activeHighlightColor = '#fef08a';
+  let isHighlightMode = false;
+  const highlightBtn = document.getElementById('ribbon-highlight');
+  const highlightGlow = document.getElementById('ribbon-highlight-glow');
+  const highlightDropBtn = document.getElementById('ribbon-highlight-dropdown-btn');
+  const highlightPalette = document.getElementById('highlighter-palette');
+
+  function applyHighlight(color) {
     restoreTextSelection();
-    document.execCommand('hiliteColor', false, '#fef08a');
-    syncRibbonActiveStates();
-    captureTextSelection();
+    const sel = window.getSelection();
+    if (sel && !sel.isCollapsed && sel.rangeCount > 0) {
+      if (color === 'transparent') {
+        document.execCommand('removeFormat');
+      } else {
+        document.execCommand('hiliteColor', false, color);
+      }
+      syncRibbonActiveStates();
+      captureTextSelection();
+      return true;
+    }
+    return false;
+  }
+
+  highlightBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const applied = applyHighlight(activeHighlightColor);
+    if (!applied) {
+      isHighlightMode = !isHighlightMode;
+      highlightBtn.classList.toggle('active', isHighlightMode);
+      if (typeof showToast === 'function') {
+        showToast(isHighlightMode ? '🖍️ Highlight Tool Active: Drag over text to highlight' : 'Highlight Tool Inactive');
+      }
+    }
+  });
+
+  highlightDropBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    highlightPalette?.classList.toggle('hidden');
+  });
+
+  highlightPalette?.querySelectorAll('.hl-swatch').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const col = btn.getAttribute('data-color') || '#fef08a';
+      activeHighlightColor = col;
+      if (highlightGlow) {
+        highlightGlow.style.backgroundColor = col === 'transparent' ? 'transparent' : col;
+      }
+      highlightPalette.querySelectorAll('.hl-swatch').forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      highlightPalette.classList.add('hidden');
+      applyHighlight(col);
+    });
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#highlighter-picker-wrapper')) {
+      highlightPalette?.classList.add('hidden');
+    }
+  });
+
+  document.addEventListener('selectionchange', () => {
+    if (isHighlightMode) {
+      const sel = window.getSelection();
+      if (sel && !sel.isCollapsed && sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0);
+        const node = range.commonAncestorContainer;
+        const textBlock = (node.nodeType === 1 ? node : node.parentElement)?.closest('.note-item-text');
+        if (textBlock) {
+          applyHighlight(activeHighlightColor);
+        }
+      }
+    }
   });
   const ribbonColorInput = document.getElementById('ribbon-color');
   const ribbonColorBar = document.getElementById('ribbon-color-bar');

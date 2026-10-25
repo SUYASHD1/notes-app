@@ -11,12 +11,46 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Notes">
   <link rel="apple-touch-icon" href="./icons/logo.svg">
-  <link rel="stylesheet" href="./styles.css?v=4.8.3">
+  <link rel="stylesheet" href="./styles.css?v=4.8.4">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    (function() {
+      try {
+        var t = localStorage.getItem('notes_app_theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', t);
+      } catch(e) {}
+    })();
+  </script>
 </head>
 <body data-layout="layout-a">
+  <!-- Instant Native Startup Splash Screen (Zero White Flash, Browser Cached) -->
+  <div id="app-splash-overlay" class="app-splash-overlay theme-dark">
+    <div class="splash-aurora"></div>
+    <div class="splash-3d-stage">
+      <div class="splash-ink-ripple"></div>
+      <svg class="splash-logo-art" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="splashBookGrad" x1="8" y1="10" x2="56" y2="54" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#4f46e5" />
+            <stop offset="100%" stop-color="#06b6d4" />
+          </linearGradient>
+        </defs>
+        <rect x="8" y="10" width="48" height="44" rx="10" fill="url(#splashBookGrad)" fill-opacity="0.18" stroke="#6366f1" stroke-width="2.5"/>
+        <path d="M32 12V52" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-dasharray="3 3"/>
+        <path class="splash-draw-stroke" d="M18 36C22 30 26 24 32 24C38 24 40 32 46 22" stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle class="splash-nib-dot" cx="46" cy="22" r="3.5" fill="#38bdf8"/>
+      </svg>
+      <div class="splash-nib-spark"></div>
+    </div>
+    <div class="splash-brand-text">Notes App</div>
+    <div class="splash-whisper-text" id="app-splash-whisper">Preparing your infinite canvas...</div>
+    <div class="splash-progress-track">
+      <div class="splash-progress-fill"></div>
+    </div>
+  </div>
+
   <div id="app-container">
     
     <!-- Top Master App Bar -->
@@ -108,12 +142,6 @@
 
       <!-- Windows Mode: Typography & Text Editing Controls (Home Tab) -->
       <div id="ribbon-text-group" class="ribbon-mode-group">
-        <!-- Tool Selection Cluster (Select vs Hand) -->
-        <div class="ribbon-cluster" id="win-tool-cluster">
-          <button id="btn-tool-select" class="fmt-btn active" title="Select Tool (V) - Select, move and resize elements">↖</button>
-          <button id="btn-tool-hand" class="fmt-btn" title="Hand / Pan Tool (H) - Pan canvas freely">✋</button>
-        </div>
-
         <!-- Font Family & Size Cluster -->
         <div class="ribbon-cluster ribbon-font-cluster">
           <select id="ribbon-font" title="Font Family">
@@ -159,13 +187,26 @@
             <div class="color-bar-indicator" id="ribbon-color-bar"></div>
             <input type="color" id="ribbon-color" value="#0f172a" title="Font Color">
           </div>
-          <button id="ribbon-highlight" class="fmt-btn" title="Highlight">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 20h9"></path>
-              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-            </svg>
-            <span class="highlighter-swatch-glow" id="ribbon-highlight-glow"></span>
-          </button>
+          <div class="highlighter-picker-wrapper" id="highlighter-picker-wrapper" title="Highlight Tool">
+            <button id="ribbon-highlight" class="fmt-btn" title="Highlight (Click to apply or toggle highlight mode)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+              </svg>
+              <span class="highlighter-swatch-glow" id="ribbon-highlight-glow" style="background:#fef08a;"></span>
+            </button>
+            <button id="ribbon-highlight-dropdown-btn" class="fmt-btn dropdown-arrow-btn" title="Choose Highlighter Color">
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div id="highlighter-palette" class="highlighter-palette hidden">
+              <button class="hl-swatch active" data-color="#fef08a" style="background:#fef08a;" title="Soft Yellow"></button>
+              <button class="hl-swatch" data-color="#bbf7d0" style="background:#bbf7d0;" title="Mint Green"></button>
+              <button class="hl-swatch" data-color="#fbcfe8" style="background:#fbcfe8;" title="Blossom Pink"></button>
+              <button class="hl-swatch" data-color="#bae6fd" style="background:#bae6fd;" title="Sky Blue"></button>
+              <button class="hl-swatch" data-color="#fed7aa" style="background:#fed7aa;" title="Warm Peach"></button>
+              <button class="hl-swatch hl-clear-btn" data-color="transparent" title="Remove Highlight">✕</button>
+            </div>
+          </div>
         </div>
 
         <!-- Paragraph Alignment & Lists Cluster -->
@@ -184,7 +225,14 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="9" y1="6" x2="21" y2="6"></line><line x1="9" y1="12" x2="21" y2="12"></line><line x1="9" y1="18" x2="21" y2="18"></line><circle cx="4.5" cy="6" r="1.5" fill="var(--accent-color, #6366f1)"></circle><circle cx="4.5" cy="12" r="1.5" fill="var(--accent-color, #6366f1)"></circle><circle cx="4.5" cy="18" r="1.5" fill="var(--accent-color, #6366f1)"></circle></svg>
           </button>
           <button id="ribbon-num" class="fmt-btn" title="Numbered List">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="10" y1="6" x2="21" y2="6"></line><line x1="10" y1="12" x2="21" y2="12"></line><line x1="10" y1="18" x2="21" y2="18"></line><text x="2" y="7" font-size="7" font-family="sans-serif" font-weight="700" fill="currentColor">1</text><text x="2" y="13" font-size="7" font-family="sans-serif" font-weight="700" fill="currentColor">2</text><text x="2" y="19" font-size="7" font-family="sans-serif" font-weight="700" fill="currentColor">3</text></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="10" y1="6" x2="21" y2="6"></line>
+              <line x1="10" y1="12" x2="21" y2="12"></line>
+              <line x1="10" y1="18" x2="21" y2="18"></line>
+              <path d="M4 6h1.5v4"></path>
+              <path d="M3.5 10h3"></path>
+              <path d="M6 18H3.5c0-1 2.5-2 2.5-3s-1-1.5-2.5-1"></path>
+            </svg>
           </button>
           <button id="ribbon-task" class="fmt-btn" title="Task Checkbox">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="4"></rect><polyline points="8 12 11 15 16 9" stroke="var(--accent-color, #6366f1)" stroke-width="2"></polyline></svg>

@@ -11,8 +11,19 @@
   padding: 0 14px;
   gap: 10px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
   z-index: 95;
+}
+
+#ribbon-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.ribbon-tabs-nav, .ribbon-cluster, .ribbon-mode-group {
+  flex-shrink: 0;
 }
 
 .ribbon-tabs-nav {
@@ -208,16 +219,77 @@
   position: relative;
 }
 
-.highlighter-swatch-glow {
+.highlighter-picker-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.dropdown-arrow-btn {
+  padding: 0 2px !important;
+  width: 13px !important;
+  min-width: 13px !important;
+  margin-left: -2px;
+  opacity: 0.7;
+}
+
+.dropdown-arrow-btn:hover {
+  opacity: 1;
+}
+
+.highlighter-palette {
   position: absolute;
-  bottom: 5px;
-  right: 5px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #eab308;
-  box-shadow: 0 0 6px #eab308;
-  pointer-events: none;
+  top: calc(100% + 6px);
+  left: 0;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  padding: 6px;
+  display: grid;
+  grid-template-columns: repeat(3, 24px);
+  gap: 5px;
+  z-index: 200;
+}
+
+.highlighter-palette.hidden {
+  display: none !important;
+}
+
+.hl-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  padding: 0;
+}
+
+.hl-swatch:hover {
+  transform: scale(1.15);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.hl-swatch.active {
+  outline: 2px solid var(--accent-color, #6366f1);
+  outline-offset: 1px;
+}
+
+.hl-clear-btn {
+  background: var(--panel-sub);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body[data-theme="dark"] .highlighter-palette {
+  background: #1e2028;
+  border-color: #333846;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
 }
 
 /* Floating Rich Text Toolbar */

@@ -1,6 +1,6 @@
 # 📓 Notes App — Current State & Knowledge Log
 
-> **Last Updated:** 25 October 2026 (v4.8.3)  
+> **Last Updated:** 25 October 2026 (v4.8.4)  
 > **Status:** Fully Functional, PWA Standalone Enabled, Deployed to Production (Vercel)  
 > **Live Web Application:** [https://notes-app-topaz-six.vercel.app/](https://notes-app-topaz-six.vercel.app/)  
 > **Automated Test Suite:** `77 / 77 tests passed (100%)`
@@ -228,6 +228,15 @@ This application is a freeform, ultra-fast note-taking system designed to combin
   - Inking Wave Ripple & Apple Pencil Spark: Outward circular ink ripple expands from the inking nib, while a glowing stylus star glides along the ribbon path.
   - Theme-Adaptive Ambiance & Whispers: Dark mode features a starlit midnight aurora with cyan light; Bright mode features warm morning paper with sunbeam diffusion.
   - 0% Background Overhead: The splash automatically dissolves within 2 seconds as the database opens and detaches itself completely from the DOM, consuming 0% CPU and 0% RAM during active writing.
+
+### 24. Toolbar Refinement, Interactive Pastel Highlighter & Instant Edge-to-Edge Canvas (v4.8.4)
+* **Removed Redundant Tool Cluster:** Removed the `↖` select and `✋` hand tool buttons from the top toolbar since canvas panning and note selection are fully automatic.
+* **Crisp Vector Numbered List Icon:** Replaced blurry SVG text with sharp, scalable vector paths for numeral list markers.
+* **Smart Pastel Highlighter System:** Added a curated dropdown palette (Soft Honey Yellow `#fef08a`, Mint Green `#bbf7d0`, Blossom Pink `#fbcfe8`, Sky Blue `#bae6fd`, Warm Peach `#fed7aa`, and Remove Highlight). Supports both pre-selected text highlighting and "Highlighter-First Mode" where clicking the tool enables instant drag-to-highlight on canvas text.
+* **Tab & Mode Clean Separation:** Strict CSS and JavaScript state separation prevents Insert buttons or Home text tools from leaking into Ink Mode, and vice versa.
+* **Instant Native Startup Animation (Pre-Cached at $t = 0$):** Embedded the initial splash overlay directly into `index.html` with instant theme detection so the animation renders on millisecond zero directly from browser cache, dissolving cleanly once the canvas is ready.
+* **Fluid iPad Ribbon Swiping:** Enabled horizontal touch swiping (`overflow-x: auto; -webkit-overflow-scrolling: touch`) and flex-shrink protection on the ribbon bar so icons never get clipped or lost on narrow tablet viewports.
+* **Edge-to-Edge Canvas on iPad:** Completely eliminated the bottom grey desktop status bar in iPad/Ink mode, giving maximum vertical writing space.
 
 ---
 

@@ -4,18 +4,9 @@
 export function initSplashScreen() {
   if (typeof document === 'undefined') return { dismiss: () => {} };
 
-  // Avoid duplicate injection
-  if (document.getElementById('app-splash-overlay')) {
-    return { dismiss: () => {} };
-  }
-
-  // Detect active theme
-  const isDark = document.body.getAttribute('data-theme') !== 'light';
+  let overlay = document.getElementById('app-splash-overlay');
+  const isDark = document.body.getAttribute('data-theme') !== 'light' && document.documentElement.getAttribute('data-theme') !== 'light';
   const themeClass = isDark ? 'theme-dark' : 'theme-light';
-
-  const overlay = document.createElement('div');
-  overlay.id = 'app-splash-overlay';
-  overlay.className = themeClass;
 
   const darkWhispers = [
     'Lighting the quiet midnight canvas...',
@@ -30,6 +21,13 @@ export function initSplashScreen() {
   ];
 
   const whispers = isDark ? darkWhispers : lightWhispers;
+
+  if (overlay) {
+    overlay.className = `app-splash-overlay ${themeClass}`;
+  } else {
+    overlay = document.createElement('div');
+    overlay.id = 'app-splash-overlay';
+    overlay.className = `app-splash-overlay ${themeClass}`;
 
   overlay.innerHTML = `
     <div class="splash-aurora"></div>
@@ -69,6 +67,7 @@ export function initSplashScreen() {
   `;
 
   document.body.appendChild(overlay);
+  }
 
   const whisperEl = document.getElementById('app-splash-whisper');
   let step = 0;

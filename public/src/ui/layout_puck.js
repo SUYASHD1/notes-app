@@ -32,6 +32,15 @@ export function setMode({
     const ribbonTabsNav = document.querySelector('.ribbon-tabs-nav');
     if (ribbonTabsNav) ribbonTabsNav.style.display = 'flex';
     if (inkGroup) inkGroup.style.display = 'none';
+    const ribbonBar = document.getElementById('ribbon-bar');
+    const curTab = ribbonBar?.getAttribute('data-tab') || 'home';
+    if (curTab === 'home') {
+      if (textGroup) textGroup.style.display = 'flex';
+      if (insertCluster) insertCluster.style.display = 'none';
+    } else {
+      if (textGroup) textGroup.style.display = 'none';
+      if (insertCluster) insertCluster.style.display = 'flex';
+    }
     if (selCluster) selCluster.style.display = 'flex';
 
     if (puck) {
@@ -64,6 +73,8 @@ export function setMode({
 
     const ribbonTabsNav = document.querySelector('.ribbon-tabs-nav');
     if (ribbonTabsNav) ribbonTabsNav.style.display = 'none';
+    if (textGroup) textGroup.style.display = 'none';
+    if (insertCluster) insertCluster.style.display = 'none';
     if (inkGroup) inkGroup.style.display = 'flex';
     if (selCluster) selCluster.style.display = 'none';
 

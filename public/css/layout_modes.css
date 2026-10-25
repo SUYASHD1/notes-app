@@ -122,33 +122,36 @@ body[data-layout="layout-a"] #ribbon-bar {
 }
 
 /* Platform Mode Adaptations */
-body[data-mode="ipad"] .ml-auto {
-  margin-left: auto;
+body[data-mode="ipad"] #ribbon-bar #ribbon-text-group,
+body[data-mode="ipad"] #ribbon-bar .insert-cluster,
+body[data-mode="ipad"] #ribbon-bar .ribbon-tabs-nav {
+  display: none !important;
 }
 
-body[data-mode="ipad"] #ribbon-text-group,
-body[data-mode="ipad"] .insert-cluster {
-  display: flex;
+body[data-mode="ipad"] #ribbon-bar #ribbon-ink-group {
+  display: flex !important;
 }
 
-body[data-mode="ipad"] #ribbon-ink-group,
-body[data-mode="ipad"] .ribbon-tabs-nav {
-  display: flex;
+body[data-mode="windows"] #ribbon-bar #ribbon-ink-group {
+  display: none !important;
 }
 
-body[data-mode="windows"] #ribbon-ink-group,
-body[data-mode="windows"] .ribbon-tabs-nav {
-  display: flex;
+body[data-mode="windows"] #ribbon-bar .ribbon-tabs-nav {
+  display: flex !important;
 }
 
-body[data-mode="windows"] #ribbon-bar[data-tab="home"] #ribbon-text-group,
+body[data-mode="windows"] #ribbon-bar[data-tab="home"] #ribbon-text-group {
+  display: flex !important;
+}
 body[data-mode="windows"] #ribbon-bar[data-tab="home"] .insert-cluster {
-  display: flex;
+  display: none !important;
 }
 
-body[data-mode="windows"] #ribbon-bar[data-tab="insert"] #ribbon-text-group,
+body[data-mode="windows"] #ribbon-bar[data-tab="insert"] #ribbon-text-group {
+  display: none !important;
+}
 body[data-mode="windows"] #ribbon-bar[data-tab="insert"] .insert-cluster {
-  display: flex;
+  display: flex !important;
 }
 
 /* Topbar Layout & Selector Controls */
