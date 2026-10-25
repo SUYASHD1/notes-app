@@ -198,4 +198,19 @@ test('Web paste with numbered headings and body paragraphs preserves heading tag
   assert.ok(!rendered.includes('<li'));
 });
 
+test('SanitizeRichHtml strips external background noise, odd styling, and empty paragraphs', () => {
+  const dirtyHtml = `
+    <div style="background-color: yellow; margin: 20px; font-family: Comic Sans MS;">
+      <p style="background: rgb(240, 240, 240); line-height: 2.5; font-size: 32px;">Clean content</p>
+      <div style="width: 100px;"></div>
+      <p>&nbsp;</p>
+    </div>
+  `;
+  const clean = MarkdownLatexParser.sanitizeRichHtml(dirtyHtml);
+  assert.ok(clean.includes('Clean content'));
+  assert.ok(!clean.includes('background-color: yellow'));
+  assert.ok(!clean.includes('Comic Sans MS'));
+});
+
+
 

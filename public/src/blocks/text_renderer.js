@@ -2,6 +2,34 @@
 import { MarkdownLatexParser } from './text_block.js';
 import { AddBlockCommand } from '../core/history.js';
 import { vaultExternalImage, vaultImagesInTextItem } from './media_renderer.js';
+import { openImageCropper } from './image_cropper.js';
+
+function extractTableFromHtml(html) {
+  if (typeof DOMParser === 'undefined') return null;
+  try {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const table = doc.querySelector('table');
+    if (!table) return null;
+    const trs = Array.from(table.querySelectorAll('tr'));
+    if (trs.length === 0) return null;
+    const rows = trs.map(tr => Array.from(tr.querySelectorAll('th, td')).map(td => td.textContent.trim())).filter(r => r.length > 0);
+    return rows.length > 0 ? rows : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function extractTableFromText(text) {
+  if (!text || !text.includes('\t') || !text.includes('\n')) return null;
+  const lines = text.trim().split(/\r?\n/).filter(Boolean);
+  if (lines.length < 2) return null;
+  const rows = lines.map(l => l.split('\t').map(c => c.trim()));
+  const colCount = rows[0].length;
+  if (colCount >= 2 && rows.every(r => r.length === colCount)) {
+    return rows;
+  }
+  return null;
+}
 
 export function renderTextItem(parentEl, item, headerEl, containerBlock, deps = {}) {
   const state = deps.state || window.state;
@@ -56,6 +84,7 @@ export function renderTextItem(parentEl, item, headerEl, containerBlock, deps = 
             <button class="img-tool-btn ${rawWrap === 'left' ? 'active' : ''}" data-action="wrap-left" title="Wrap text around left side of image">⬅️ Left</button>
             <button class="img-tool-btn ${rawWrap === 'center' ? 'active' : ''}" data-action="wrap-center" title="Center image between text blocks">⏸️ Center</button>
             <button class="img-tool-btn ${rawWrap === 'right' ? 'active' : ''}" data-action="wrap-right" title="Wrap text around right side of image">➡️ Right</button>
+            <button class="img-tool-btn btn-crop" data-action="crop" title="Crop image">✂ Crop</button>
             <div class="img-tool-divider"></div>
             <button class="img-tool-btn btn-popout" data-action="pop-out" title="Take image out of box and place on canvas as independent card">🪟 Pop Out</button>
             <button class="img-tool-btn btn-danger" data-action="delete" title="Remove image">🗑️</button>
@@ -76,7 +105,21 @@ export function renderTextItem(parentEl, item, headerEl, containerBlock, deps = 
               toolbar.querySelectorAll('.img-tool-btn').forEach(b => b.classList.remove('active'));
               btn.classList.add('active');
               item.content = serializeTextContent(textDiv);
-              if (saveActivePageDocument) saveActivePageDocument();
+            } else if (action === 'crop') {
+              const imgEl = imgContainer.querySelector('img');
+              const currentSrc = imgContainer.getAttribute('data-src') || (imgEl ? imgEl.src : '');
+              if (currentSrc) {
+                openImageCropper({ src: currentSrc }, async (newSrc) => {
+                  if (newSrc && imgEl) {
+                    imgEl.src = newSrc;
+                    imgContainer.setAttribute('data-src', newSrc);
+                    await vaultExternalImage(newSrc, deps);
+                    item.content = serializeTextContent(textDiv);
+                    if (saveActivePageDocument) saveActivePageDocument();
+                    if (showToast) showToast('✂ Image cropped');
+                  }
+                }, deps);
+              }
             } else if (action === 'delete') {
               imgContainer.remove();
               item.content = serializeTextContent(textDiv);
@@ -276,6 +319,30 @@ export function renderTextItem(parentEl, item, headerEl, containerBlock, deps = 
         reader.readAsDataURL(file);
         return;
       }
+    }
+
+    // Check for copied Table (from Web, Word, Excel, or Google Sheets)
+    const tableData = (htmlData && htmlData.includes('<table'))
+      ? extractTableFromHtml(htmlData)
+      : (plainText ? extractTableFromText(plainText) : null);
+
+    if (tableData && containerBlock) {
+      e.preventDefault();
+      const currentItemIndex = (containerBlock.items || []).indexOf(item);
+      const newTableItem = {
+        id: 'item_tbl_' + Date.now(),
+        type: 'table',
+        data: tableData
+      };
+      if (currentItemIndex !== -1) {
+        containerBlock.items.splice(currentItemIndex + 1, 0, newTableItem);
+      } else {
+        containerBlock.items.push(newTableItem);
+      }
+      if (saveActivePageDocument) saveActivePageDocument();
+      if (renderAll) renderAll();
+      if (showToast) showToast('⊞ Converted copied grid into interactive Table (+Row, +Col)');
+      return;
     }
 
     if (htmlData && htmlData.trim()) {

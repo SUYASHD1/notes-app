@@ -232,9 +232,9 @@ We are systematically restructuring all files that exceed the **350-line limit**
 - [x] Code is modularized into its own file in `src/` and mirrored in `public/src/`.
 - [x] Zero hardcoded colors in styles — all colors point to CSS theme variables.
 - [x] Two-Door House parity verification script passes with 0 mismatches.
-- [x] All 76 automated tests pass (`node --test tests/*.test.js`).
+- [x] All 77 automated tests pass (`node --test tests/*.test.js`).
 - [x] Visual browser verification performed (no stuck menus, boundary cursors active).
-- [x] Version number bumped in `index.html` and `sw.js` (v4.7.6).
+- [x] Version number bumped in `index.html` and `sw.js` (v4.8.0).
 - [x] Changes logged clearly into `CURRENT_STATE.md`.
 
 

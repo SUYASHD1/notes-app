@@ -4,6 +4,17 @@ import { getCanvasContentBounds, clampViewportBounds } from './viewport_bounds.j
 
 let isDraggingScrollbar = false;
 let activeDragRepositionCallback = null;
+let scrollActivityTimer = null;
+
+function indicateScrollActivity(sbH, sbV) {
+  if (sbH) sbH.classList.add('scrolling');
+  if (sbV) sbV.classList.add('scrolling');
+  if (scrollActivityTimer) clearTimeout(scrollActivityTimer);
+  scrollActivityTimer = setTimeout(() => {
+    if (sbH) sbH.classList.remove('scrolling');
+    if (sbV) sbV.classList.remove('scrolling');
+  }, 1200);
+}
 
 export function registerActiveDragCallback(cb) {
   activeDragRepositionCallback = cb;
@@ -20,6 +31,8 @@ export function updateScrollbars({ state, container }) {
   const thumbH = document.getElementById('canvas-scroll-thumb-h');
   const thumbV = document.getElementById('canvas-scroll-thumb-v');
   if (!sbH || !sbV || !thumbH || !thumbV || !container) return;
+
+  indicateScrollActivity(sbH, sbV);
 
   const bounds = getCanvasContentBounds(state.doc);
   const containerW = container.offsetWidth || window.innerWidth;

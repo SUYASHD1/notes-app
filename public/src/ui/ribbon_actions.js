@@ -56,6 +56,32 @@ export function setupRibbonControls(options) {
     });
   }
 
+  // Persistent text selection keeper across dropdowns & color pickers
+  let lastActiveRange = null;
+
+  function captureTextSelection() {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0);
+      const node = range.commonAncestorContainer;
+      const textBlock = (node.nodeType === 1 ? node : node.parentElement)?.closest('.note-item-text');
+      if (textBlock) {
+        lastActiveRange = range.cloneRange();
+      }
+    }
+  }
+
+  function restoreTextSelection() {
+    if (lastActiveRange) {
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(lastActiveRange);
+    }
+  }
+
+  document.addEventListener('selectionchange', captureTextSelection);
+  document.addEventListener('pointerup', captureTextSelection);
+
   // Prevent focus theft on format buttons so contentEditable stays active
   const fmtButtons = [
     'ribbon-bold', 'ribbon-italic', 'ribbon-underline', 'ribbon-strike',
@@ -67,58 +93,93 @@ export function setupRibbonControls(options) {
     if (el) el.addEventListener('mousedown', (e) => e.preventDefault());
   });
 
+  ['ribbon-color', 'ribbon-font', 'ribbon-font-size', 'ribbon-heading'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('focus', captureTextSelection);
+      el.addEventListener('pointerdown', captureTextSelection);
+    }
+  });
+
   // Typography buttons
   document.getElementById('ribbon-bold')?.addEventListener('click', () => {
+    restoreTextSelection();
     document.execCommand('bold');
     syncRibbonActiveStates();
+    captureTextSelection();
   });
   document.getElementById('ribbon-italic')?.addEventListener('click', () => {
+    restoreTextSelection();
     document.execCommand('italic');
     syncRibbonActiveStates();
+    captureTextSelection();
   });
   document.getElementById('ribbon-underline')?.addEventListener('click', () => {
+    restoreTextSelection();
     document.execCommand('underline');
     syncRibbonActiveStates();
+    captureTextSelection();
   });
   document.getElementById('ribbon-strike')?.addEventListener('click', () => {
+    restoreTextSelection();
     document.execCommand('strikeThrough');
     syncRibbonActiveStates();
+    captureTextSelection();
   });
   document.getElementById('ribbon-highlight')?.addEventListener('click', () => {
+    restoreTextSelection();
     document.execCommand('hiliteColor', false, '#fef08a');
     syncRibbonActiveStates();
+    captureTextSelection();
   });
   document.getElementById('ribbon-color')?.addEventListener('input', (e) => {
+    restoreTextSelection();
     document.execCommand('foreColor', false, e.target.value);
+    captureTextSelection();
   });
 
   // Alignment buttons
   document.getElementById('ribbon-align-left')?.addEventListener('click', () => {
+    restoreTextSelection();
     document.execCommand('justifyLeft');
+    captureTextSelection();
   });
   document.getElementById('ribbon-align-center')?.addEventListener('click', () => {
+    restoreTextSelection();
     document.execCommand('justifyCenter');
+    captureTextSelection();
   });
   document.getElementById('ribbon-align-right')?.addEventListener('click', () => {
+    restoreTextSelection();
     document.execCommand('justifyRight');
+    captureTextSelection();
   });
 
   // Lists & Checkboxes
   document.getElementById('ribbon-bullet')?.addEventListener('click', () => {
+    restoreTextSelection();
     document.execCommand('insertUnorderedList');
+    captureTextSelection();
   });
   document.getElementById('ribbon-num')?.addEventListener('click', () => {
+    restoreTextSelection();
     document.execCommand('insertOrderedList');
+    captureTextSelection();
   });
   document.getElementById('ribbon-task')?.addEventListener('click', () => {
+    restoreTextSelection();
     document.execCommand('insertHTML', false, '<label class="checklist-item"><input type="checkbox"> &nbsp;</label>');
+    captureTextSelection();
   });
 
   // Font Family, Font Size, Heading Style
   document.getElementById('ribbon-font')?.addEventListener('change', (e) => {
+    restoreTextSelection();
     document.execCommand('fontName', false, e.target.value);
+    captureTextSelection();
   });
   document.getElementById('ribbon-font-size')?.addEventListener('change', (e) => {
+    restoreTextSelection();
     const sel = window.getSelection();
     if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
       const span = document.createElement('span');
@@ -127,9 +188,12 @@ export function setupRibbonControls(options) {
       span.appendChild(range.extractContents());
       range.insertNode(span);
     }
+    captureTextSelection();
   });
   document.getElementById('ribbon-heading')?.addEventListener('change', (e) => {
+    restoreTextSelection();
     document.execCommand('formatBlock', false, `<${e.target.value}>`);
+    captureTextSelection();
   });
 
   // Live Ribbon Active State Synchronization (like MS Word Home Tab)

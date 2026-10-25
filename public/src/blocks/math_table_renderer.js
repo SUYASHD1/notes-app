@@ -51,9 +51,10 @@ export function renderTableItem(parentEl, item, containerBlock, deps = {}) {
       const td = document.createElement(rIdx === 0 ? 'th' : 'td');
       td.contentEditable = 'true';
       td.textContent = cell;
-      td.style.border = '1px solid #cbd5e1';
+      td.style.border = '1px solid var(--border-color, #cbd5e1)';
       td.style.padding = '6px 10px';
-      td.style.background = rIdx === 0 ? '#f8fafc' : '#ffffff';
+      td.style.background = rIdx === 0 ? 'var(--panel-sub, #f8fafc)' : 'var(--card-bg, #ffffff)';
+      td.style.color = 'var(--text-main, #1e293b)';
       td.style.fontWeight = rIdx === 0 ? '600' : 'normal';
 
       td.addEventListener('input', () => {

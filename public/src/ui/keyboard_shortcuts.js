@@ -1,4 +1,5 @@
 // Keyboard Shortcuts, Clipboard Paste & Drag-and-Drop Controller
+import { RemoveBlockCommand } from '../core/history.js';
 
 /**
  * Sets up global hotkeys, clipboard paste, file drag & drop, and zoom controls.
@@ -21,6 +22,43 @@ export function setupKeyboardAndClipboard(options) {
   window.addEventListener('keydown', (e) => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
       return;
+    }
+
+    // Delete / Backspace: Remove selected note container
+    if (e.code === 'Delete' || e.code === 'Backspace' || e.key === 'Delete' || e.key === 'Backspace') {
+      const selectedIds = Array.from(state.selectedBlockIds || []);
+      const activeId = state.activeContainerId;
+      const idsToDelete = selectedIds.length > 0 ? selectedIds : (activeId ? [activeId] : []);
+
+      if (idsToDelete.length > 0) {
+        e.preventDefault();
+        idsToDelete.forEach(id => {
+          if (state.history) {
+            state.history.execute(new RemoveBlockCommand(state.doc, id));
+          } else {
+            const idx = (state.doc.blocks || []).findIndex(b => b.id === id);
+            if (idx !== -1) state.doc.blocks.splice(idx, 1);
+          }
+          state.selectedBlockIds?.delete(id);
+        });
+        if (state.activeContainerId && idsToDelete.includes(state.activeContainerId)) {
+          state.activeContainerId = null;
+        }
+        saveActivePageDocument();
+        renderAll();
+        showToast('🗑️ Note removed (Ctrl+Z to undo)');
+        return;
+      }
+    }
+
+    // Escape: Clear block selection
+    if (e.code === 'Escape' || e.key === 'Escape') {
+      if (state.selectedBlockIds?.size > 0 || state.activeContainerId) {
+        state.selectedBlockIds?.clear();
+        state.activeContainerId = null;
+        renderAll();
+        return;
+      }
     }
 
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {

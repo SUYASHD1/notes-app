@@ -1,9 +1,9 @@
 # 📓 Notes App — Current State & Knowledge Log
 
-> **Last Updated:** 25 October 2026 (v4.7.6)  
+> **Last Updated:** 25 October 2026 (v4.8.0)  
 > **Status:** Fully Functional, PWA Standalone Enabled, Deployed to Production (Vercel)  
 > **Live Web Application:** [https://notes-app-topaz-six.vercel.app/](https://notes-app-topaz-six.vercel.app/)  
-> **Automated Test Suite:** `76 / 76 tests passed (100%)`
+> **Automated Test Suite:** `77 / 77 tests passed (100%)`
 
 ---
 
@@ -308,6 +308,33 @@ Following component-driven scalability and the **"Permanent Shell"** architectur
 2. **`src/ui/storage_settings_template.js` (224 lines):** Extracted the full Storage & Data Hub settings popup dialog into a dedicated, self-contained template module mirrored in `public/src/ui/storage_settings_template.js`.
 3. **Dynamic Mounting:** `storage_settings_modal.js` now dynamically mounts the dialog upon startup, ensuring all future modals (Export, Audio, etc.) follow a clean modular component pattern with zero index.html clutter.
 4. **Verification:** All 76 automated tests passing at 100%, with exact Two-Door House parity across all 57 files.
+
+---
+
+## 🏛️ 10. Unified Object Experience, Ghost Scrollbars & Card Decluttering (v4.8.0)
+
+1. **Note Header Decluttering:**
+   - Removed the 6 redundant toolbar buttons (`+ Text`, `✍ Sketch`, `🖼 Media`, `📑 PDF`, `⊞ Table`, `📈 Plot`) from every note card on the canvas, centralizing them in the Top Ribbon where they naturally belong.
+   - Preserved the clean drag handle (`:::`) and close button (`×`), making notes look like elegant paper cards.
+2. **Modern "Ghost Scrollbars":**
+   - Replaced the harsh, glaring rectangular grey tracks with borderless, translucent ghost scrollbars.
+   - Scrollbars stay slim and unobtrusive when idle (`opacity: 0.35`), dynamically illuminate during scrolling or edge hover, and expand smoothly from 7px to 11px for easy grabbing.
+   - 100% theme-driven: softly illuminated in light mode, and subtle graphite matching the `#282828` charcoal canvas in dark mode.
+3. **Reliable Keyboard Delete & Deselect:**
+   - Pressing `Delete` or `Backspace` with a note container selected (when not actively typing inside a sentence) deletes the note card with full `Ctrl+Z` Undo history.
+   - Added `Escape` to quickly clear block selections.
+4. **Text Selection Persistence Across Formatting Controls:**
+   - Fixed focus theft when using the Font Color Picker, Font Family dropdown, Font Size dropdown, and Heading dropdown.
+   - Text selection is automatically captured, held, and restored so formatting applies on the first click every time.
+5. **Paste Noise & Background Stripping:**
+   - Enhanced `HtmlSanitizer` to strip external webpage background colors, fixed widths, and ghost spacer paragraphs.
+6. **Unified Tables & Images (Ending the Duality):**
+   - **Copied Tables:** When pasting clipboard data containing a table (from Word, Excel, Google Sheets, or Wikipedia), it is automatically detected and converted into a native **interactive Table Item** (`type: 'table'`) with `+ Row`, `+ Column`, and cell editing.
+   - **Cropping & Wrapping:** Added `✂ Crop` directly to embedded images inside note boxes, unifying image superpowers across both entry routes.
+7. **Verification & Quality:**
+   - 77 / 77 automated tests passing (100%).
+   - Exact Two-Door House parity across all 57 JavaScript engine files with 0 mismatches.
+   - Zero files exceed the 450-line ceiling across the codebase.
 
 ---
 

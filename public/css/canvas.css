@@ -80,44 +80,49 @@
   z-index: 70;
 }
 
-/* Spatial Scrollbars */
+/* Spatial Scrollbars (Modern Ghost Aesthetic) */
 .canvas-scrollbar {
   position: absolute;
   z-index: 50;
-  background: rgba(226, 232, 240, 0.75);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(203, 213, 225, 0.8);
-  border-radius: 8px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
   user-select: none;
   cursor: pointer;
-  opacity: 0.85;
-  transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  opacity: 0.35;
+  transition: opacity 0.25s ease, background 0.2s ease, width 0.2s ease, height 0.2s ease;
 }
 
 .canvas-scrollbar.horizontal {
   bottom: 8px;
-  left: 20px;
-  right: 32px;
-  height: 12px;
+  left: 16px;
+  right: 28px;
+  height: 7px;
 }
 
 .canvas-scrollbar.vertical {
-  top: 14px;
-  right: 8px;
-  bottom: 28px;
-  width: 12px;
+  top: 12px;
+  right: 6px;
+  bottom: 24px;
+  width: 7px;
 }
 
-.canvas-scrollbar:hover {
+.canvas-scrollbar:hover, .canvas-scrollbar.scrolling {
   opacity: 1;
-  background: rgba(226, 232, 240, 0.95);
-  border-color: #94a3b8;
+  background: var(--scrollbar-track-hover, rgba(148, 163, 184, 0.12));
+}
+
+.canvas-scrollbar.horizontal:hover, .canvas-scrollbar.horizontal.scrolling {
+  height: 11px;
+}
+
+.canvas-scrollbar.vertical:hover, .canvas-scrollbar.vertical.scrolling {
+  width: 11px;
 }
 
 .canvas-scroll-thumb {
   position: absolute;
-  background: #64748b;
+  background: var(--scrollbar-thumb, rgba(100, 116, 139, 0.45));
   border-radius: 6px;
   cursor: grab;
   touch-action: none;
@@ -126,27 +131,31 @@
 }
 
 .canvas-scrollbar.horizontal .canvas-scroll-thumb {
-  top: 1px;
-  bottom: 1px;
-  height: calc(100% - 2px);
+  top: 0;
+  bottom: 0;
+  height: 100%;
   min-width: 36px;
 }
 
 .canvas-scrollbar.vertical .canvas-scroll-thumb {
-  left: 1px;
-  right: 1px;
-  width: calc(100% - 2px);
+  left: 0;
+  right: 0;
+  width: 100%;
   min-height: 36px;
 }
 
-.canvas-scroll-thumb:hover, .canvas-scroll-thumb.active {
-  background: #1e293b;
+.canvas-scroll-thumb:hover {
+  background: var(--scrollbar-thumb-hover, #475569);
+}
+
+.canvas-scroll-thumb.active {
+  background: var(--scrollbar-thumb-active, #1e293b);
   cursor: grabbing;
 }
 
 .canvas-scrollbar.locked {
   pointer-events: none !important;
-  opacity: 0.1 !important;
+  opacity: 0.05 !important;
   cursor: default !important;
 }
 

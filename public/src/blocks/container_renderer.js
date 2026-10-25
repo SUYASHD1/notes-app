@@ -104,88 +104,18 @@ export function renderBlocks(deps = {}) {
       el.appendChild(h);
     });
 
-    // Container Header with Quick Tools
+    // Container Header with Clean Minimal Handle and Close Button
     const header = document.createElement('div');
     header.className = 'note-container-header';
     header.innerHTML = `
       <div style="display:flex; align-items:center; gap:6px;">
-        <span class="block-handle-dots" style="cursor:grab; font-weight:bold; letter-spacing:2px; color:#94a3b8;">:::</span>
-        <span style="font-weight: 600; color: #475569;">${block.title || 'NOTE'}</span>
+        <span class="block-handle-dots" style="cursor:grab; font-weight:bold; letter-spacing:2px; color:var(--text-muted, #94a3b8);" title="Drag note">:::</span>
+        <span style="font-weight: 600; color: var(--text-color, #475569);">${block.title || 'NOTE'}</span>
       </div>
       <div class="note-container-tools">
-        <button class="mini-tool-btn btn-add-sub-text" title="Add Text Section">+ Text</button>
-        <button class="mini-tool-btn btn-add-sub-sketch" title="Insert Handwriting Canvas into Note">✍ Sketch</button>
-        <button class="mini-tool-btn btn-add-sub-media" title="Insert Media/Image from Computer">🖼 Media</button>
-        <button class="mini-tool-btn btn-add-sub-pdf" title="Insert PDF document from Computer">📑 PDF</button>
-        <button class="mini-tool-btn btn-add-sub-tbl" title="Insert Table">⊞ Table</button>
-        <button class="mini-tool-btn btn-add-sub-plot" title="Insert Math Plot">📈 Plot</button>
-        <button class="block-delete-btn" title="Delete entire Note container" style="margin-left:4px; font-size:14px; font-weight:bold; color:#94a3b8; background:none; border:none; cursor:pointer;">&times;</button>
+        <button class="block-delete-btn" title="Delete note (&times;)" style="font-size:16px; font-weight:bold; color:var(--text-muted, #94a3b8); background:none; border:none; cursor:pointer; padding:2px 6px; border-radius:4px; line-height:1;">&times;</button>
       </div>
     `;
-
-    // Header Tool Handlers
-    header.querySelector('.btn-add-sub-text').addEventListener('click', (e) => {
-      e.stopPropagation();
-      const newItem = { id: 'item_' + Date.now(), type: 'text', content: '' };
-      block.items.push(newItem);
-      state.focusItemId = newItem.id;
-      if (saveActivePageDocument) saveActivePageDocument();
-      if (renderAll) renderAll();
-    });
-
-    header.querySelector('.btn-add-sub-sketch').addEventListener('click', (e) => {
-      e.stopPropagation();
-      block.items.push({
-        id: 'item_sketch_' + Date.now(),
-        type: 'sketch',
-        height: 260,
-        strokes: []
-      });
-      if (saveActivePageDocument) saveActivePageDocument();
-      if (renderAll) renderAll();
-      if (showToast) showToast('✍ Added Handwriting Canvas to Note');
-    });
-
-    header.querySelector('.btn-add-sub-media').addEventListener('click', (e) => {
-      e.stopPropagation();
-      state.activeContainerId = block.id;
-      if (mediaFileInput) mediaFileInput.click();
-    });
-
-    header.querySelector('.btn-add-sub-pdf').addEventListener('click', (e) => {
-      e.stopPropagation();
-      state.activeContainerId = block.id;
-      if (pdfFileInput) pdfFileInput.click();
-    });
-
-    header.querySelector('.btn-add-sub-tbl').addEventListener('click', (e) => {
-      e.stopPropagation();
-      block.items.push({
-        id: 'item_' + Date.now(),
-        type: 'table',
-        data: [
-          ['Col 1', 'Col 2', 'Col 3'],
-          ['Val 1', 'Val 2', 'Val 3']
-        ]
-      });
-      if (saveActivePageDocument) saveActivePageDocument();
-      if (renderAll) renderAll();
-      if (showToast) showToast('⊞ Added Table to Note');
-    });
-
-    header.querySelector('.btn-add-sub-plot').addEventListener('click', (e) => {
-      e.stopPropagation();
-      block.items.push({
-        id: 'item_' + Date.now(),
-        type: 'plot',
-        formula: 'cos(x)',
-        xMin: -10,
-        xMax: 10
-      });
-      if (saveActivePageDocument) saveActivePageDocument();
-      if (renderAll) renderAll();
-      if (showToast) showToast('📈 Added Math Plot to Note');
-    });
 
     header.querySelector('.block-delete-btn').addEventListener('click', (e) => {
       e.stopPropagation();

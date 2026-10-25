@@ -86,17 +86,33 @@ export class HtmlSanitizer {
           }
         });
 
-        // 5. Clean external styles from headings & paragraphs so note typography is preserved
-        doc.querySelectorAll('h1, h2, h3, h4, h5, h6, p, span').forEach(el => {
+        // 5. Clean external styles so native note typography and dark/light themes are preserved
+        doc.querySelectorAll('*').forEach(el => {
+          if (el.classList && el.classList.contains('note-image-container')) return;
           if (el.style) {
             el.style.fontSize = '';
             el.style.fontFamily = '';
             el.style.lineHeight = '';
             el.style.backgroundColor = '';
+            el.style.background = '';
             el.style.color = '';
+            el.style.letterSpacing = '';
+            el.style.wordSpacing = '';
+            if (!['TABLE', 'TH', 'TD', 'IMG'].includes(el.tagName)) {
+              el.style.width = '';
+              el.style.maxWidth = '';
+              el.style.minWidth = '';
+            }
             if (el.getAttribute('style') && !el.getAttribute('style').trim()) {
               el.removeAttribute('style');
             }
+          }
+        });
+
+        // Remove ghost wrapper divs and excessive blank paragraphs
+        doc.querySelectorAll('p, div').forEach(el => {
+          if (!el.textContent.trim() && !el.querySelector('img, table, svg, canvas')) {
+            el.remove();
           }
         });
 
@@ -142,6 +158,7 @@ export class HtmlSanitizer {
       .replace(/<p[^>]*class=["'][^"']*(msotitle|msoheading1)[^"']*["'][^>]*>([\s\S]*?)<\/p>/gi, '<h1>$2</h1>')
       .replace(/<p[^>]*class=["'][^"']*(msoheading2)[^"']*["'][^>]*>([\s\S]*?)<\/p>/gi, '<h2>$2</h2>')
       .replace(/<p[^>]*class=["'][^"']*(msoheading3)[^"']*["'][^>]*>([\s\S]*?)<\/p>/gi, '<h3>$2</h3>')
+      .replace(/\s*style=["'][^"']*(?:background|font-family)[^"']*["']/gi, '')
       .replace(/<a([^>]*href=["'][^"']+["'][^>]*)>([\s\S]*?)<\/a>/gi, (match, attrs, text) => {
         if (match.includes('class="note-link"')) return match;
         return `<a${attrs} target="_blank" rel="noopener noreferrer" class="note-link">${text}</a>`;
