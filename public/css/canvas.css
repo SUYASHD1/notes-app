@@ -80,36 +80,38 @@
   z-index: 70;
 }
 
-/* Spatial Scrollbars (Modern Ghost Aesthetic) */
+/* Spatial Scrollbars (Modern Integrated Ghost Aesthetic) */
 .canvas-scrollbar {
-  position: absolute;
   z-index: 50;
-  background: transparent;
   border: none;
   border-radius: 6px;
   user-select: none;
   cursor: pointer;
-  opacity: 0.35;
+  opacity: 0.45;
   transition: opacity 0.25s ease, background 0.2s ease, width 0.2s ease, height 0.2s ease;
 }
 
 .canvas-scrollbar.horizontal {
-  bottom: 8px;
-  left: 16px;
-  right: 28px;
-  height: 7px;
+  position: relative;
+  flex: 1;
+  margin: 0 16px;
+  height: 8px;
+  background: var(--scrollbar-track-hover, rgba(148, 163, 184, 0.12));
+  border-radius: 4px;
 }
 
 .canvas-scrollbar.vertical {
+  position: absolute;
   top: 12px;
   right: 6px;
-  bottom: 24px;
+  bottom: 12px;
   width: 7px;
+  background: transparent;
 }
 
 .canvas-scrollbar:hover, .canvas-scrollbar.scrolling {
   opacity: 1;
-  background: var(--scrollbar-track-hover, rgba(148, 163, 184, 0.12));
+  background: var(--scrollbar-track-hover, rgba(148, 163, 184, 0.18));
 }
 
 .canvas-scrollbar.horizontal:hover, .canvas-scrollbar.horizontal.scrolling {

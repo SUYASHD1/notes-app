@@ -1,6 +1,6 @@
 # 📓 Notes App — Current State & Knowledge Log
 
-> **Last Updated:** 25 October 2026 (v4.8.0)  
+> **Last Updated:** 25 October 2026 (v4.8.1)  
 > **Status:** Fully Functional, PWA Standalone Enabled, Deployed to Production (Vercel)  
 > **Live Web Application:** [https://notes-app-topaz-six.vercel.app/](https://notes-app-topaz-six.vercel.app/)  
 > **Automated Test Suite:** `77 / 77 tests passed (100%)`
@@ -335,6 +335,9 @@ Following component-driven scalability and the **"Permanent Shell"** architectur
    - 77 / 77 automated tests passing (100%).
    - Exact Two-Door House parity across all 57 JavaScript engine files with 0 mismatches.
    - Zero files exceed the 450-line ceiling across the codebase.
+8. **Bottom Status Bar Scrollbar Integration (v4.8.1):**
+   - Integrated the horizontal spatial scrollbar directly inside the bottom status bar between the location breadcrumb and the zoom pill.
+   - The drawing canvas paper is now 100% free of bottom bars, preventing accidental palm taps and giving the bottom bar a cohesive, professional software aesthetic.
 
 ---
 

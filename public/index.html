@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Notes">
   <link rel="apple-touch-icon" href="./icons/icon-180.png">
-  <link rel="stylesheet" href="./styles.css?v=4.8.0">
+  <link rel="stylesheet" href="./styles.css?v=4.8.1">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -290,21 +290,24 @@
         <!-- Active iPad Ink Simulation Overlay Canvas -->
         <canvas id="active-draw-canvas" class="hidden"></canvas>
 
-        <!-- Canvas Position Scrollbars / Spatial Trackers (Locked in Ink Mode) -->
-        <div id="canvas-scrollbar-h" class="canvas-scrollbar horizontal" title="Horizontal Canvas Position">
-          <div id="canvas-scroll-thumb-h" class="canvas-scroll-thumb"></div>
-        </div>
+        <!-- Vertical Canvas Position Scrollbar (Locked in Ink Mode) -->
         <div id="canvas-scrollbar-v" class="canvas-scrollbar vertical" title="Vertical Canvas Position">
           <div id="canvas-scroll-thumb-v" class="canvas-scroll-thumb"></div>
         </div>
       </main>
     </div>
 
-    <!-- Bottom Status Bar -->
+    <!-- Bottom Status Bar with Integrated Horizontal Scrollbar -->
     <footer id="status-bar">
       <div class="status-left">
         <span id="page-status-label" title="Current Note Location">Physics &amp; Calculus &gt; Limits &amp; Continuity &gt; Derivatives Intro</span>
       </div>
+
+      <!-- Integrated Horizontal Spatial Scrollbar -->
+      <div id="canvas-scrollbar-h" class="canvas-scrollbar horizontal" title="Horizontal Canvas Position">
+        <div id="canvas-scroll-thumb-h" class="canvas-scroll-thumb"></div>
+      </div>
+
       <div class="status-right">
         <div class="zoom-popover-wrapper">
           <button id="btn-zoom-pill" class="zoom-pill" title="Tap to adjust Zoom or Fit View">
@@ -331,6 +334,6 @@
     <!-- Storage & Data Hub Settings Modal is dynamically mounted by storage_settings_modal.js -->
   </div>
 
-  <script type="module" src="./app.js?v=4.8.0"></script>
+  <script type="module" src="./app.js?v=4.8.1"></script>
 </body>
 </html>
