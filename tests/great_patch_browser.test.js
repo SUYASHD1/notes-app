@@ -271,6 +271,37 @@ test('The Great Patch: Comprehensive Browser Testing in Microsoft Edge', async (
       `Full box font must apply Caveat to container and inner text: ${JSON.stringify(containerFontCheck)}`
     );
 
+    // Verify Live Cursor Inspection updates Ribbon Font Family & Font Size
+    const liveSyncCheck = await page.evaluate(() => {
+      const textEl = document.querySelector('.note-item-text');
+      // Create a 28px span with Georgia inside the text
+      const span = document.createElement('span');
+      span.style.fontSize = '28px';
+      span.style.fontFamily = 'Georgia, serif';
+      span.textContent = 'Large Georgia Heading';
+      textEl.appendChild(span);
+
+      // Place cursor inside the span
+      const r = document.createRange();
+      r.selectNodeContents(span);
+      r.collapse(true);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(r);
+
+      // Trigger selectionchange
+      document.dispatchEvent(new Event('selectionchange'));
+
+      const sizeSelect = document.getElementById('ribbon-font-size');
+      const fontLabel = document.getElementById('ribbon-font-label');
+      return {
+        selectedOptText: sizeSelect?.options[sizeSelect.selectedIndex]?.textContent,
+        fontLabelText: fontLabel?.textContent.trim()
+      };
+    });
+    assert.equal(liveSyncCheck.fontLabelText, 'Georgia', 'Font label must immediately reflect Georgia under cursor');
+    assert.equal(liveSyncCheck.selectedOptText, '24pt', 'Font size select must immediately reflect 24pt (28px) under cursor');
+
     // 6. Master Key 4: Ink Mode Vector Icons, Chisel Tip, and Custom Palette Launcher
     await page.click('#btn-mode-ipad');
     await page.waitForFunction(() => document.getElementById('ribbon-ink-group').style.display !== 'none');

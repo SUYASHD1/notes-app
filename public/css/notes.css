@@ -12,11 +12,11 @@
   display: flex;
   flex-direction: column;
   min-width: 320px;
-  contain: layout paint;
-  will-change: transform;
-  transform: translate3d(0, 0, 0);
   transition: border-color 0.15s ease;
   color: var(--text-main);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .universal-note-container.selected {
@@ -112,7 +112,7 @@
 
 .note-item-text {
   outline: none;
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1.65;
   min-height: 36px;
   color: var(--text-main);

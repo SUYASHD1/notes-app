@@ -259,9 +259,10 @@ function initTouchRecognizer() {
       const originX = center.x - rect.left;
       const originY = center.y - rect.top;
 
-      // True Locked Paper Anchoring: Scale seamlessly around the midpoint and glide with finger drift
-      if (scaleFactor && scaleFactor > 0 && Math.abs(scaleFactor - 1.0) > 0.001) {
-        state.viewport.zoomAt(originX, originY, scaleFactor);
+      // True Locked Paper Anchoring: Scale seamlessly with responsive OneNote-grade sensitivity
+      if (scaleFactor && scaleFactor > 0 && Math.abs(scaleFactor - 1.0) > 0.0001) {
+        const responsiveFactor = 1 + (scaleFactor - 1) * 1.35;
+        state.viewport.zoomAt(originX, originY, responsiveFactor);
       }
       if (panDelta && (panDelta.dx !== 0 || panDelta.dy !== 0)) {
         state.viewport.pan(panDelta.dx, panDelta.dy);

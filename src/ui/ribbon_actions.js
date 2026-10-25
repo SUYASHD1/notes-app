@@ -92,7 +92,7 @@ export function setupRibbonControls(options) {
       captureTextSelection();
     });
   });
-  // Live Ribbon Active State Synchronization (subtle blue glow for active commands)
+  // Live Ribbon Active State Synchronization (subtle blue glow for active commands & live typography detection)
   function syncRibbonActiveStates() {
     try {
       [
@@ -111,11 +111,60 @@ export function setupRibbonControls(options) {
     } catch (_) {}
 
     const sel = window.getSelection();
-    const headingSelect = document.getElementById('ribbon-heading');
-    if (sel && sel.anchorNode && headingSelect) {
+    if (sel && sel.anchorNode) {
       const parentBlock = sel.anchorNode.nodeType === Node.ELEMENT_NODE ? sel.anchorNode : sel.anchorNode.parentElement;
-      const hTag = parentBlock?.closest('h1, h2, h3, p');
-      if (hTag) headingSelect.value = hTag.tagName.toLowerCase();
+      if (parentBlock) {
+        // 1. Heading style
+        const headingSelect = document.getElementById('ribbon-heading');
+        const hTag = parentBlock.closest('h1, h2, h3, p');
+        if (hTag && headingSelect) {
+          headingSelect.value = hTag.tagName.toLowerCase();
+        }
+
+        // 2. Live Font Size Detection under cursor
+        const sizeSelect = document.getElementById('ribbon-font-size');
+        if (sizeSelect) {
+          try {
+            const sizeEl = parentBlock.closest('span[style*="font-size"]') || parentBlock;
+            const computedSize = window.getComputedStyle(sizeEl).fontSize;
+            if (computedSize) {
+              const pxVal = parseInt(computedSize, 10);
+              let bestIdx = -1;
+              let minDiff = Infinity;
+              for (let i = 0; i < sizeSelect.options.length; i++) {
+                const optPx = parseInt(sizeSelect.options[i].value, 10);
+                const diff = Math.abs(optPx - pxVal);
+                if (diff < minDiff) {
+                  minDiff = diff;
+                  bestIdx = i;
+                }
+              }
+              if (bestIdx !== -1 && minDiff <= 3) {
+                sizeSelect.selectedIndex = bestIdx;
+              }
+            }
+          } catch (_) {}
+        }
+
+        // 3. Live Font Family Detection under cursor
+        const fontLabel = document.getElementById('ribbon-font-label');
+        if (fontLabel) {
+          try {
+            const fontEl = parentBlock.closest('span[style*="font-family"], font[face]') || parentBlock;
+            const fontName = window.getComputedStyle(fontEl).fontFamily.toLowerCase();
+            if (fontName.includes('georgia')) fontLabel.textContent = 'Georgia';
+            else if (fontName.includes('calibri')) fontLabel.textContent = 'Calibri';
+            else if (fontName.includes('caveat')) fontLabel.textContent = 'Caveat';
+            else if (fontName.includes('fira code') || fontName.includes('consolas')) fontLabel.textContent = 'Fira Code';
+            else fontLabel.textContent = 'Segoe UI';
+
+            document.querySelectorAll('#font-family-palette .font-item').forEach(item => {
+              const itemFont = (item.getAttribute('data-font') || '').toLowerCase();
+              item.classList.toggle('active', itemFont.includes(fontLabel.textContent.toLowerCase()));
+            });
+          } catch (_) {}
+        }
+      }
     }
   }
 
@@ -189,7 +238,7 @@ export function setupRibbonControls(options) {
     e.target.blur();
   });
 
-  document.addEventListener('selectionchange', () => {
+  const onCursorInspect = () => {
     const sel = window.getSelection();
     if (sel && sel.anchorNode) {
       const nodeEl = sel.anchorNode.nodeType === Node.ELEMENT_NODE ? sel.anchorNode : sel.anchorNode.parentElement;
@@ -198,7 +247,11 @@ export function setupRibbonControls(options) {
         syncRibbonActiveStates();
       }
     }
-  });
+  };
+
+  document.addEventListener('selectionchange', onCursorInspect);
+  document.addEventListener('pointerup', onCursorInspect);
+  document.addEventListener('keyup', onCursorInspect);
 
   // Setup draggable scrollbars, auto-scrolling, and Word ribbon tabs
   const onZoomSync = () => {
