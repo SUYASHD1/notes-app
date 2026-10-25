@@ -1,6 +1,6 @@
 # 📓 Notes App — Current State & Knowledge Log
 
-> **Last Updated:** 25 October 2026 (v4.8.2)  
+> **Last Updated:** 25 October 2026 (v4.8.3)  
 > **Status:** Fully Functional, PWA Standalone Enabled, Deployed to Production (Vercel)  
 > **Live Web Application:** [https://notes-app-topaz-six.vercel.app/](https://notes-app-topaz-six.vercel.app/)  
 > **Automated Test Suite:** `77 / 77 tests passed (100%)`
@@ -214,6 +214,20 @@ This application is a freeform, ultra-fast note-taking system designed to combin
   2. **Micro-Expansion on Hover:** Hovering over the edge-docked tab smoothly slides it out to show its label and controls; tapping it immediately toggles modes.
   3. **Display Preference Setting:** Added a new **Display & Interface Preferences** section to the **Storage & Vault Settings** flyout (`#toggle-floating-puck`). Users can toggle the floating button on or off anytime.
   4. **Persistent Preference:** Remembers visibility and edge dock position across app reloads via local storage (`notes_show_mode_puck` and `notes_puck_pos`).
+
+### 24. Luxury Brand Identity, Vector "Aurora Folio" Logo, Live Status Icons & 3D Living Inking Launch (v4.8.3)
+* **The "Aurora Folio" Vector Identity:** Replaced generic emoji `📓` and raster PNG icons with a crisp, mathematical SVG vector identity that stays razor-sharp on 4K, Retina, and iPad Pro screens. Adapts dynamically between Starlit Obsidian (Dark Mode) and Ceramic Porcelain (Bright Mode).
+* **Live Status Indicator Icons:**
+  - Real-time Font Color Pill: An illuminated color capsule underneath the letter `A` instantly reflects whichever shade the user picks, accompanied by a soft ambient reflection.
+  - Luminous Highlighter Swatch: An ink reservoir tip that softly glows in the active highlight hue.
+  - Active State Illumination: Bold, italic, underline, strikethrough, alignments, and lists now actively glow when the user's cursor rests inside corresponding formatted text.
+  - Dual-Tone Micro-Icons: Replaced coarse keyboard characters with 1.8px optical vector geometry featuring sky-blue checkmarks and alternating line lengths for paragraphs.
+* **3D Living Inking Startup Animation:**
+  - Zero-Flicker Launch: Replaces harsh white browser load flicker with a peaceful, theme-aware canvas introduction.
+  - 3D Unfurling Journal: The notebook cover gently unfurls in true 3D perspective (`perspective: 1000px`) as calligraphy inking lines sketch across the page.
+  - Inking Wave Ripple & Apple Pencil Spark: Outward circular ink ripple expands from the inking nib, while a glowing stylus star glides along the ribbon path.
+  - Theme-Adaptive Ambiance & Whispers: Dark mode features a starlit midnight aurora with cyan light; Bright mode features warm morning paper with sunbeam diffusion.
+  - 0% Background Overhead: The splash automatically dissolves within 2 seconds as the database opens and detaches itself completely from the DOM, consuming 0% CPU and 0% RAM during active writing.
 
 ---
 

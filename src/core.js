@@ -56,6 +56,7 @@ export { createContainerActions } from './ui/container_actions.js';
 export { setupRibbonControls } from './ui/ribbon_actions.js';
 export { setupKeyboardAndClipboard } from './ui/keyboard_shortcuts.js';
 export { getPreferredTheme, applyTheme, toggleTheme, setupThemeController, THEME_DARK, THEME_LIGHT } from './ui/theme_controller.js';
+export { initSplashScreen } from './ui/splash_screen.js';
 
 
 // Backward compatibility alias for StrokeEngine

@@ -132,9 +132,16 @@ export function setupRibbonControls(options) {
     syncRibbonActiveStates();
     captureTextSelection();
   });
-  document.getElementById('ribbon-color')?.addEventListener('input', (e) => {
+  const ribbonColorInput = document.getElementById('ribbon-color');
+  const ribbonColorBar = document.getElementById('ribbon-color-bar');
+  ribbonColorInput?.addEventListener('input', (e) => {
+    const val = e.target.value;
+    if (ribbonColorBar) {
+      ribbonColorBar.style.backgroundColor = val;
+      ribbonColorBar.style.boxShadow = `0 1px 5px ${val}66`;
+    }
     restoreTextSelection();
-    document.execCommand('foreColor', false, e.target.value);
+    document.execCommand('foreColor', false, val);
     captureTextSelection();
   });
 
@@ -202,6 +209,11 @@ export function setupRibbonControls(options) {
     const italicBtn = document.getElementById('ribbon-italic');
     const underBtn = document.getElementById('ribbon-underline');
     const strikeBtn = document.getElementById('ribbon-strike');
+    const alignLeftBtn = document.getElementById('ribbon-align-left');
+    const alignCenterBtn = document.getElementById('ribbon-align-center');
+    const alignRightBtn = document.getElementById('ribbon-align-right');
+    const bulletBtn = document.getElementById('ribbon-bullet');
+    const numBtn = document.getElementById('ribbon-num');
     const headingSelect = document.getElementById('ribbon-heading');
 
     try {
@@ -209,6 +221,11 @@ export function setupRibbonControls(options) {
       if (italicBtn) italicBtn.classList.toggle('active', document.queryCommandState('italic'));
       if (underBtn) underBtn.classList.toggle('active', document.queryCommandState('underline'));
       if (strikeBtn) strikeBtn.classList.toggle('active', document.queryCommandState('strikeThrough'));
+      if (alignLeftBtn) alignLeftBtn.classList.toggle('active', document.queryCommandState('justifyLeft'));
+      if (alignCenterBtn) alignCenterBtn.classList.toggle('active', document.queryCommandState('justifyCenter'));
+      if (alignRightBtn) alignRightBtn.classList.toggle('active', document.queryCommandState('justifyRight'));
+      if (bulletBtn) bulletBtn.classList.toggle('active', document.queryCommandState('insertUnorderedList'));
+      if (numBtn) numBtn.classList.toggle('active', document.queryCommandState('insertOrderedList'));
     } catch (_) {}
 
     // Check heading level

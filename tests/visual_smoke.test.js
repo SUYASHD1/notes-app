@@ -106,6 +106,8 @@ test('Puppeteer Visual Safety Net: Menus, Boundaries, and Overlay Isolation', as
 
     await page.goto(url, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.universal-note-container', { timeout: 5000 });
+    // Wait for initial luxury splash dissolve
+    await page.waitForFunction(() => !document.getElementById('app-splash-overlay') || document.getElementById('app-splash-overlay').classList.contains('fade-out'), { timeout: 4000 });
 
     // 1. Master Visibility: Zoom Flyout must be hidden by default
     const zoomDisplay = await page.$eval('#zoom-flyout', el => getComputedStyle(el).display);

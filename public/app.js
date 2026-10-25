@@ -26,7 +26,8 @@ import {
   setupThemeController,
   createViewportCamera,
   createPageStorageManager,
-  renderBlocks as modularRenderBlocks
+  renderBlocks as modularRenderBlocks,
+  initSplashScreen
 } from './src/core.js';
 
 // Global State
@@ -149,6 +150,7 @@ const {
 // --- Initialization ---
 
 async function initApp() {
+  const splash = initSplashScreen();
   await state.vault.init();
   await initHierarchy({
     state,
@@ -236,6 +238,7 @@ async function initApp() {
 
   await loadActivePageDocument();
   renderAll();
+  setTimeout(() => { if (splash && splash.dismiss) splash.dismiss(); }, 700);
 }
 
 // --- Touch Gesture Recognizer ---

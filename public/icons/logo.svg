@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="aurora-bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1e1b4b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="aurora-stroke" x1="4" y1="8" x2="60" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#aurora-bg)"/>
+  <rect x="10" y="12" width="44" height="40" rx="9" fill="url(#aurora-stroke)" fill-opacity="0.18" stroke="url(#aurora-stroke)" stroke-width="2.5"/>
+  <path d="M32 14V50" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-dasharray="3 3"/>
+  <path d="M20 34C24 28 27 24 32 24C37 24 40 30 45 22" stroke="url(#aurora-stroke)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="45" cy="22" r="3.5" fill="#38bdf8"/>
+</svg>
