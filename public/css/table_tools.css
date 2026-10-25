@@ -1,0 +1,201 @@
+/* ==========================================================================
+   📊 TABLE TOOLS, MOVE ANCHOR & IN-NOTE DRAG INDICATOR (< 350 lines)
+   ========================================================================== */
+
+/* Ribbon Table Popover Menu */
+.table-picker-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.table-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+  z-index: 250;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 230px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: tableMenuFadeIn 0.14s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes tableMenuFadeIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.tbl-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #64748b);
+  margin-bottom: 2px;
+}
+
+.tbl-btn-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.tbl-action-btn {
+  height: 28px;
+  padding: 0 8px;
+  background: var(--panel-sub, #f8fafc);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-main, #1e293b);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: all 0.12s ease;
+}
+
+.tbl-action-btn:hover {
+  background: var(--dropdown-hover, #f1f5f9);
+  border-color: var(--border-subtle, #cbd5e1);
+  color: var(--accent-hover, #4f46e5);
+}
+
+.tbl-action-btn.active {
+  background: var(--active-glow-bg, rgba(56, 189, 248, 0.12)) !important;
+  border-color: var(--active-glow-border, #38bdf8) !important;
+  color: var(--active-glow-text, #0284c7) !important;
+  font-weight: 600;
+  box-shadow: 0 0 6px var(--active-glow-blue, #38bdf8) !important;
+}
+
+.tbl-action-btn.btn-danger-sm:hover {
+  background: #fee2e2;
+  color: #ef4444;
+  border-color: #fca5a5;
+}
+
+.tbl-divider {
+  height: 1px;
+  background: var(--border-color, #e2e8f0);
+  margin: 3px 0;
+}
+
+/* In-Note Table Wrapper & Word-Style Move Anchor */
+.note-table-wrapper {
+  position: relative;
+  margin: 14px 0;
+  display: block;
+  user-select: text;
+}
+
+.note-table-wrapper.selected-table {
+  outline: 2px solid var(--accent-color, #6366f1);
+  border-radius: 6px;
+}
+
+.table-move-handle {
+  position: absolute;
+  top: -12px;
+  left: -12px;
+  width: 24px;
+  height: 24px;
+  background: var(--card-bg, #ffffff);
+  border: 1.5px solid var(--border-color, #cbd5e1);
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--text-muted, #64748b);
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.12s ease;
+  z-index: 25;
+}
+
+.note-table-wrapper:hover .table-move-handle,
+.note-table-wrapper.selected-table .table-move-handle {
+  opacity: 1;
+}
+
+.table-move-handle:hover {
+  background: var(--dropdown-hover, #f1f5f9);
+  color: var(--accent-color, #6366f1);
+  border-color: var(--accent-color, #6366f1);
+}
+
+.table-move-handle:active {
+  cursor: grabbing;
+  transform: scale(0.95);
+}
+
+/* Table Style Themes */
+.table-style-striped tr:nth-child(even) td {
+  background: var(--card-header, rgba(0, 0, 0, 0.035)) !important;
+}
+
+.table-style-header-accent th {
+  background: var(--accent-color, #6366f1) !important;
+  color: #ffffff !important;
+  border-color: var(--accent-hover, #4f46e5) !important;
+}
+
+.table-style-minimal table,
+.table-style-minimal th,
+.table-style-minimal td {
+  border-left: none !important;
+  border-right: none !important;
+  border-top: none !important;
+}
+
+/* In-Note Image & Element Drag Insertion Landing Indicator */
+.note-drop-indicator {
+  height: 3.5px;
+  background: var(--accent-color, #38bdf8);
+  border-radius: 2px;
+  margin: 8px 0;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+  pointer-events: none;
+  animation: pulseDropLine 1s infinite alternate ease-in-out;
+}
+
+@keyframes pulseDropLine {
+  from { opacity: 0.7; }
+  to { opacity: 1; }
+}
+
+.img-drag-handle {
+  cursor: grab !important;
+}
+
+.img-drag-handle:active {
+  cursor: grabbing !important;
+}
+
+body[data-theme="dark"] .table-menu {
+  background: #1e1e1e;
+  border-color: #383838;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+body[data-theme="dark"] .table-move-handle {
+  background: #282828;
+  border-color: #4a4a4a;
+  color: #94a3b8;
+}
+
+body[data-theme="dark"] .table-style-striped tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.04) !important;
+}

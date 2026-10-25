@@ -2,6 +2,7 @@ import { createContainerActions } from './container_actions.js';
 import { setupRibbonTabs } from './ribbon_controller.js';
 import { setupScrollbarDragging, setupEdgeAutoScroll } from '../canvas/scrollbar_controller.js';
 import { setupTypographyPalettes } from './typography_palette_actions.js';
+import { setupTablePalette } from './table_palette_actions.js';
 
 /**
  * Initializes formatting ribbon, typography controls, and media insertion buttons.
@@ -164,6 +165,12 @@ export function setupRibbonControls(options) {
             });
           } catch (_) {}
         }
+
+        // 4. Live Table Detection under cursor
+        const tableEl = parentBlock.closest('table');
+        if (tableEl && registerActiveTable) {
+          registerActiveTable(tableEl, parentBlock.closest('td, th'));
+        }
       }
     }
   }
@@ -176,6 +183,17 @@ export function setupRibbonControls(options) {
     syncRibbonActiveStates,
     showToast,
     saveActivePageDocument
+  });
+
+  // Delegate Table formatting & grid insertion palette
+  const { registerActiveTable, clearActiveTable } = setupTablePalette({
+    state,
+    showToast,
+    saveActivePageDocument,
+    renderAll,
+    getOrCreateActiveContainer,
+    restoreTextSelection,
+    captureTextSelection
   });
 
   // Alignment and List buttons

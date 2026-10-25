@@ -3,6 +3,7 @@ import { MarkdownLatexParser } from './text_block.js';
 import { AddBlockCommand } from '../core/history.js';
 import { vaultExternalImage, vaultImagesInTextItem } from './media_renderer.js';
 import { openImageCropper } from './image_cropper.js';
+import { bindTableMoveHandles, bindInNoteDragAndDrop } from './element_drag_helper.js';
 
 function extractStandaloneTable(htmlData, plainText) {
   if (htmlData && htmlData.includes('<table') && typeof DOMParser !== 'undefined') {
@@ -54,8 +55,8 @@ export function renderTextItem(parentEl, item, headerEl, containerBlock, deps = 
       return el.innerText || el.textContent || '';
     }
     const clone = el.cloneNode(true);
-    clone.querySelectorAll('.embedded-img-toolbar, .embedded-img-resize-handle').forEach(t => t.remove());
-    clone.querySelectorAll('.selected-image').forEach(c => c.classList.remove('selected-image'));
+    clone.querySelectorAll('.embedded-img-toolbar, .embedded-img-resize-handle, .note-drop-indicator').forEach(t => t.remove());
+    clone.querySelectorAll('.selected-image, .selected-table, .dragging-element').forEach(c => c.classList.remove('selected-image', 'selected-table', 'dragging-element'));
     return clone.innerHTML;
   };
 
@@ -210,6 +211,14 @@ export function renderTextItem(parentEl, item, headerEl, containerBlock, deps = 
       textDiv.innerHTML = MarkdownLatexParser.renderToHtml(content);
     }
     bindEmbeddedImageControls();
+    bindTableMoveHandles(textDiv, () => {
+      item.content = serializeTextContent(textDiv);
+      if (saveActivePageDocument) saveActivePageDocument();
+    });
+    bindInNoteDragAndDrop(textDiv, () => {
+      item.content = serializeTextContent(textDiv);
+      if (saveActivePageDocument) saveActivePageDocument();
+    });
   };
 
   renderVisual();

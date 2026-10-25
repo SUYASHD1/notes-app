@@ -6,7 +6,15 @@ export function renderTableItem(parentEl, item, containerBlock, deps = {}) {
   const renderAll = deps.renderAll || window.renderAll;
 
   const tableDiv = document.createElement('div');
+  tableDiv.className = 'note-table-wrapper';
   tableDiv.style.overflowX = 'auto';
+
+  const moveHandle = document.createElement('div');
+  moveHandle.className = 'table-move-handle';
+  moveHandle.contentEditable = 'false';
+  moveHandle.title = 'Click to select / Drag to reposition table';
+  moveHandle.textContent = '✢';
+  tableDiv.appendChild(moveHandle);
 
   const rows = item.data || [
     ['Col 1', 'Col 2', 'Col 3'],
