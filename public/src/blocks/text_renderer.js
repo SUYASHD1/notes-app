@@ -3,7 +3,7 @@ import { MarkdownLatexParser } from './text_block.js';
 import { AddBlockCommand } from '../core/history.js';
 import { vaultExternalImage, vaultImagesInTextItem } from './media_renderer.js';
 import { openImageCropper } from './image_cropper.js';
-import { bindTableMoveHandles, bindInNoteDragAndDrop } from './element_drag_helper.js';
+import { bindTableMoveHandles, bindInNoteDragAndDrop, createUniversalBoxHtml } from './element_drag_helper.js';
 import { dismissTextCaret } from '../core/app_shield.js';
 
 function extractStandaloneTable(htmlData, plainText) {
@@ -326,8 +326,13 @@ export function renderTextItem(parentEl, item, headerEl, containerBlock, deps = 
           const dataUrl = loadEvt.target.result;
           await vaultExternalImage(dataUrl, deps);
 
-          const renderedHtml = MarkdownLatexParser.renderToHtml(`![Pasted Image](${dataUrl})`);
-          document.execCommand('insertHTML', false, renderedHtml);
+          const boxHtml = createUniversalBoxHtml({
+            title: file.name || 'Pasted Image',
+            src: dataUrl,
+            alt: file.name || 'Pasted Image',
+            textHtml: ''
+          });
+          document.execCommand('insertHTML', false, boxHtml);
           item.content = serializeTextContent(textDiv);
           bindEmbeddedImageControls();
           if (saveActivePageDocument) saveActivePageDocument();

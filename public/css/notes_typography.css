@@ -433,6 +433,68 @@ body[data-theme="dark"] .nested-tool-btn:hover {
   color: #dc2626;
   border-color: #fca5a5;
 }
+
+.nested-card-text {
+  min-height: 24px;
+  padding: 6px 8px;
+  margin-top: 6px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  outline: none;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px dashed transparent;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.nested-card-text:hover,
+.nested-card-text:focus {
+  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+body[data-theme="dark"] .nested-card-text {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+body[data-theme="dark"] .nested-card-text:hover,
+body[data-theme="dark"] .nested-card-text:focus {
+  border-color: rgba(129, 140, 248, 0.5);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.nested-card-text[data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  color: var(--text-muted, #94a3b8);
+  font-style: italic;
+}
+
+.card-resize-handle {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background: #6366f1;
+  border: 1.5px solid #ffffff;
+  border-radius: 2px;
+  z-index: 10;
+  display: none;
+}
+
+.note-nested-card.selected-nested-card .card-resize-handle {
+  display: block;
+}
+
+.card-resize-handle.handle-nw { top: -4px; left: -4px; cursor: nwse-resize; }
+.card-resize-handle.handle-ne { top: -4px; right: -4px; cursor: nesw-resize; }
+.card-resize-handle.handle-se { bottom: -4px; right: -4px; cursor: nwse-resize; }
+.card-resize-handle.handle-sw { bottom: -4px; left: -4px; cursor: nesw-resize; }
+.card-resize-handle.handle-n { top: -4px; left: calc(50% - 4px); cursor: ns-resize; }
+.card-resize-handle.handle-s { bottom: -4px; left: calc(50% - 4px); cursor: ns-resize; }
+.card-resize-handle.handle-w { top: calc(50% - 4px); left: -4px; cursor: ew-resize; }
+.card-resize-handle.handle-e { top: calc(50% - 4px); right: -4px; cursor: ew-resize; }
+
 body[data-theme="dark"] .note-item-text tr:nth-child(even) td { background: rgba(255, 255, 255, 0.02); }
 
 /* Total App Shield: Neutralize accidental browser blue highlighting on canvas & cards */

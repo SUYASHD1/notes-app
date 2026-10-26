@@ -37,7 +37,9 @@ export function setupCanvasDrop({
       cardData = window.__activeInNoteDrag;
     }
     if (cardData && cardData.element) {
-      popOutNestedCard(cardData.element, null);
+      const rect = container.getBoundingClientRect();
+      const dropWorld = state.viewport.screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
+      popOutNestedCard(cardData.element, null, { x: Math.round(dropWorld.x - 180), y: Math.round(dropWorld.y - 120) });
       window.__activeInNoteDrag = null;
       return;
     }

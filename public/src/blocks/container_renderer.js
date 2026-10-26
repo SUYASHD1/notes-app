@@ -92,8 +92,43 @@ export function renderBlocks(deps = {}) {
         e.stopPropagation();
         const sourceBlock = (state.doc.blocks || []).find(b => b.id === cardData.sourceBlockId);
         if (sourceBlock) {
-          dockWholeBoxIntoContainer(sourceBlock, block, deps);
+          let targetRange = null;
+          if (document.caretRangeFromPoint) {
+            targetRange = document.caretRangeFromPoint(e.clientX, e.clientY);
+          } else if (document.caretPositionFromPoint) {
+            const pos = document.caretPositionFromPoint(e.clientX, e.clientY);
+            if (pos) {
+              targetRange = document.createRange();
+              targetRange.setStart(pos.offsetNode, pos.offset);
+              targetRange.collapse(true);
+            }
+          }
+          dockWholeBoxIntoContainer(sourceBlock, block, deps, targetRange);
           window.__activeCardDrag = null;
+          return;
+        }
+      }
+
+      // 1b. Dropping external image file directly onto this note
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+          e.preventDefault();
+          e.stopPropagation();
+          const reader = new FileReader();
+          reader.onload = (loadEvt) => {
+            const dataUrl = loadEvt.target.result;
+            const tempBlock = {
+              id: 'block_temp_' + Date.now(),
+              type: 'note_container',
+              title: file.name,
+              items: [{ id: 'item_img_' + Date.now(), type: 'image', src: dataUrl, caption: file.name }]
+            };
+            let dropRange = null;
+            if (document.caretRangeFromPoint) dropRange = document.caretRangeFromPoint(e.clientX, e.clientY);
+            dockWholeBoxIntoContainer(tempBlock, block, deps, dropRange);
+          };
+          reader.readAsDataURL(file);
           return;
         }
       }

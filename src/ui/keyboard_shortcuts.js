@@ -2,6 +2,7 @@ import { RemoveBlockCommand } from '../core/history.js';
 import { setupZoomControls } from './zoom_controls.js';
 import { setupCanvasDrop } from './canvas_drop_handler.js';
 import { setupAppShield } from '../core/app_shield.js';
+import { dockWholeBoxIntoContainer, popOutNestedCard } from '../blocks/nested_box_manager.js';
 
 /**
  * Sets up global hotkeys, clipboard paste, file drag & drop, and zoom controls.
@@ -56,7 +57,14 @@ export function setupKeyboardAndClipboard(options) {
     }
 
     const getSelectedObject = () => {
-      return document.querySelector('.selected-image, .selected-table, .selected-nested-card');
+      const explicit = document.querySelector('.selected-image, .selected-table, .selected-nested-card');
+      if (explicit) return explicit;
+      const focused = document.activeElement;
+      if (focused && focused.closest) {
+        const parentCard = focused.closest('.note-nested-card, .note-image-container, .note-table-wrapper');
+        if (parentCard) return parentCard;
+      }
+      return null;
     };
 
     // --- Individual Object Shortcuts (Delete, Backspace, Ctrl+C, Ctrl+X, Ctrl+D) ---
@@ -138,32 +146,48 @@ export function setupKeyboardAndClipboard(options) {
       }
     }
 
-    // Ctrl+V: Paste individual item if clipboardItem exists
+    // Ctrl+V: Unified Paste multiplexer (Inner item <-> Canvas box seamlessly)
     if ((e.ctrlKey || e.metaKey) && (e.code === 'KeyV' || e.key === 'v' || e.key === 'V')) {
-      if (state.clipboardItem) {
-        const activeContainerEl = state.activeContainerId ? document.getElementById(state.activeContainerId) : null;
-        const textDiv = activeContainerEl ? activeContainerEl.querySelector('.note-item-text') : null;
-        if (textDiv) {
-          e.preventDefault();
-          e.stopPropagation();
-          const beforeSnap = state.history?.takeSnapshot(state.doc);
-          const temp = document.createElement('div');
-          temp.innerHTML = state.clipboardItem.html;
-          const pastedEl = temp.firstElementChild;
-          if (pastedEl) {
-            pastedEl.classList.remove('selected-image', 'selected-nested-card', 'selected-table');
-            if (activeObj && activeObj.parentNode) {
-              activeObj.parentNode.insertBefore(pastedEl, activeObj.nextSibling);
-            } else {
-              textDiv.appendChild(pastedEl);
-            }
-            if (typeof textDiv._syncContent === 'function') textDiv._syncContent();
-            if (beforeSnap) state.history?.recordSnapshot(state.doc, beforeSnap);
-            saveActivePageDocument();
-            renderAll();
-            showToast('📋 Item pasted');
-            return;
+      const activeContainerEl = state.activeContainerId ? document.getElementById(state.activeContainerId) : null;
+      const textDiv = activeContainerEl ? activeContainerEl.querySelector('.note-item-text') : null;
+
+      if (textDiv && state.clipboardItem) {
+        e.preventDefault();
+        e.stopPropagation();
+        const beforeSnap = state.history?.takeSnapshot(state.doc);
+        const temp = document.createElement('div');
+        temp.innerHTML = state.clipboardItem.html;
+        const pastedEl = temp.firstElementChild;
+        if (pastedEl) {
+          pastedEl.classList.remove('selected-image', 'selected-nested-card', 'selected-table');
+          if (activeObj && activeObj.parentNode) {
+            activeObj.parentNode.insertBefore(pastedEl, activeObj.nextSibling);
+          } else {
+            textDiv.appendChild(pastedEl);
           }
+          if (typeof textDiv._syncContent === 'function') textDiv._syncContent();
+          if (beforeSnap) state.history?.recordSnapshot(state.doc, beforeSnap);
+          saveActivePageDocument();
+          renderAll();
+          showToast('📋 Item pasted into note');
+          return;
+        }
+      } else if (textDiv && state.clipboardBlocks && state.clipboardBlocks.length > 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        const blockToDock = state.clipboardBlocks[0];
+        dockWholeBoxIntoContainer(blockToDock, state.doc.getBlock(state.activeContainerId), { state, saveActivePageDocument, renderAll, showToast });
+        return;
+      } else if (!textDiv && state.clipboardItem) {
+        e.preventDefault();
+        e.stopPropagation();
+        const temp = document.createElement('div');
+        temp.innerHTML = state.clipboardItem.html;
+        const cardEl = temp.firstElementChild;
+        if (cardEl) {
+          const center = state.viewport.screenToWorld(window.innerWidth / 2, window.innerHeight / 2);
+          popOutNestedCard(cardEl, null, { x: Math.round(center.x), y: Math.round(center.y) });
+          return;
         }
       }
     }
