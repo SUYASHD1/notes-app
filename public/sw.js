@@ -1,10 +1,10 @@
 // Service Worker for Notes App (Offline-First PWA)
-const CACHE_NAME = 'notes-app-cache-v4.8.9';
+const CACHE_NAME = 'notes-app-cache-v5.0.0';
 
 const PRECACHE_ASSETS = [
   './',
   './index.html',
-  './styles.css?v=4.8.9',
+  './styles.css?v=5.0.0',
   './css/theme.css',
   './css/layout_modes.css',
   './css/topbar.css',
@@ -30,6 +30,7 @@ const PRECACHE_ASSETS = [
   './app.js',
   './manifest.json',
   './src/core.js',
+  './src/core/app_shield.js',
   './src/core/sample_notebook.js',
   './src/blocks/text_block.js',
   './src/blocks/latex_parser.js',
@@ -42,6 +43,7 @@ const PRECACHE_ASSETS = [
   './src/blocks/media_renderer.js',
   './src/blocks/text_renderer.js',
   './src/blocks/element_drag_helper.js',
+  './src/blocks/nested_box_manager.js',
   './src/blocks/sketch_renderer.js',
   './src/blocks/container_renderer.js',
   './src/canvas/viewport_bounds.js',
@@ -57,6 +59,8 @@ const PRECACHE_ASSETS = [
   './src/ui/typography_palette_actions.js',
   './src/ui/table_palette_actions.js',
   './src/ui/keyboard_shortcuts.js',
+  './src/ui/canvas_drop_handler.js',
+  './src/ui/zoom_controls.js',
   './src/ui/theme_controller.js',
   './src/storage/indexed_db.js',
   './src/storage/vault_backup.js',
