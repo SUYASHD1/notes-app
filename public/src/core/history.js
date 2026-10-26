@@ -10,10 +10,30 @@ export class Command {
 }
 
 export class HistoryManager {
-  constructor(maxDepth = 100) {
+  constructor(maxDepth = 200) {
     this.undoStack = [];
     this.redoStack = [];
     this.maxDepth = maxDepth;
+  }
+
+  takeSnapshot(doc) {
+    if (!doc) return null;
+    return {
+      blocks: JSON.parse(JSON.stringify(doc.blocks || [])),
+      globalAnnotations: JSON.parse(JSON.stringify(doc.globalAnnotations || []))
+    };
+  }
+
+  recordSnapshot(doc, beforeSnapshot) {
+    if (!doc || !beforeSnapshot) return;
+    const afterSnapshot = this.takeSnapshot(doc);
+    if (JSON.stringify(beforeSnapshot) === JSON.stringify(afterSnapshot)) return;
+    const cmd = new SnapshotCommand(doc, beforeSnapshot, afterSnapshot);
+    this.undoStack.push(cmd);
+    if (this.undoStack.length > this.maxDepth) {
+      this.undoStack.shift();
+    }
+    this.redoStack = [];
   }
 
   execute(command) {
@@ -63,6 +83,29 @@ export class HistoryManager {
       undo: this.undoStack.length,
       redo: this.redoStack.length
     };
+  }
+}
+
+export class SnapshotCommand extends Command {
+  constructor(doc, beforeSnapshot, afterSnapshot) {
+    super();
+    this.doc = doc;
+    this.beforeSnapshot = beforeSnapshot;
+    this.afterSnapshot = afterSnapshot;
+  }
+
+  execute() {
+    this.doc.blocks = JSON.parse(JSON.stringify(this.afterSnapshot.blocks));
+    this.doc.globalAnnotations = JSON.parse(JSON.stringify(this.afterSnapshot.globalAnnotations));
+    this.doc.touch();
+    return true;
+  }
+
+  undo() {
+    this.doc.blocks = JSON.parse(JSON.stringify(this.beforeSnapshot.blocks));
+    this.doc.globalAnnotations = JSON.parse(JSON.stringify(this.beforeSnapshot.globalAnnotations));
+    this.doc.touch();
+    return true;
   }
 }
 

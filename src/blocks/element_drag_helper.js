@@ -152,9 +152,74 @@ export function bindInNoteDragAndDrop(textDiv, onContentChanged) {
     };
   });
 
+  // Bind nested cards inside textDiv
+  const nestedCards = textDiv.querySelectorAll('.note-nested-card');
+  nestedCards.forEach(card => {
+    card.setAttribute('contenteditable', 'false');
+    card.setAttribute('draggable', 'true');
+
+    card.addEventListener('click', (e) => {
+      e.stopPropagation();
+      textDiv.querySelectorAll('.selected-image, .selected-table, .selected-nested-card').forEach(el => {
+        if (el !== card) el.classList.remove('selected-image', 'selected-table', 'selected-nested-card');
+      });
+      card.classList.add('selected-nested-card');
+    });
+
+    card.querySelectorAll('.nested-tool-btn').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const action = btn.getAttribute('data-action');
+        if (action === 'wrap-left' || action === 'wrap-center' || action === 'wrap-right') {
+          const wrapMode = action.replace('wrap-', '');
+          card.setAttribute('data-wrap', wrapMode);
+          card.classList.remove('wrap-left', 'wrap-center', 'wrap-right');
+          card.classList.add(`wrap-${wrapMode}`);
+          card.querySelectorAll('.nested-tool-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          if (typeof onContentChanged === 'function') onContentChanged();
+        } else if (action === 'delete') {
+          card.remove();
+          if (typeof onContentChanged === 'function') onContentChanged();
+        } else if (action === 'pop-out') {
+          popOutNestedCard(card, textDiv);
+        }
+      };
+    });
+
+    card.ondragstart = (e) => {
+      activeDraggedElement = card;
+      card.classList.add('dragging-element');
+      e.dataTransfer.effectAllowed = 'all';
+      e.dataTransfer.setData('text/plain', 'nested-card');
+
+      const title = card.getAttribute('data-title') || 'Card';
+      const width = card.offsetWidth || 420;
+      const noteContainer = card.closest('.universal-note-container');
+      const sourceBlockId = noteContainer ? noteContainer.id : null;
+      const payload = {
+        sourceBlockId,
+        title,
+        width,
+        element: card,
+        isCard: true
+      };
+      window.__activeInNoteDrag = payload;
+      e.dataTransfer.setData('application/notes-nested-card', JSON.stringify(payload));
+    };
+
+    card.ondragend = () => {
+      card.classList.remove('dragging-element');
+      activeDraggedElement = null;
+      window.__activeInNoteDrag = null;
+      removeDropIndicator();
+    };
+  });
+
   // Handle Drag Over with Fluid Caret Positioning
   textDiv.ondragover = (e) => {
-    const isOurDrag = activeDraggedElement || window.__activeInNoteDrag || (e.dataTransfer?.types && e.dataTransfer.types.includes('application/notes-in-note-img'));
+    const isOurDrag = activeDraggedElement || window.__activeInNoteDrag || (e.dataTransfer?.types && (e.dataTransfer.types.includes('application/notes-in-note-img') || e.dataTransfer.types.includes('application/notes-nested-card')));
     if (!isOurDrag) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
@@ -220,7 +285,7 @@ export function bindInNoteDragAndDrop(textDiv, onContentChanged) {
     const isCrossContainer = inNotePayload && inNotePayload.sourceBlockId && inNotePayload.sourceBlockId !== thisBlockId;
 
     let targetEl = elementToDrop;
-    if (isCrossContainer && inNotePayload) {
+    if (isCrossContainer && inNotePayload && !inNotePayload.isCard) {
       if (elementToDrop && elementToDrop.parentNode) {
         elementToDrop.remove();
       }
@@ -252,4 +317,119 @@ export function bindInNoteDragAndDrop(textDiv, onContentChanged) {
       onContentChanged();
     }
   };
+}
+
+export function dockWholeBoxIntoContainer(sourceBlock, targetBlock, deps = {}) {
+  const state = deps.state || window.state;
+  const saveActivePageDocument = deps.saveActivePageDocument || window.saveActivePageDocument;
+  const renderAll = deps.renderAll || window.renderAll;
+  const showToast = deps.showToast || window.showToast;
+
+  if (!sourceBlock || !targetBlock || sourceBlock.id === targetBlock.id) return;
+  const beforeSnap = state?.history?.takeSnapshot(state.doc);
+
+  if (!targetBlock.items) targetBlock.items = [];
+  let textItem = targetBlock.items.find(it => it.type === 'text' || !it.type);
+  if (!textItem) {
+    textItem = { id: 'item_text_' + Date.now(), type: 'text', content: '' };
+    targetBlock.items.push(textItem);
+  }
+
+  let cardHtml = '';
+  (sourceBlock.items || []).forEach(it => {
+    if (it.type === 'image' || it.src) {
+      const src = it.src || it.url;
+      const alt = it.caption || 'Image';
+      cardHtml += `<div class="note-image-container wrap-center" data-wrap="center" data-src="${src}" data-alt="${alt}"><img class="note-embedded-image" src="${src}" alt="${alt}" loading="lazy" /></div>`;
+    } else if (it.type === 'text' || !it.type) {
+      cardHtml += `<div class="nested-text-segment">${it.content || ''}</div>`;
+    }
+  });
+
+  const title = sourceBlock.title || 'Note Card';
+  const nestedCardHtml = `\n\n<div class="note-nested-card wrap-center" data-wrap="center" data-title="${title}" contenteditable="false" draggable="true"><div class="nested-card-header"><span class="nested-card-drag-handle" title="Drag to reposition or pop out">:::</span><span class="nested-card-title">${title}</span><div class="nested-card-toolbar"><button class="nested-tool-btn" data-action="wrap-left" title="Wrap text around left">⬅️ Left</button><button class="nested-tool-btn active" data-action="wrap-center" title="Center card">⏸️ Center</button><button class="nested-tool-btn" data-action="wrap-right" title="Wrap text around right">➡️ Right</button><button class="nested-tool-btn btn-popout" data-action="pop-out" title="Pop out onto canvas">🪟 Pop Out</button><button class="nested-tool-btn btn-danger" data-action="delete" title="Delete card">🗑️</button></div></div><div class="nested-card-content">${cardHtml}</div></div>\n\n`;
+
+  textItem.content = (textItem.content || '').trim() + nestedCardHtml;
+
+  if (state?.doc?.blocks) {
+    const idx = state.doc.blocks.findIndex(b => b.id === sourceBlock.id);
+    if (idx !== -1) state.doc.blocks.splice(idx, 1);
+  }
+
+  if (state) {
+    state.activeContainerId = targetBlock.id;
+    state.selectedBlockIds?.clear();
+    state.selectedBlockIds?.add(targetBlock.id);
+  }
+
+  if (beforeSnap) state?.history?.recordSnapshot(state.doc, beforeSnap);
+  if (saveActivePageDocument) saveActivePageDocument();
+  if (renderAll) renderAll();
+  if (showToast) showToast('📥 Docked box into note as card');
+}
+
+export function popOutNestedCard(card, textDiv) {
+  const state = window.state;
+  if (!card || !state?.doc) return;
+  const beforeSnap = state.history?.takeSnapshot(state.doc);
+  const title = card.getAttribute('data-title') || 'Note Card';
+  const width = card.offsetWidth || 440;
+  const parentContainer = card.closest('.universal-note-container');
+  const parentBlock = parentContainer ? state.doc.getBlock(parentContainer.id) : null;
+
+  const items = [];
+  const imgs = card.querySelectorAll('img');
+  imgs.forEach(img => {
+    items.push({
+      id: 'item_img_' + Date.now() + Math.random().toString(36).substr(2, 4),
+      type: 'image',
+      src: img.src,
+      caption: img.alt || title,
+      width: Math.min(width - 40, 420)
+    });
+  });
+
+  const textSegments = Array.from(card.querySelectorAll('.nested-text-segment, p, span'))
+    .map(el => el.textContent.trim())
+    .filter(Boolean);
+  const textContent = textSegments.join('\n\n');
+  if (textContent) {
+    items.push({
+      id: 'item_text_' + Date.now(),
+      type: 'text',
+      content: textContent
+    });
+  }
+  if (items.length === 0) {
+    items.push({
+      id: 'item_text_' + Date.now(),
+      type: 'text',
+      content: card.querySelector('.nested-card-content')?.innerHTML || ''
+    });
+  }
+
+  card.remove();
+  if (textDiv && typeof textDiv._syncContent === 'function') {
+    textDiv._syncContent();
+  }
+
+  const newBlock = {
+    id: 'block_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+    type: 'note_container',
+    x: (parentBlock ? parentBlock.x : 100) + (parentBlock ? (parentBlock.width || 500) : 500) + 40,
+    y: parentBlock ? parentBlock.y : 100,
+    width: Math.max(340, Math.min(640, width)),
+    title: title,
+    items: items
+  };
+
+  state.doc.addBlock(newBlock);
+  state.activeContainerId = newBlock.id;
+  state.selectedBlockIds?.clear();
+  state.selectedBlockIds?.add(newBlock.id);
+
+  if (beforeSnap) state.history?.recordSnapshot(state.doc, beforeSnap);
+  if (window.saveActivePageDocument) window.saveActivePageDocument();
+  if (window.renderAll) window.renderAll();
+  if (window.showToast) window.showToast('🪟 Card popped out to canvas note');
 }

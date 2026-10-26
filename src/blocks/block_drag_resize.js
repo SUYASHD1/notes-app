@@ -1,5 +1,5 @@
-// Note Container Dragging, Multi-Selection Physics & 8-Point Bounding Box Resizing
 import { ResizeHandleEngine } from './resize_handle.js';
+import { dockWholeBoxIntoContainer } from './element_drag_helper.js';
 
 export function attachResizeHandle(handleEl, block, blockEl, dir, deps = {}) {
   const isVertical = dir.includes('n') || dir.includes('s');
@@ -182,6 +182,22 @@ export function makeDraggable(el, handle, block, deps = {}) {
       window.removeEventListener('pointercancel', onPointerUp);
       window.removeEventListener('mousemove', onPointerMove);
       window.removeEventListener('mouseup', onPointerUp);
+
+      const clientX = upEvent.clientX || lastMoveClientX;
+      const clientY = upEvent.clientY || lastMoveClientY;
+      const movedDist = Math.hypot(clientX - startX, clientY - startY);
+      if (movedDist > 30) {
+        const dropTargets = document.elementsFromPoint(clientX, clientY) || [];
+        const targetContainerEl = dropTargets.find(tEl => tEl.classList && tEl.classList.contains('universal-note-container') && tEl.id !== block.id);
+        if (targetContainerEl && state?.doc) {
+          const targetBlock = state.doc.getBlock(targetContainerEl.id);
+          if (targetBlock) {
+            dockWholeBoxIntoContainer(block, targetBlock, deps);
+            return;
+          }
+        }
+      }
+
       if (debouncedSave) debouncedSave(600);
     };
 

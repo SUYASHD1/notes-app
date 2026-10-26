@@ -1,6 +1,6 @@
-// Universal Mixed-Media Note Containers Master Layout & Item Dispatch Engine
 import { attachResizeHandle, makeDraggable } from './block_drag_resize.js';
 import { dockImageIntoContainer, renderMediaItem } from './media_renderer.js';
+import { dockWholeBoxIntoContainer } from './element_drag_helper.js';
 import { renderTextItem } from './text_renderer.js';
 import { renderTableItem, renderPlotItem } from './math_table_renderer.js';
 import { renderPDFItem } from './pdf_renderer.js';
@@ -59,10 +59,10 @@ export function renderBlocks(deps = {}) {
       }
     });
 
-    // Drag-and-Drop Docking Support (docking images from canvas or other notes into this note)
+    // Drag-and-Drop Docking Support (docking images or whole boxes from canvas or other notes into this note)
     el.addEventListener('dragover', (e) => {
       const types = e.dataTransfer ? Array.from(e.dataTransfer.types || []) : [];
-      if (types.includes('application/notes-dock-img') || types.includes('application/notes-in-note-img') || window.__activeInNoteDrag || window.__activeDockImg) {
+      if (types.includes('application/notes-dock-img') || types.includes('application/notes-in-note-img') || types.includes('application/notes-nested-card') || window.__activeInNoteDrag || window.__activeDockImg || window.__activeCardDrag) {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
         el.classList.add('drop-target-active');
@@ -78,7 +78,27 @@ export function renderBlocks(deps = {}) {
     el.addEventListener('drop', (e) => {
       el.classList.remove('drop-target-active');
 
-      // Docking from another in-note image
+      // 1. Docking an entire note box into this note as a nested card
+      let cardDataRaw = e.dataTransfer ? e.dataTransfer.getData('application/notes-nested-card') : null;
+      let cardData = null;
+      if (cardDataRaw) {
+        try { cardData = JSON.parse(cardDataRaw); } catch (_) {}
+      }
+      if (!cardData && window.__activeCardDrag) {
+        cardData = window.__activeCardDrag;
+      }
+      if (cardData && cardData.sourceBlockId && cardData.sourceBlockId !== block.id) {
+        e.preventDefault();
+        e.stopPropagation();
+        const sourceBlock = (state.doc.blocks || []).find(b => b.id === cardData.sourceBlockId);
+        if (sourceBlock) {
+          dockWholeBoxIntoContainer(sourceBlock, block, deps);
+          window.__activeCardDrag = null;
+          return;
+        }
+      }
+
+      // 2. Docking from another in-note image
       const inNoteDataRaw = e.dataTransfer ? e.dataTransfer.getData('application/notes-in-note-img') : null;
       let imgData = null;
       if (inNoteDataRaw) {
@@ -106,7 +126,7 @@ export function renderBlocks(deps = {}) {
         return;
       }
 
-      // Docking from a standalone canvas image card
+      // 3. Docking from a standalone canvas image card
       const dockDataRaw = e.dataTransfer ? e.dataTransfer.getData('application/notes-dock-img') : null;
       let dockData = null;
       if (dockDataRaw) {
@@ -147,13 +167,28 @@ export function renderBlocks(deps = {}) {
     header.className = 'note-container-header';
     header.innerHTML = `
       <div style="display:flex; align-items:center; gap:6px;">
-        <span class="block-handle-dots" style="cursor:grab; font-weight:bold; letter-spacing:2px; color:var(--text-muted, #94a3b8);" title="Drag note">:::</span>
+        <span class="block-handle-dots" style="cursor:grab; font-weight:bold; letter-spacing:2px; color:var(--text-muted, #94a3b8);" title="Drag note or drop onto another note to dock">:::</span>
         <span style="font-weight: 600; color: var(--text-color, #475569);">${block.title || 'NOTE'}</span>
       </div>
       <div class="note-container-tools">
         <button class="block-delete-btn" title="Delete note (&times;)" style="font-size:16px; font-weight:bold; color:var(--text-muted, #94a3b8); background:none; border:none; cursor:pointer; padding:2px 6px; border-radius:4px; line-height:1;">&times;</button>
       </div>
     `;
+
+    const dotsHandle = header.querySelector('.block-handle-dots');
+    if (dotsHandle) {
+      dotsHandle.setAttribute('draggable', 'true');
+      dotsHandle.addEventListener('dragstart', (e) => {
+        e.stopPropagation();
+        const payload = { sourceBlockId: block.id, title: block.title, width: block.width };
+        window.__activeCardDrag = payload;
+        e.dataTransfer.setData('application/notes-nested-card', JSON.stringify(payload));
+        e.dataTransfer.effectAllowed = 'all';
+      });
+      dotsHandle.addEventListener('dragend', () => {
+        window.__activeCardDrag = null;
+      });
+    }
 
     header.querySelector('.block-delete-btn').addEventListener('click', (e) => {
       e.stopPropagation();

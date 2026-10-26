@@ -328,6 +328,111 @@ font[face*="Segoe UI"], [style*="Segoe UI"] { font-family: -apple-system, BlinkM
   color: var(--text-main);
 }
 body[data-theme="dark"] .note-item-text th { background: #2a2a2a; color: #f1f5f9; }
+
+/* Nested Fluid Cards inside Notes */
+.note-nested-card {
+  display: block;
+  box-sizing: border-box;
+  background: var(--surface-card, rgba(255, 255, 255, 0.95));
+  border: 1px solid var(--border-color, #cbd5e1);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin: 14px auto;
+  max-width: 94%;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  user-select: none;
+  cursor: grab;
+  clear: both;
+  transition: box-shadow 0.2s ease, outline 0.15s ease;
+}
+
+body[data-theme="dark"] .note-nested-card {
+  background: #242424;
+  border-color: #404040;
+  color: #f1f5f9;
+}
+
+.note-nested-card:active {
+  cursor: grabbing;
+}
+
+.note-nested-card.wrap-left {
+  float: left;
+  margin: 6px 16px 14px 0;
+  clear: left;
+  max-width: 48%;
+}
+
+.note-nested-card.wrap-right {
+  float: right;
+  margin: 6px 0 14px 16px;
+  clear: right;
+  max-width: 48%;
+}
+
+.note-nested-card.wrap-center {
+  margin: 14px auto;
+  clear: both;
+}
+
+.note-nested-card.selected-nested-card {
+  outline: 2px solid #6366f1;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.25);
+}
+
+.nested-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.nested-card-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nested-tool-btn {
+  background: none;
+  border: 1px solid var(--border-color, #cbd5e1);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+  cursor: pointer;
+  color: var(--text-color, #475569);
+  transition: all 0.15s ease;
+}
+
+body[data-theme="dark"] .nested-tool-btn {
+  color: #cbd5e1;
+  border-color: #4b5563;
+}
+
+.nested-tool-btn:hover {
+  background: var(--hover-bg, #f1f5f9);
+}
+
+body[data-theme="dark"] .nested-tool-btn:hover {
+  background: #374151;
+}
+
+.nested-tool-btn.active {
+  background: #6366f1;
+  color: #ffffff;
+  border-color: #4f46e5;
+}
+
+.nested-tool-btn.btn-danger:hover {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
 body[data-theme="dark"] .note-item-text tr:nth-child(even) td { background: rgba(255, 255, 255, 0.02); }
 
 

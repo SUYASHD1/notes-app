@@ -1,5 +1,6 @@
-// Keyboard Shortcuts, Clipboard Paste & Drag-and-Drop Controller
 import { RemoveBlockCommand } from '../core/history.js';
+import { setupZoomControls } from './zoom_controls.js';
+import { setupCanvasDrop } from './canvas_drop_handler.js';
 
 /**
  * Sets up global hotkeys, clipboard paste, file drag & drop, and zoom controls.
@@ -20,6 +21,152 @@ export function setupKeyboardAndClipboard(options) {
   } = options;
 
   window.addEventListener('keydown', (e) => {
+    // Universal Master Time-Machine Undo / Redo (Pre-empts browser contenteditable everywhere!)
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.shiftKey) {
+        if (state.history?.canRedo()) {
+          state.history.redo();
+          saveActivePageDocument();
+          renderAll();
+          showToast('↻ Redone');
+        }
+      } else {
+        if (state.history?.canUndo()) {
+          state.history.undo();
+          saveActivePageDocument();
+          renderAll();
+          showToast('↺ Undone');
+        }
+      }
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (state.history?.canRedo()) {
+        state.history.redo();
+        saveActivePageDocument();
+        renderAll();
+        showToast('↻ Redone');
+      }
+      return;
+    }
+
+    const getSelectedObject = () => {
+      return document.querySelector('.selected-image, .selected-table, .selected-nested-card');
+    };
+
+    // --- Individual Object Shortcuts (Delete, Backspace, Ctrl+C, Ctrl+X, Ctrl+D) ---
+    const activeObj = getSelectedObject();
+    if (activeObj) {
+      if (e.code === 'Delete' || e.code === 'Backspace' || e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        e.stopPropagation();
+        const beforeSnap = state.history?.takeSnapshot(state.doc);
+        const parentText = activeObj.closest('.note-item-text');
+        activeObj.remove();
+        if (parentText && typeof parentText._syncContent === 'function') {
+          parentText._syncContent();
+        }
+        if (beforeSnap) state.history?.recordSnapshot(state.doc, beforeSnap);
+        saveActivePageDocument();
+        renderAll();
+        showToast('🗑️ Item removed');
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && (e.code === 'KeyC' || e.key === 'c' || e.key === 'C')) {
+        e.preventDefault();
+        e.stopPropagation();
+        state.clipboardItem = {
+          html: activeObj.outerHTML,
+          isImage: activeObj.classList.contains('note-image-container'),
+          isCard: activeObj.classList.contains('note-nested-card'),
+          isTable: activeObj.classList.contains('note-table-wrapper')
+        };
+        try {
+          navigator.clipboard?.writeText(activeObj.outerHTML);
+        } catch (_) {}
+        showToast('📋 Item copied');
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && (e.code === 'KeyX' || e.key === 'x' || e.key === 'X')) {
+        e.preventDefault();
+        e.stopPropagation();
+        const beforeSnap = state.history?.takeSnapshot(state.doc);
+        state.clipboardItem = {
+          html: activeObj.outerHTML,
+          isImage: activeObj.classList.contains('note-image-container'),
+          isCard: activeObj.classList.contains('note-nested-card'),
+          isTable: activeObj.classList.contains('note-table-wrapper')
+        };
+        try {
+          navigator.clipboard?.writeText(activeObj.outerHTML);
+        } catch (_) {}
+        const parentText = activeObj.closest('.note-item-text');
+        activeObj.remove();
+        if (parentText && typeof parentText._syncContent === 'function') {
+          parentText._syncContent();
+        }
+        if (beforeSnap) state.history?.recordSnapshot(state.doc, beforeSnap);
+        saveActivePageDocument();
+        renderAll();
+        showToast('✂️ Item cut');
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && (e.code === 'KeyD' || e.key === 'd' || e.key === 'D')) {
+        e.preventDefault();
+        e.stopPropagation();
+        const beforeSnap = state.history?.takeSnapshot(state.doc);
+        const clone = activeObj.cloneNode(true);
+        clone.classList.remove('selected-image', 'selected-nested-card', 'selected-table');
+        activeObj.parentNode.insertBefore(clone, activeObj.nextSibling);
+        const parentText = activeObj.closest('.note-item-text');
+        if (parentText && typeof parentText._syncContent === 'function') {
+          parentText._syncContent();
+        }
+        if (beforeSnap) state.history?.recordSnapshot(state.doc, beforeSnap);
+        saveActivePageDocument();
+        renderAll();
+        showToast('📑 Item duplicated');
+        return;
+      }
+    }
+
+    // Ctrl+V: Paste individual item if clipboardItem exists
+    if ((e.ctrlKey || e.metaKey) && (e.code === 'KeyV' || e.key === 'v' || e.key === 'V')) {
+      if (state.clipboardItem) {
+        const activeContainerEl = state.activeContainerId ? document.getElementById(state.activeContainerId) : null;
+        const textDiv = activeContainerEl ? activeContainerEl.querySelector('.note-item-text') : null;
+        if (textDiv) {
+          e.preventDefault();
+          e.stopPropagation();
+          const beforeSnap = state.history?.takeSnapshot(state.doc);
+          const temp = document.createElement('div');
+          temp.innerHTML = state.clipboardItem.html;
+          const pastedEl = temp.firstElementChild;
+          if (pastedEl) {
+            pastedEl.classList.remove('selected-image', 'selected-nested-card', 'selected-table');
+            if (activeObj && activeObj.parentNode) {
+              activeObj.parentNode.insertBefore(pastedEl, activeObj.nextSibling);
+            } else {
+              textDiv.appendChild(pastedEl);
+            }
+            if (typeof textDiv._syncContent === 'function') textDiv._syncContent();
+            if (beforeSnap) state.history?.recordSnapshot(state.doc, beforeSnap);
+            saveActivePageDocument();
+            renderAll();
+            showToast('📋 Item pasted');
+            return;
+          }
+        }
+      }
+    }
+
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
       return;
     }
@@ -175,32 +322,7 @@ export function setupKeyboardAndClipboard(options) {
       }
     }
 
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
-      e.preventDefault();
-      if (e.shiftKey) {
-        if (state.history.canRedo()) {
-          state.history.redo();
-          saveActivePageDocument();
-          renderAll();
-          showToast('↻ Redone');
-        }
-      } else {
-        if (state.history.canUndo()) {
-          state.history.undo();
-          saveActivePageDocument();
-          renderAll();
-          showToast('↺ Undone');
-        }
-      }
-    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
-      e.preventDefault();
-      if (state.history.canRedo()) {
-        state.history.redo();
-        saveActivePageDocument();
-        renderAll();
-        showToast('↻ Redone');
-      }
-    } else if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+    if (!e.ctrlKey && !e.metaKey && !e.altKey) {
       if (e.code === 'KeyV') {
         const btnSelect = document.getElementById('btn-tool-select');
         if (btnSelect) btnSelect.click();
@@ -248,163 +370,24 @@ export function setupKeyboardAndClipboard(options) {
     }
   });
 
-  // Drag & Drop from File Explorer and Canvas Pop-Out
-  if (container) {
-    container.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      const hasInNote = (e.dataTransfer?.types && e.dataTransfer.types.includes('application/notes-in-note-img')) || window.__activeInNoteDrag;
-      e.dataTransfer.dropEffect = hasInNote ? 'move' : 'copy';
-    });
-
-    container.addEventListener('drop', (e) => {
-      if (e.target && e.target.closest && e.target.closest('.universal-note-container')) {
-        return;
-      }
-
-      e.preventDefault();
-
-      // Check if dropped item was an in-note image dragged OUT of its container (Automatic Pop-Out)
-      const inNoteImgRaw = e.dataTransfer ? e.dataTransfer.getData('application/notes-in-note-img') : null;
-      let imgData = null;
-      if (inNoteImgRaw) {
-        try { imgData = JSON.parse(inNoteImgRaw); } catch (_) {}
-      }
-      if (!imgData && window.__activeInNoteDrag) {
-        imgData = window.__activeInNoteDrag;
-      }
-
-      if (imgData) {
-        try {
-          const rect = container.getBoundingClientRect();
-          const dropWorld = state.viewport.screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
-
-          // Remove the image element from its source container
-          if (imgData.element && imgData.element.parentNode) {
-            imgData.element.remove();
-          } else if (imgData.sourceBlockId) {
-            const sourceEl = document.getElementById(imgData.sourceBlockId);
-            const sourceTextDiv = sourceEl ? sourceEl.querySelector('.note-item-text') : null;
-            if (sourceTextDiv) {
-              const draggedImg = sourceTextDiv.querySelector('.dragging-element') || sourceTextDiv.querySelector(`.note-image-container[data-src="${CSS.escape(imgData.src)}"]`);
-              if (draggedImg) draggedImg.remove();
-              if (typeof sourceTextDiv._syncContent === 'function') sourceTextDiv._syncContent();
-            }
-          }
-
-          const newNote = createNewNoteContainer(Math.round(dropWorld.x - 180), Math.round(dropWorld.y - 120), imgData.alt || 'NOTE');
-          newNote.width = Math.max(340, Math.min(600, imgData.width || 420));
-          newNote.items = [{
-            id: 'item_img_' + Date.now(),
-            type: 'image',
-            src: imgData.src,
-            caption: imgData.alt || 'Popped Out Image',
-            width: imgData.width || 380
-          }];
-          state.history.execute(new AddBlockCommand(state.doc, newNote));
-          state.activeContainerId = newNote.id;
-          state.selectedBlockIds?.clear();
-          state.selectedBlockIds?.add(newNote.id);
-          window.__activeInNoteDrag = null;
-          saveActivePageDocument();
-          renderAll();
-          showToast('🪟 Image popped out to canvas note');
-          return;
-        } catch (err) {
-          console.warn('Pop-out drag failed:', err);
-        }
-      }
-
-      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-        const file = e.dataTransfer.files[0];
-        const rect = container.getBoundingClientRect();
-        const dropWorld = state.viewport.screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
-
-        if (file.type.startsWith('image/')) {
-          const reader = new FileReader();
-          reader.onload = (loadEvt) => {
-            const newNote = createNewNoteContainer(dropWorld.x - 200, dropWorld.y - 100, file.name);
-            newNote.items = [{
-              id: 'item_img_' + Date.now(),
-              type: 'image',
-              src: loadEvt.target.result,
-              caption: file.name
-            }];
-            state.history.execute(new AddBlockCommand(state.doc, newNote));
-            saveActivePageDocument();
-            renderAll();
-            showToast(`🖼 Dropped image "${file.name}"`);
-          };
-          reader.readAsDataURL(file);
-        } else if (file.name.endsWith('.pdf')) {
-          const newNote = createNewNoteContainer(dropWorld.x - 200, dropWorld.y - 100, file.name);
-          newNote.items = [{
-            id: 'item_pdf_' + Date.now(),
-            type: 'pdf',
-            title: file.name,
-            totalPages: 3
-          }];
-          state.history.execute(new AddBlockCommand(state.doc, newNote));
-          saveActivePageDocument();
-          renderAll();
-          showToast(`📑 Dropped PDF "${file.name}"`);
-        }
-      }
-    });
-  }
-
-  // Reset View, Fit All & Zoom Controls
-  const zoomPill = document.getElementById('btn-zoom-pill');
-  const zoomFlyout = document.getElementById('zoom-flyout');
-
-  if (zoomPill && zoomFlyout) {
-    zoomPill.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (state.mode === 'ipad') return; // Strict ink lock
-      zoomFlyout.classList.toggle('hidden');
-    });
-
-    window.addEventListener('click', (e) => {
-      if (!zoomFlyout.contains(e.target) && e.target !== zoomPill) {
-        zoomFlyout.classList.add('hidden');
-      }
-    });
-  }
-
-  document.getElementById('btn-zoom-fit')?.addEventListener('click', () => {
-    if (typeof fitAllContent === 'function') fitAllContent(true);
-    zoomFlyout?.classList.add('hidden');
-    showToast('🔍 Framed All Content in View (Shift+1)');
+  // Setup Canvas Drag & Drop and Pop-Out
+  setupCanvasDrop({
+    container,
+    state,
+    createNewNoteContainer,
+    AddBlockCommand,
+    saveActivePageDocument,
+    renderAll,
+    showToast
   });
 
-  document.getElementById('btn-reset-view')?.addEventListener('click', () => {
-    if (typeof animateViewport === 'function') animateViewport(40, 40, 1.0);
-    zoomFlyout?.classList.add('hidden');
-    showToast('Reset View to 100%');
-  });
-
-  document.getElementById('btn-zoom-in')?.addEventListener('click', () => {
-    if (!container) return;
-    const cx = container.clientWidth / 2;
-    const cy = container.clientHeight / 2;
-    const worldBefore = state.viewport.screenToWorld(cx, cy);
-    const targetZoom = Math.min(4.0, state.viewport.zoom * 1.25);
-    const targetX = cx - worldBefore.x * targetZoom;
-    const targetY = cy - worldBefore.y * targetZoom;
-    if (typeof animateViewport === 'function') animateViewport(targetX, targetY, targetZoom, 200);
-  });
-
-  document.getElementById('btn-zoom-out')?.addEventListener('click', () => {
-    if (!container) return;
-    const cx = container.clientWidth / 2;
-    const cy = container.clientHeight / 2;
-    const worldBefore = state.viewport.screenToWorld(cx, cy);
-    const targetZoom = Math.max(0.2, state.viewport.zoom * 0.8);
-    const targetX = cx - worldBefore.x * targetZoom;
-    const targetY = cy - worldBefore.y * targetZoom;
-    if (typeof animateViewport === 'function') animateViewport(targetX, targetY, targetZoom, 200);
-  });
-
-  zoomIndicator?.addEventListener('dblclick', () => {
-    if (typeof fitAllContent === 'function') fitAllContent(true);
+  // Setup Canvas Zoom Flyout and Controls
+  setupZoomControls({
+    container,
+    state,
+    fitAllContent,
+    animateViewport,
+    showToast,
+    zoomIndicator
   });
 }
