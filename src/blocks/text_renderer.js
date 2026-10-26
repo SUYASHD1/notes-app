@@ -71,6 +71,19 @@ export function renderTextItem(parentEl, item, headerEl, containerBlock, deps = 
         if (e.target.closest('.embedded-img-toolbar') || e.target.classList.contains('embedded-img-resize-handle')) {
           return;
         }
+
+        // If image is inside a nested card, select the entire parent Box!
+        const parentCard = imgContainer.closest('.note-nested-card');
+        if (parentCard) {
+          e.stopPropagation();
+          dismissTextCaret();
+          textDiv.querySelectorAll('.selected-image, .selected-table, .selected-nested-card').forEach(el => {
+            if (el !== parentCard) el.classList.remove('selected-image', 'selected-table', 'selected-nested-card');
+          });
+          parentCard.classList.add('selected-nested-card');
+          return;
+        }
+
         e.stopPropagation();
         dismissTextCaret();
 
@@ -234,8 +247,8 @@ export function renderTextItem(parentEl, item, headerEl, containerBlock, deps = 
     }
   });
 
-  const syncToItem = () => {
-    if (!textDiv._dirty) return;
+  const syncToItem = (force = false) => {
+    if (!force && !textDiv._dirty) return;
     textDiv._dirty = false;
     item.content = serializeTextContent(textDiv);
   };

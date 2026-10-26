@@ -146,13 +146,17 @@ export function dockWholeBoxIntoContainer(sourceBlock, targetBlock, deps = {}, t
     temp.innerHTML = cardHtml;
     const insertedCard = temp.firstElementChild;
     targetRange.insertNode(insertedCard);
-    if (typeof textDiv._syncContent === 'function') textDiv._syncContent();
+    textDiv._dirty = true;
+    if (typeof textDiv._syncContent === 'function') textDiv._syncContent(true);
+    textItem.content = textDiv.innerHTML;
   } else if (textDiv) {
     const temp = document.createElement('div');
     temp.innerHTML = cardHtml;
     const insertedCard = temp.firstElementChild;
     textDiv.appendChild(insertedCard);
-    if (typeof textDiv._syncContent === 'function') textDiv._syncContent();
+    textDiv._dirty = true;
+    if (typeof textDiv._syncContent === 'function') textDiv._syncContent(true);
+    textItem.content = textDiv.innerHTML;
   } else {
     textItem.content = (textItem.content || '').trim() + '\n\n' + cardHtml + '\n\n';
   }
@@ -246,10 +250,18 @@ export function popOutNestedCard(card, textDiv, targetCoords = null) {
     };
   }
 
-  // Remove card element from DOM and sync
+  // Remove card element from DOM and sync parent note
+  const parentText = card.closest('.note-item-text') || textDiv;
   card.remove();
-  if (textDiv && typeof textDiv._syncContent === 'function') {
-    textDiv._syncContent();
+  if (parentText) {
+    parentText._dirty = true;
+    if (typeof parentText._syncContent === 'function') {
+      parentText._syncContent(true);
+    }
+    if (parentBlock) {
+      let ptItem = (parentBlock.items || []).find(it => it.type === 'text' || !it.type);
+      if (ptItem) ptItem.content = parentText.innerHTML;
+    }
   }
 
   state.doc.addBlock(newBlock);
