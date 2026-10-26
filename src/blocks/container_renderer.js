@@ -59,9 +59,10 @@ export function renderBlocks(deps = {}) {
       }
     });
 
-    // Drag-and-Drop Docking Support (docking images from canvas into this note)
+    // Drag-and-Drop Docking Support (docking images from canvas or other notes into this note)
     el.addEventListener('dragover', (e) => {
-      if (e.dataTransfer && e.dataTransfer.types && Array.from(e.dataTransfer.types).includes('application/notes-dock-img')) {
+      const types = e.dataTransfer ? Array.from(e.dataTransfer.types || []) : [];
+      if (types.includes('application/notes-dock-img') || types.includes('application/notes-in-note-img')) {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
         el.classList.add('drop-target-active');
@@ -76,6 +77,28 @@ export function renderBlocks(deps = {}) {
 
     el.addEventListener('drop', (e) => {
       el.classList.remove('drop-target-active');
+
+      // Docking from another in-note image
+      const inNoteDataRaw = e.dataTransfer ? e.dataTransfer.getData('application/notes-in-note-img') : null;
+      if (inNoteDataRaw) {
+        try {
+          const imgData = JSON.parse(inNoteDataRaw);
+          if (imgData.sourceBlockId && imgData.sourceBlockId !== block.id) {
+            e.preventDefault();
+            e.stopPropagation();
+            const sourceEl = document.getElementById(imgData.sourceBlockId);
+            const sourceTextDiv = sourceEl ? sourceEl.querySelector('.note-item-text') : null;
+            if (sourceTextDiv) {
+              const draggedImg = sourceTextDiv.querySelector('.dragging-element') || sourceTextDiv.querySelector(`.note-image-container[data-src="${CSS.escape(imgData.src)}"]`);
+              if (draggedImg) draggedImg.remove();
+              if (typeof sourceTextDiv._syncContent === 'function') sourceTextDiv._syncContent();
+            }
+            dockImageIntoContainer(imgData, null, block, deps);
+            return;
+          }
+        } catch (_) {}
+      }
+
       const dockDataRaw = e.dataTransfer ? e.dataTransfer.getData('application/notes-dock-img') : null;
       if (dockDataRaw) {
         e.preventDefault();

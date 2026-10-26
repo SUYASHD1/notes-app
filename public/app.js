@@ -27,6 +27,8 @@ import {
   createViewportCamera,
   createPageStorageManager,
   renderBlocks as modularRenderBlocks,
+  registerActiveDragCallback,
+  unregisterActiveDragCallback,
   initSplashScreen
 } from './src/core.js';
 
@@ -300,8 +302,8 @@ function renderBlocks() {
     updateSelectionStatus,
     mediaFileInput,
     pdfFileInput,
-    registerActiveDragCallback: () => {},
-    unregisterActiveDragCallback: () => {},
+    registerActiveDragCallback,
+    unregisterActiveDragCallback,
     debouncedSave
   });
 }

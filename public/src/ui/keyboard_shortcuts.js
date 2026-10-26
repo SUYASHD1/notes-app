@@ -61,6 +61,120 @@ export function setupKeyboardAndClipboard(options) {
       }
     }
 
+    // --- Container Clipboard Multiplexing (Ctrl+C, Ctrl+X, Ctrl+V, Ctrl+D) ---
+    const getTargetBlockIds = () => {
+      const selected = Array.from(state.selectedBlockIds || []);
+      if (selected.length > 0) return selected;
+      if (state.activeContainerId) return [state.activeContainerId];
+      return [];
+    };
+
+    const copySelectedBlocks = () => {
+      const ids = getTargetBlockIds();
+      if (ids.length === 0 || !state.doc) return false;
+      const blocks = ids.map(id => state.doc.getBlock(id)).filter(Boolean);
+      if (blocks.length === 0) return false;
+      state.clipboardBlocks = JSON.parse(JSON.stringify(blocks));
+      try {
+        navigator.clipboard?.writeText(JSON.stringify({ type: 'notes-blocks-clip', blocks: state.clipboardBlocks }));
+      } catch (_) {}
+      showToast(`📋 Copied ${blocks.length} note${blocks.length > 1 ? 's' : ''}`);
+      return true;
+    };
+
+    const cutSelectedBlocks = () => {
+      if (copySelectedBlocks()) {
+        const ids = getTargetBlockIds();
+        ids.forEach(id => {
+          if (state.history) {
+            state.history.execute(new RemoveBlockCommand(state.doc, id));
+          } else {
+            const idx = (state.doc.blocks || []).findIndex(b => b.id === id);
+            if (idx !== -1) state.doc.blocks.splice(idx, 1);
+          }
+          state.selectedBlockIds?.delete(id);
+        });
+        if (state.activeContainerId && ids.includes(state.activeContainerId)) {
+          state.activeContainerId = null;
+        }
+        saveActivePageDocument();
+        renderAll();
+        showToast('✂️ Note cut (Ctrl+Z to undo)');
+        return true;
+      }
+      return false;
+    };
+
+    const pasteClipboardBlocks = () => {
+      if (!state.clipboardBlocks || state.clipboardBlocks.length === 0 || !state.doc) return false;
+      state.selectedBlockIds?.clear();
+      const newIds = [];
+      state.clipboardBlocks.forEach(template => {
+        const newId = 'block_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+        const cloned = JSON.parse(JSON.stringify(template));
+        cloned.id = newId;
+        cloned.x = (cloned.x || 40) + 30;
+        cloned.y = (cloned.y || 40) + 30;
+        if (cloned.items) {
+          cloned.items.forEach((it, idx) => {
+            it.id = 'item_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substring(2, 6);
+          });
+        }
+        if (AddBlockCommand && state.history) {
+          state.history.execute(new AddBlockCommand(state.doc, cloned));
+        } else {
+          state.doc.addBlock(cloned);
+        }
+        newIds.push(newId);
+      });
+      newIds.forEach(id => state.selectedBlockIds?.add(id));
+      state.activeContainerId = newIds[newIds.length - 1];
+      // Increment offset so repeated Ctrl+V creates a cascading cascade (+30, +60, +90)
+      state.clipboardBlocks.forEach(b => {
+        b.x = (b.x || 40) + 30;
+        b.y = (b.y || 40) + 30;
+      });
+      saveActivePageDocument();
+      renderAll();
+      showToast(`📋 Pasted ${newIds.length} note${newIds.length > 1 ? 's' : ''}`);
+      return true;
+    };
+
+    if ((e.ctrlKey || e.metaKey) && (e.code === 'KeyC' || e.key === 'c' || e.key === 'C')) {
+      if (getTargetBlockIds().length > 0) {
+        e.preventDefault();
+        copySelectedBlocks();
+        return;
+      }
+    }
+
+    if ((e.ctrlKey || e.metaKey) && (e.code === 'KeyX' || e.key === 'x' || e.key === 'X')) {
+      if (getTargetBlockIds().length > 0) {
+        e.preventDefault();
+        cutSelectedBlocks();
+        return;
+      }
+    }
+
+    if ((e.ctrlKey || e.metaKey) && (e.code === 'KeyV' || e.key === 'v' || e.key === 'V')) {
+      if (state.clipboardBlocks && state.clipboardBlocks.length > 0) {
+        e.preventDefault();
+        pasteClipboardBlocks();
+        return;
+      }
+    }
+
+    if ((e.ctrlKey || e.metaKey) && (e.code === 'KeyD' || e.key === 'd' || e.key === 'D')) {
+      if (getTargetBlockIds().length > 0) {
+        e.preventDefault();
+        if (copySelectedBlocks()) {
+          pasteClipboardBlocks();
+          showToast('📑 Note duplicated');
+        }
+        return;
+      }
+    }
+
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
       e.preventDefault();
       if (e.shiftKey) {
@@ -143,6 +257,48 @@ export function setupKeyboardAndClipboard(options) {
 
     container.addEventListener('drop', (e) => {
       e.preventDefault();
+
+      // Check if dropped item was an in-note image dragged OUT of its container (Automatic Pop-Out)
+      const inNoteImgRaw = e.dataTransfer ? e.dataTransfer.getData('application/notes-in-note-img') : null;
+      if (inNoteImgRaw) {
+        try {
+          const imgData = JSON.parse(inNoteImgRaw);
+          const rect = container.getBoundingClientRect();
+          const dropWorld = state.viewport.screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
+
+          // Remove the image element from its source container
+          if (imgData.sourceBlockId) {
+            const sourceEl = document.getElementById(imgData.sourceBlockId);
+            const sourceTextDiv = sourceEl ? sourceEl.querySelector('.note-item-text') : null;
+            if (sourceTextDiv) {
+              const draggedImg = sourceTextDiv.querySelector('.dragging-element') || sourceTextDiv.querySelector(`.note-image-container[data-src="${CSS.escape(imgData.src)}"]`);
+              if (draggedImg) draggedImg.remove();
+              if (typeof sourceTextDiv._syncContent === 'function') sourceTextDiv._syncContent();
+            }
+          }
+
+          const newNote = createNewNoteContainer(Math.round(dropWorld.x - 180), Math.round(dropWorld.y - 120), imgData.alt || 'NOTE');
+          newNote.width = Math.max(340, Math.min(600, imgData.width || 420));
+          newNote.items = [{
+            id: 'item_img_' + Date.now(),
+            type: 'image',
+            src: imgData.src,
+            caption: imgData.alt || 'Popped Out Image',
+            width: imgData.width || 380
+          }];
+          state.history.execute(new AddBlockCommand(state.doc, newNote));
+          state.activeContainerId = newNote.id;
+          state.selectedBlockIds?.clear();
+          state.selectedBlockIds?.add(newNote.id);
+          saveActivePageDocument();
+          renderAll();
+          showToast('🪟 Image popped out to canvas note');
+          return;
+        } catch (err) {
+          console.warn('Pop-out drag failed:', err);
+        }
+      }
+
       if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
         const file = e.dataTransfer.files[0];
         const rect = container.getBoundingClientRect();

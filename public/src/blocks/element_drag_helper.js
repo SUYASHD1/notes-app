@@ -114,6 +114,22 @@ export function bindInNoteDragAndDrop(textDiv, onContentChanged) {
       container.classList.add('dragging-element');
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', 'note-image');
+
+      const imgEl = container.querySelector('img');
+      const src = container.getAttribute('data-src') || (imgEl ? imgEl.src : '');
+      const alt = container.getAttribute('data-alt') || (imgEl ? imgEl.alt : 'Image');
+      const wrap = container.getAttribute('data-wrap') || 'center';
+      const width = container.offsetWidth || 360;
+      const noteContainer = container.closest('.universal-note-container');
+      const sourceBlockId = noteContainer ? noteContainer.id : null;
+
+      e.dataTransfer.setData('application/notes-in-note-img', JSON.stringify({
+        sourceBlockId,
+        src,
+        alt,
+        wrap,
+        width
+      }));
     };
 
     container.ondragend = () => {
@@ -123,26 +139,54 @@ export function bindInNoteDragAndDrop(textDiv, onContentChanged) {
     };
   });
 
-  // Handle Drag Over
+  // Handle Drag Over with Fluid Caret Positioning
   textDiv.ondragover = (e) => {
     if (!activeDraggedElement) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
 
-    const { closest, placeAfter } = getNearestChildBlock(textDiv, e.clientY);
+    let targetElement = null;
+    let placeAfter = false;
+
+    // 1. Fluid Caret Tracking: Detect exact character or text position
+    if (document.caretRangeFromPoint) {
+      try {
+        const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+        if (range && textDiv.contains(range.startContainer)) {
+          let node = range.startContainer;
+          if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+          if (node && node !== textDiv && node !== activeDraggedElement && textDiv.contains(node)) {
+            while (node.parentElement && node.parentElement !== textDiv) {
+              node = node.parentElement;
+            }
+            targetElement = node;
+            const rect = node.getBoundingClientRect();
+            placeAfter = e.clientY > (rect.top + rect.height / 2);
+          }
+        }
+      } catch (_) {}
+    }
+
+    // 2. Fallback to Nearest Child Block
+    if (!targetElement) {
+      const nearest = getNearestChildBlock(textDiv, e.clientY);
+      targetElement = nearest.closest;
+      placeAfter = nearest.placeAfter;
+    }
+
     const indicator = getOrCreateDropIndicator(textDiv);
 
-    if (closest) {
+    if (targetElement && targetElement !== indicator && targetElement !== activeDraggedElement) {
       if (placeAfter) {
-        if (closest.nextSibling !== indicator) {
-          textDiv.insertBefore(indicator, closest.nextSibling);
+        if (targetElement.nextSibling !== indicator) {
+          textDiv.insertBefore(indicator, targetElement.nextSibling);
         }
       } else {
-        if (closest !== indicator) {
-          textDiv.insertBefore(indicator, closest);
+        if (targetElement !== indicator) {
+          textDiv.insertBefore(indicator, targetElement);
         }
       }
-    } else {
+    } else if (!targetElement) {
       textDiv.appendChild(indicator);
     }
   };
