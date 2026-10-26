@@ -175,10 +175,15 @@ export function bindInNoteDragAndDrop(textDiv, onContentChanged) {
       });
       cardTextEl.addEventListener('click', (e) => {
         e.stopPropagation();
+        card.classList.remove('selected-nested-card');
+      });
+      cardTextEl.addEventListener('focus', () => {
+        card.classList.remove('selected-nested-card');
       });
     }
 
     card.addEventListener('click', (e) => {
+      if (e.target.closest('.nested-card-text')) return;
       e.stopPropagation();
       dismissTextCaret();
       textDiv.querySelectorAll('.selected-image, .selected-table, .selected-nested-card').forEach(el => {

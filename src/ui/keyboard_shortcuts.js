@@ -56,20 +56,29 @@ export function setupKeyboardAndClipboard(options) {
       return;
     }
 
-    const getSelectedObject = () => {
-      const explicit = document.querySelector('.selected-image, .selected-table, .selected-nested-card');
-      if (explicit) return explicit;
-      const focused = document.activeElement;
-      if (focused && focused.closest) {
-        const parentCard = focused.closest('.note-nested-card, .note-image-container, .note-table-wrapper');
-        if (parentCard) return parentCard;
+    const isUserTypingText = () => {
+      const active = document.activeElement;
+      if (!active) return false;
+      if (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA') return true;
+      if (active.isContentEditable) return true;
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+        const node = sel.anchorNode;
+        if (node && (node.nodeType === 3 || (node.closest && node.closest('[contenteditable="true"]')))) {
+          return true;
+        }
       }
-      return null;
+      return false;
+    };
+
+    const getSelectedObject = () => {
+      if (isUserTypingText()) return null;
+      return document.querySelector('.selected-image, .selected-table, .selected-nested-card');
     };
 
     // --- Individual Object Shortcuts (Delete, Backspace, Ctrl+C, Ctrl+X, Ctrl+D) ---
     const activeObj = getSelectedObject();
-    if (activeObj) {
+    if (activeObj && !isUserTypingText()) {
       if (e.code === 'Delete' || e.code === 'Backspace' || e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
         e.stopPropagation();
@@ -160,7 +169,10 @@ export function setupKeyboardAndClipboard(options) {
         const pastedEl = temp.firstElementChild;
         if (pastedEl) {
           pastedEl.classList.remove('selected-image', 'selected-nested-card', 'selected-table');
-          if (activeObj && activeObj.parentNode) {
+          const sel = window.getSelection();
+          if (sel && sel.rangeCount > 0 && textDiv.contains(sel.getRangeAt(0).startContainer)) {
+            sel.getRangeAt(0).insertNode(pastedEl);
+          } else if (activeObj && activeObj.parentNode) {
             activeObj.parentNode.insertBefore(pastedEl, activeObj.nextSibling);
           } else {
             textDiv.appendChild(pastedEl);

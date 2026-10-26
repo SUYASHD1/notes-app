@@ -4,6 +4,7 @@ import { AddBlockCommand } from '../core/history.js';
 import { vaultExternalImage, vaultImagesInTextItem } from './media_renderer.js';
 import { openImageCropper } from './image_cropper.js';
 import { bindTableMoveHandles, bindInNoteDragAndDrop, createUniversalBoxHtml } from './element_drag_helper.js';
+import { popOutNestedCard } from './nested_box_manager.js';
 import { dismissTextCaret } from '../core/app_shield.js';
 
 function extractStandaloneTable(htmlData, plainText) {
@@ -147,34 +148,7 @@ export function renderTextItem(parentEl, item, headerEl, containerBlock, deps = 
               if (saveActivePageDocument) saveActivePageDocument();
               if (showToast) showToast('🗑️ Image removed');
             } else if (action === 'pop-out') {
-              const imgEl = imgContainer.querySelector('img');
-              const src = imgContainer.getAttribute('data-src') || (imgEl ? imgEl.src : '');
-              const alt = imgContainer.getAttribute('data-alt') || (imgEl ? imgEl.alt : 'Detached Image');
-              const width = imgContainer.offsetWidth || 400;
-
-              imgContainer.remove();
-              item.content = serializeTextContent(textDiv);
-              if (saveActivePageDocument) saveActivePageDocument();
-
-              const newNote = {
-                id: 'block_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-                type: 'note_container',
-                x: (containerBlock ? containerBlock.x : 100) + (containerBlock ? (containerBlock.width || 520) : 520) + 40,
-                y: containerBlock ? containerBlock.y : 100,
-                width: Math.min(Math.max(width, 320), 720),
-                title: alt || 'Detached Image',
-                items: [{
-                  id: 'item_img_' + Date.now(),
-                  type: 'image',
-                  src: src,
-                  caption: alt || 'Detached Image',
-                  width: width
-                }]
-              };
-              if (state?.history) state.history.execute(new AddBlockCommand(state.doc, newNote));
-              if (saveActivePageDocument) saveActivePageDocument();
-              if (renderAll) renderAll();
-              if (showToast) showToast('🪟 Detached image as an independent canvas unit');
+              popOutNestedCard(imgContainer, textDiv);
             }
           });
 

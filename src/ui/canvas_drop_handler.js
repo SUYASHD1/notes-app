@@ -59,10 +59,14 @@ export function setupCanvasDrop({
         const rect = container.getBoundingClientRect();
         const dropWorld = state.viewport.screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
 
+        if (imgData.element) {
+          popOutNestedCard(imgData.element, null, { x: Math.round(dropWorld.x - 180), y: Math.round(dropWorld.y - 120) });
+          window.__activeInNoteDrag = null;
+          return;
+        }
+
         // Remove the image element from its source container
-        if (imgData.element && imgData.element.parentNode) {
-          imgData.element.remove();
-        } else if (imgData.sourceBlockId) {
+        if (imgData.sourceBlockId) {
           const sourceEl = document.getElementById(imgData.sourceBlockId);
           const sourceTextDiv = sourceEl ? sourceEl.querySelector('.note-item-text') : null;
           if (sourceTextDiv) {

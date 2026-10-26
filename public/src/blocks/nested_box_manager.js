@@ -95,9 +95,9 @@ export function attachCardResizeHandles(card, onContentChanged) {
 
 /**
  * Docks a whole box into another note container.
- * Inserts directly at targetRange (mouse drop location) instead of appending to the bottom.
+ * Inserts directly at indicator guideline, cursor position, or nearest paragraph (never blindly at bottom).
  */
-export function dockWholeBoxIntoContainer(sourceBlock, targetBlock, deps = {}, targetRange = null) {
+export function dockWholeBoxIntoContainer(sourceBlock, targetBlock, deps = {}, targetInfo = null) {
   const state = deps.state || window.state;
   const saveActivePageDocument = deps.saveActivePageDocument || window.saveActivePageDocument;
   const renderAll = deps.renderAll || window.renderAll;
@@ -137,23 +137,54 @@ export function dockWholeBoxIntoContainer(sourceBlock, targetBlock, deps = {}, t
     width: Math.max(280, Math.min(540, sourceBlock.width || 420))
   });
 
-  // Target DOM element if already visible
   const targetEl = document.getElementById(targetBlock.id);
   const textDiv = targetEl ? targetEl.querySelector('.note-item-text') : null;
 
-  if (textDiv && targetRange && textDiv.contains(targetRange.startContainer)) {
-    const temp = document.createElement('div');
-    temp.innerHTML = cardHtml;
-    const insertedCard = temp.firstElementChild;
-    targetRange.insertNode(insertedCard);
-    textDiv._dirty = true;
-    if (typeof textDiv._syncContent === 'function') textDiv._syncContent(true);
-    textItem.content = textDiv.innerHTML;
-  } else if (textDiv) {
-    const temp = document.createElement('div');
-    temp.innerHTML = cardHtml;
-    const insertedCard = temp.firstElementChild;
-    textDiv.appendChild(insertedCard);
+  const temp = document.createElement('div');
+  temp.innerHTML = cardHtml;
+  const insertedCard = temp.firstElementChild;
+
+  let inserted = false;
+  if (textDiv) {
+    // 1. Precise Insertion at Drop Indicator Guideline
+    const indicator = textDiv.querySelector('.note-drop-indicator');
+    if (indicator && indicator.parentNode) {
+      indicator.parentNode.insertBefore(insertedCard, indicator);
+      indicator.remove();
+      inserted = true;
+    } else if (targetInfo && targetInfo.startContainer && textDiv.contains(targetInfo.startContainer)) {
+      targetInfo.insertNode(insertedCard);
+      inserted = true;
+    } else if (targetInfo && (typeof targetInfo.clientY === 'number' || typeof targetInfo === 'number')) {
+      const clientY = typeof targetInfo.clientY === 'number' ? targetInfo.clientY : targetInfo;
+      const children = Array.from(textDiv.children).filter(c => !c.classList?.contains('note-drop-indicator'));
+      let nearest = null;
+      let minD = Infinity;
+      let placeAfter = false;
+      children.forEach(c => {
+        const rect = c.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+        const d = Math.abs(clientY - midY);
+        if (d < minD) { minD = d; nearest = c; placeAfter = clientY > midY; }
+      });
+      if (nearest) {
+        if (placeAfter) textDiv.insertBefore(insertedCard, nearest.nextSibling);
+        else textDiv.insertBefore(insertedCard, nearest);
+        inserted = true;
+      }
+    }
+
+    if (!inserted) {
+      // 2. Insert at Active Text Cursor
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0 && textDiv.contains(sel.getRangeAt(0).startContainer)) {
+        sel.getRangeAt(0).insertNode(insertedCard);
+        inserted = true;
+      } else {
+        textDiv.appendChild(insertedCard);
+      }
+    }
+
     textDiv._dirty = true;
     if (typeof textDiv._syncContent === 'function') textDiv._syncContent(true);
     textItem.content = textDiv.innerHTML;
@@ -176,12 +207,12 @@ export function dockWholeBoxIntoContainer(sourceBlock, targetBlock, deps = {}, t
   if (beforeSnap) state?.history?.recordSnapshot(state.doc, beforeSnap);
   if (saveActivePageDocument) saveActivePageDocument();
   if (renderAll) renderAll();
-  if (showToast) showToast('📥 Docked box into note as Universal Box');
+  if (showToast) showToast('📥 Merged note box at insertion line');
 }
 
 /**
- * Pops out a nested card back onto the canvas.
- * - Restores exact original block formatting and layout without any data loss.
+ * Pops out an in-note element (nested card, image, or table) back onto the canvas.
+ * - Gathers media and all associated captions/notes so no formatting or text is separated.
  * - Places the new note right under targetCoords (mouse drop location).
  */
 export function popOutNestedCard(card, textDiv, targetCoords = null) {
@@ -200,7 +231,22 @@ export function popOutNestedCard(card, textDiv, targetCoords = null) {
   const parentContainer = card.closest('.universal-note-container');
   const parentBlock = parentContainer ? state.doc.getBlock(parentContainer.id) : null;
   const cardTextEl = card.querySelector('.nested-card-text');
-  const liveText = cardTextEl ? cardTextEl.innerHTML : '';
+  let liveText = cardTextEl ? cardTextEl.innerHTML : '';
+
+  // Extract caption if card is an image container without separate nested-card-text
+  if (!liveText && card.classList?.contains('note-image-container')) {
+    const nextSib = card.nextElementSibling;
+    if (nextSib && (nextSib.tagName === 'P' || nextSib.tagName === 'DIV') && nextSib.textContent.length < 240 && !nextSib.classList.contains('note-image-container') && !nextSib.classList.contains('note-nested-card')) {
+      liveText = nextSib.innerHTML;
+      nextSib.remove();
+    } else {
+      const alt = card.getAttribute('data-alt') || card.querySelector('img')?.alt;
+      if (alt && alt !== 'Image' && alt !== 'Detached Image' && alt !== 'Pasted Image') {
+        liveText = `<p>${alt}</p>`;
+      }
+    }
+  }
+
   const title = card.getAttribute('data-title') || originalBlock?.title || 'Note Card';
   const width = card.offsetWidth || originalBlock?.width || 440;
 
@@ -272,5 +318,5 @@ export function popOutNestedCard(card, textDiv, targetCoords = null) {
   if (beforeSnap) state.history?.recordSnapshot(state.doc, beforeSnap);
   if (window.saveActivePageDocument) window.saveActivePageDocument();
   if (window.renderAll) window.renderAll();
-  if (window.showToast) window.showToast('🪟 Card popped out to canvas note');
+  if (window.showToast) window.showToast('🪟 Detached to canvas with layout intact');
 }

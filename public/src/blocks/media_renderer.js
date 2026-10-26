@@ -1,5 +1,5 @@
-// Mixed Media Rendering, Image Freeform Resizing, Docking & IndexedDB Offline Vault
 import { openImageCropper } from './image_cropper.js';
+import { dockWholeBoxIntoContainer } from './nested_box_manager.js';
 
 // Helper to permanently vault external images offline in IndexedDB
 export async function vaultExternalImage(src, deps = {}) {
@@ -106,45 +106,9 @@ export async function vaultImagesInTextItem(textItem, textDiv, deps = {}) {
 
 // Helper to dock a standalone canvas image card into a target note container
 export function dockImageIntoContainer(imageItem, sourceBlock, targetContainer, deps = {}) {
-  const state = deps.state || window.state;
-  const saveActivePageDocument = deps.saveActivePageDocument || window.saveActivePageDocument;
-  const renderAll = deps.renderAll || window.renderAll;
-  const showToast = deps.showToast || window.showToast;
-
-  if (!targetContainer.items) targetContainer.items = [];
-  let textItem = targetContainer.items.find(it => it.type === 'text' || !it.type);
-  if (!textItem) {
-    textItem = { id: 'item_text_' + Date.now(), type: 'text', content: '' };
-    targetContainer.items.push(textItem);
+  if (sourceBlock && targetContainer) {
+    dockWholeBoxIntoContainer(sourceBlock, targetContainer, deps);
   }
-
-  const src = imageItem.src || imageItem.url;
-  const caption = imageItem.caption || 'Docked Image';
-  const widthAttr = imageItem.width ? `|width=${imageItem.width}px` : '';
-  const markdownImg = `\n\n![${caption}${widthAttr}](${src})\n`;
-  textItem.content = (textItem.content || '').trim() + markdownImg;
-
-  if (sourceBlock && state?.doc?.blocks) {
-    if ((sourceBlock.items || []).length <= 1) {
-      const idx = (state.doc.blocks || []).indexOf(sourceBlock);
-      if (idx !== -1) {
-        state.doc.blocks.splice(idx, 1);
-      }
-    } else {
-      const itIdx = sourceBlock.items.indexOf(imageItem);
-      if (itIdx !== -1) sourceBlock.items.splice(itIdx, 1);
-    }
-  }
-
-  if (state) {
-    state.activeContainerId = targetContainer.id;
-    state.selectedBlockIds.clear();
-    state.selectedBlockIds.add(targetContainer.id);
-  }
-
-  if (saveActivePageDocument) saveActivePageDocument();
-  if (renderAll) renderAll();
-  if (showToast) showToast('📥 Image docked into note box');
 }
 
 export function renderMediaItem(parentEl, item, containerBlock, deps = {}) {

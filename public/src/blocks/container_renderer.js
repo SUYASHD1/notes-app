@@ -103,7 +103,7 @@ export function renderBlocks(deps = {}) {
               targetRange.collapse(true);
             }
           }
-          dockWholeBoxIntoContainer(sourceBlock, block, deps, targetRange);
+          dockWholeBoxIntoContainer(sourceBlock, block, deps, targetRange || { clientY: e.clientY });
           window.__activeCardDrag = null;
           return;
         }
@@ -126,7 +126,7 @@ export function renderBlocks(deps = {}) {
             };
             let dropRange = null;
             if (document.caretRangeFromPoint) dropRange = document.caretRangeFromPoint(e.clientX, e.clientY);
-            dockWholeBoxIntoContainer(tempBlock, block, deps, dropRange);
+            dockWholeBoxIntoContainer(tempBlock, block, deps, dropRange || { clientY: e.clientY });
           };
           reader.readAsDataURL(file);
           return;
