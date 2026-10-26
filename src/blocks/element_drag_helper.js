@@ -1,4 +1,5 @@
 // In-Note Element Drag Reordering (Tables & Images) (< 200 lines)
+import { dismissTextCaret } from '../core/app_shield.js';
 
 let activeDraggedElement = null;
 let dropIndicator = null;
@@ -75,6 +76,7 @@ export function bindTableMoveHandles(textDiv, onContentChanged) {
 
     handle.onmousedown = (e) => {
       e.stopPropagation();
+      dismissTextCaret();
       document.querySelectorAll('.note-table-wrapper.selected-table').forEach(w => w.classList.remove('selected-table'));
       wrapper.classList.add('selected-table');
     };
@@ -160,6 +162,7 @@ export function bindInNoteDragAndDrop(textDiv, onContentChanged) {
 
     card.addEventListener('click', (e) => {
       e.stopPropagation();
+      dismissTextCaret();
       textDiv.querySelectorAll('.selected-image, .selected-table, .selected-nested-card').forEach(el => {
         if (el !== card) el.classList.remove('selected-image', 'selected-table', 'selected-nested-card');
       });

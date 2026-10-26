@@ -4,6 +4,7 @@ import { AddBlockCommand } from '../core/history.js';
 import { vaultExternalImage, vaultImagesInTextItem } from './media_renderer.js';
 import { openImageCropper } from './image_cropper.js';
 import { bindTableMoveHandles, bindInNoteDragAndDrop } from './element_drag_helper.js';
+import { dismissTextCaret } from '../core/app_shield.js';
 
 function extractStandaloneTable(htmlData, plainText) {
   if (htmlData && htmlData.includes('<table') && typeof DOMParser !== 'undefined') {
@@ -71,6 +72,7 @@ export function renderTextItem(parentEl, item, headerEl, containerBlock, deps = 
           return;
         }
         e.stopPropagation();
+        dismissTextCaret();
 
         textDiv.querySelectorAll('.note-image-container.selected-image').forEach(c => {
           if (c !== imgContainer) {

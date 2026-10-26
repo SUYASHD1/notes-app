@@ -435,4 +435,24 @@ body[data-theme="dark"] .nested-tool-btn:hover {
 }
 body[data-theme="dark"] .note-item-text tr:nth-child(even) td { background: rgba(255, 255, 255, 0.02); }
 
+/* Total App Shield: Neutralize accidental browser blue highlighting on canvas & cards */
+#canvas-container,
+.universal-note-container,
+.note-container-header,
+.note-image-container,
+.note-nested-card,
+.note-table-wrapper,
+.table-move-handle,
+.embedded-img-toolbar,
+.nested-card-toolbar {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.note-item-text {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+
 

@@ -1,6 +1,7 @@
 import { RemoveBlockCommand } from '../core/history.js';
 import { setupZoomControls } from './zoom_controls.js';
 import { setupCanvasDrop } from './canvas_drop_handler.js';
+import { setupAppShield } from '../core/app_shield.js';
 
 /**
  * Sets up global hotkeys, clipboard paste, file drag & drop, and zoom controls.
@@ -341,7 +342,7 @@ export function setupKeyboardAndClipboard(options) {
       if (typeof fitAllContent === 'function') fitAllContent(true);
       showToast('🔍 Framed All Content in View');
     }
-  });
+  }, { capture: true });
 
   // Paste Image from Clipboard (Ctrl+V)
   window.addEventListener('paste', (e) => {
@@ -389,5 +390,13 @@ export function setupKeyboardAndClipboard(options) {
     animateViewport,
     showToast,
     zoomIndicator
+  });
+
+  // Setup Total App Shield (Neutralize browser right click, beforeinput, and text caret)
+  setupAppShield({
+    state,
+    saveActivePageDocument,
+    renderAll,
+    showToast
   });
 }
