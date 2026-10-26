@@ -248,26 +248,40 @@ export function setupKeyboardAndClipboard(options) {
     }
   });
 
-  // Drag & Drop from File Explorer
+  // Drag & Drop from File Explorer and Canvas Pop-Out
   if (container) {
     container.addEventListener('dragover', (e) => {
       e.preventDefault();
-      e.dataTransfer.dropEffect = 'copy';
+      const hasInNote = (e.dataTransfer?.types && e.dataTransfer.types.includes('application/notes-in-note-img')) || window.__activeInNoteDrag;
+      e.dataTransfer.dropEffect = hasInNote ? 'move' : 'copy';
     });
 
     container.addEventListener('drop', (e) => {
+      if (e.target && e.target.closest && e.target.closest('.universal-note-container')) {
+        return;
+      }
+
       e.preventDefault();
 
       // Check if dropped item was an in-note image dragged OUT of its container (Automatic Pop-Out)
       const inNoteImgRaw = e.dataTransfer ? e.dataTransfer.getData('application/notes-in-note-img') : null;
+      let imgData = null;
       if (inNoteImgRaw) {
+        try { imgData = JSON.parse(inNoteImgRaw); } catch (_) {}
+      }
+      if (!imgData && window.__activeInNoteDrag) {
+        imgData = window.__activeInNoteDrag;
+      }
+
+      if (imgData) {
         try {
-          const imgData = JSON.parse(inNoteImgRaw);
           const rect = container.getBoundingClientRect();
           const dropWorld = state.viewport.screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
 
           // Remove the image element from its source container
-          if (imgData.sourceBlockId) {
+          if (imgData.element && imgData.element.parentNode) {
+            imgData.element.remove();
+          } else if (imgData.sourceBlockId) {
             const sourceEl = document.getElementById(imgData.sourceBlockId);
             const sourceTextDiv = sourceEl ? sourceEl.querySelector('.note-item-text') : null;
             if (sourceTextDiv) {
@@ -290,6 +304,7 @@ export function setupKeyboardAndClipboard(options) {
           state.activeContainerId = newNote.id;
           state.selectedBlockIds?.clear();
           state.selectedBlockIds?.add(newNote.id);
+          window.__activeInNoteDrag = null;
           saveActivePageDocument();
           renderAll();
           showToast('🪟 Image popped out to canvas note');

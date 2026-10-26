@@ -99,9 +99,25 @@ export function bindTableMoveHandles(textDiv, onContentChanged) {
  * Enables in-note drag-and-drop repositioning for images and tables.
  */
 export function bindInNoteDragAndDrop(textDiv, onContentChanged) {
+  // Retrospectively wrap any naked <img> elements inside textDiv into .note-image-container
+  const unadornedImgs = textDiv.querySelectorAll('img:not(.note-image-container img):not(.embedded-img-toolbar img)');
+  unadornedImgs.forEach(img => {
+    if (!img.closest('.note-image-container')) {
+      const wrap = document.createElement('div');
+      wrap.className = 'note-image-container wrap-center';
+      wrap.setAttribute('data-wrap', 'center');
+      wrap.setAttribute('data-src', img.src);
+      wrap.setAttribute('data-alt', img.alt || 'Image');
+      wrap.setAttribute('contenteditable', 'false');
+      img.parentNode.insertBefore(wrap, img);
+      wrap.appendChild(img);
+    }
+  });
+
   // Bind image container drag handles
   const imageContainers = textDiv.querySelectorAll('.note-image-container');
   imageContainers.forEach(container => {
+    container.setAttribute('contenteditable', 'false');
     container.setAttribute('draggable', 'true');
 
     container.ondragstart = (e) => {
@@ -112,7 +128,7 @@ export function bindInNoteDragAndDrop(textDiv, onContentChanged) {
       }
       activeDraggedElement = container;
       container.classList.add('dragging-element');
-      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.effectAllowed = 'all';
       e.dataTransfer.setData('text/plain', 'note-image');
 
       const imgEl = container.querySelector('img');
@@ -123,70 +139,61 @@ export function bindInNoteDragAndDrop(textDiv, onContentChanged) {
       const noteContainer = container.closest('.universal-note-container');
       const sourceBlockId = noteContainer ? noteContainer.id : null;
 
-      e.dataTransfer.setData('application/notes-in-note-img', JSON.stringify({
-        sourceBlockId,
-        src,
-        alt,
-        wrap,
-        width
-      }));
+      const payload = { sourceBlockId, src, alt, wrap, width, element: container };
+      window.__activeInNoteDrag = payload;
+      e.dataTransfer.setData('application/notes-in-note-img', JSON.stringify(payload));
     };
 
     container.ondragend = () => {
       container.classList.remove('dragging-element');
       activeDraggedElement = null;
+      window.__activeInNoteDrag = null;
       removeDropIndicator();
     };
   });
 
   // Handle Drag Over with Fluid Caret Positioning
   textDiv.ondragover = (e) => {
-    if (!activeDraggedElement) return;
+    const isOurDrag = activeDraggedElement || window.__activeInNoteDrag || (e.dataTransfer?.types && e.dataTransfer.types.includes('application/notes-in-note-img'));
+    if (!isOurDrag) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
 
-    let targetElement = null;
-    let placeAfter = false;
-
-    // 1. Fluid Caret Tracking: Detect exact character or text position
+    // 1. Fluid Caret Range Detection: place caret right between characters/words!
+    let targetRange = null;
     if (document.caretRangeFromPoint) {
-      try {
-        const range = document.caretRangeFromPoint(e.clientX, e.clientY);
-        if (range && textDiv.contains(range.startContainer)) {
-          let node = range.startContainer;
-          if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
-          if (node && node !== textDiv && node !== activeDraggedElement && textDiv.contains(node)) {
-            while (node.parentElement && node.parentElement !== textDiv) {
-              node = node.parentElement;
-            }
-            targetElement = node;
-            const rect = node.getBoundingClientRect();
-            placeAfter = e.clientY > (rect.top + rect.height / 2);
-          }
-        }
-      } catch (_) {}
-    }
-
-    // 2. Fallback to Nearest Child Block
-    if (!targetElement) {
-      const nearest = getNearestChildBlock(textDiv, e.clientY);
-      targetElement = nearest.closest;
-      placeAfter = nearest.placeAfter;
-    }
-
-    const indicator = getOrCreateDropIndicator(textDiv);
-
-    if (targetElement && targetElement !== indicator && targetElement !== activeDraggedElement) {
-      if (placeAfter) {
-        if (targetElement.nextSibling !== indicator) {
-          textDiv.insertBefore(indicator, targetElement.nextSibling);
-        }
-      } else {
-        if (targetElement !== indicator) {
-          textDiv.insertBefore(indicator, targetElement);
-        }
+      targetRange = document.caretRangeFromPoint(e.clientX, e.clientY);
+    } else if (document.caretPositionFromPoint) {
+      const pos = document.caretPositionFromPoint(e.clientX, e.clientY);
+      if (pos) {
+        targetRange = document.createRange();
+        targetRange.setStart(pos.offsetNode, pos.offset);
+        targetRange.collapse(true);
       }
-    } else if (!targetElement) {
+    }
+
+    if (targetRange && textDiv.contains(targetRange.startContainer)) {
+      if (!activeDraggedElement || !activeDraggedElement.contains(targetRange.startContainer)) {
+        const indicator = getOrCreateDropIndicator(textDiv);
+        indicator.classList.remove('block-indicator');
+        try {
+          targetRange.insertNode(indicator);
+          return;
+        } catch (_) {}
+      }
+    }
+
+    // 2. Fallback: Between child blocks
+    const nearest = getNearestChildBlock(textDiv, e.clientY);
+    const indicator = getOrCreateDropIndicator(textDiv);
+    indicator.classList.add('block-indicator');
+    if (nearest.closest && nearest.closest !== indicator && nearest.closest !== activeDraggedElement) {
+      if (nearest.placeAfter) {
+        textDiv.insertBefore(indicator, nearest.closest.nextSibling);
+      } else {
+        textDiv.insertBefore(indicator, nearest.closest);
+      }
+    } else {
       textDiv.appendChild(indicator);
     }
   };
@@ -200,20 +207,46 @@ export function bindInNoteDragAndDrop(textDiv, onContentChanged) {
 
   // Handle Drop
   textDiv.ondrop = (e) => {
-    if (!activeDraggedElement) return;
+    const isOurDrag = activeDraggedElement || window.__activeInNoteDrag;
+    if (!isOurDrag) return;
     e.preventDefault();
+    e.stopPropagation();
 
-    const indicator = dropIndicator;
-    if (indicator && indicator.parentNode === textDiv) {
-      textDiv.insertBefore(activeDraggedElement, indicator);
-      indicator.remove();
-    } else {
-      textDiv.appendChild(activeDraggedElement);
+    const elementToDrop = activeDraggedElement || (window.__activeInNoteDrag ? window.__activeInNoteDrag.element : null);
+    const inNotePayload = window.__activeInNoteDrag;
+
+    const noteContainer = textDiv.closest('.universal-note-container');
+    const thisBlockId = noteContainer ? noteContainer.id : null;
+    const isCrossContainer = inNotePayload && inNotePayload.sourceBlockId && inNotePayload.sourceBlockId !== thisBlockId;
+
+    let targetEl = elementToDrop;
+    if (isCrossContainer && inNotePayload) {
+      if (elementToDrop && elementToDrop.parentNode) {
+        elementToDrop.remove();
+      }
+      targetEl = document.createElement('div');
+      targetEl.className = `note-image-container wrap-${inNotePayload.wrap || 'center'}`;
+      targetEl.setAttribute('data-wrap', inNotePayload.wrap || 'center');
+      targetEl.setAttribute('data-src', inNotePayload.src);
+      targetEl.setAttribute('data-alt', inNotePayload.alt || 'Image');
+      targetEl.setAttribute('contenteditable', 'false');
+      targetEl.innerHTML = `<img class="note-embedded-image" src="${inNotePayload.src}" alt="${inNotePayload.alt || 'Image'}" loading="lazy" />`;
     }
 
-    activeDraggedElement.classList.remove('dragging-element');
+    if (!targetEl) return;
+
+    if (dropIndicator && dropIndicator.parentNode) {
+      dropIndicator.parentNode.insertBefore(targetEl, dropIndicator);
+      dropIndicator.remove();
+    } else {
+      textDiv.appendChild(targetEl);
+    }
+
+    targetEl.classList.remove('dragging-element');
     activeDraggedElement = null;
+    window.__activeInNoteDrag = null;
     removeDropIndicator();
+    textDiv.normalize();
 
     if (typeof onContentChanged === 'function') {
       onContentChanged();

@@ -62,7 +62,7 @@ export function renderBlocks(deps = {}) {
     // Drag-and-Drop Docking Support (docking images from canvas or other notes into this note)
     el.addEventListener('dragover', (e) => {
       const types = e.dataTransfer ? Array.from(e.dataTransfer.types || []) : [];
-      if (types.includes('application/notes-dock-img') || types.includes('application/notes-in-note-img')) {
+      if (types.includes('application/notes-dock-img') || types.includes('application/notes-in-note-img') || window.__activeInNoteDrag || window.__activeDockImg) {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
         el.classList.add('drop-target-active');
@@ -80,42 +80,54 @@ export function renderBlocks(deps = {}) {
 
       // Docking from another in-note image
       const inNoteDataRaw = e.dataTransfer ? e.dataTransfer.getData('application/notes-in-note-img') : null;
+      let imgData = null;
       if (inNoteDataRaw) {
-        try {
-          const imgData = JSON.parse(inNoteDataRaw);
-          if (imgData.sourceBlockId && imgData.sourceBlockId !== block.id) {
-            e.preventDefault();
-            e.stopPropagation();
-            const sourceEl = document.getElementById(imgData.sourceBlockId);
-            const sourceTextDiv = sourceEl ? sourceEl.querySelector('.note-item-text') : null;
-            if (sourceTextDiv) {
-              const draggedImg = sourceTextDiv.querySelector('.dragging-element') || sourceTextDiv.querySelector(`.note-image-container[data-src="${CSS.escape(imgData.src)}"]`);
-              if (draggedImg) draggedImg.remove();
-              if (typeof sourceTextDiv._syncContent === 'function') sourceTextDiv._syncContent();
-            }
-            dockImageIntoContainer(imgData, null, block, deps);
-            return;
-          }
-        } catch (_) {}
+        try { imgData = JSON.parse(inNoteDataRaw); } catch (_) {}
       }
-
-      const dockDataRaw = e.dataTransfer ? e.dataTransfer.getData('application/notes-dock-img') : null;
-      if (dockDataRaw) {
+      if (!imgData && window.__activeInNoteDrag) {
+        imgData = window.__activeInNoteDrag;
+      }
+      if (imgData && imgData.sourceBlockId && imgData.sourceBlockId !== block.id) {
         e.preventDefault();
         e.stopPropagation();
-        try {
-          const dockData = JSON.parse(dockDataRaw);
-          const sourceBlock = (state.doc.blocks || []).find(b => b.id === dockData.blockId);
-          if (sourceBlock && sourceBlock.id !== block.id) {
-            const imgItem = (sourceBlock.items || []).find(it => it.id === dockData.itemId) || {
-              src: dockData.src,
-              caption: dockData.caption,
-              width: dockData.width
-            };
-            dockImageIntoContainer(imgItem, sourceBlock, block, deps);
+        if (imgData.element && imgData.element.parentNode) {
+          imgData.element.remove();
+        } else {
+          const sourceEl = document.getElementById(imgData.sourceBlockId);
+          const sourceTextDiv = sourceEl ? sourceEl.querySelector('.note-item-text') : null;
+          if (sourceTextDiv) {
+            const draggedImg = sourceTextDiv.querySelector('.dragging-element') || sourceTextDiv.querySelector(`.note-image-container[data-src="${CSS.escape(imgData.src)}"]`);
+            if (draggedImg) draggedImg.remove();
+            if (typeof sourceTextDiv._syncContent === 'function') sourceTextDiv._syncContent();
           }
-        } catch (err) {
-          console.warn('Dock drop failed:', err);
+        }
+        dockImageIntoContainer(imgData, null, block, deps);
+        window.__activeInNoteDrag = null;
+        return;
+      }
+
+      // Docking from a standalone canvas image card
+      const dockDataRaw = e.dataTransfer ? e.dataTransfer.getData('application/notes-dock-img') : null;
+      let dockData = null;
+      if (dockDataRaw) {
+        try { dockData = JSON.parse(dockDataRaw); } catch (_) {}
+      }
+      if (!dockData && window.__activeDockImg) {
+        dockData = window.__activeDockImg;
+      }
+      if (dockData) {
+        e.preventDefault();
+        e.stopPropagation();
+        const sourceBlock = (state.doc.blocks || []).find(b => b.id === dockData.blockId);
+        if (sourceBlock && sourceBlock.id !== block.id) {
+          const imgItem = (sourceBlock.items || []).find(it => it.id === dockData.itemId) || {
+            src: dockData.src,
+            caption: dockData.caption,
+            width: dockData.width
+          };
+          dockImageIntoContainer(imgItem, sourceBlock, block, deps);
+          window.__activeDockImg = null;
+          return;
         }
       }
     });

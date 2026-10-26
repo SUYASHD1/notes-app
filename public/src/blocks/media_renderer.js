@@ -202,14 +202,19 @@ export function renderMediaItem(parentEl, item, containerBlock, deps = {}) {
   wrapper.draggable = true;
   wrapper.title = 'Drag onto any note box to dock it in!';
   wrapper.addEventListener('dragstart', (e) => {
-    e.dataTransfer.setData('application/notes-dock-img', JSON.stringify({
+    const payload = {
       blockId: containerBlock ? containerBlock.id : null,
       itemId: item.id,
       src: item.src || item.url,
       caption: item.caption || 'Docked Image',
       width: item.width || 320
-    }));
-    e.dataTransfer.effectAllowed = 'move';
+    };
+    window.__activeDockImg = payload;
+    e.dataTransfer.setData('application/notes-dock-img', JSON.stringify(payload));
+    e.dataTransfer.effectAllowed = 'all';
+  });
+  wrapper.addEventListener('dragend', () => {
+    window.__activeDockImg = null;
   });
 
   const img = document.createElement('img');

@@ -27,8 +27,21 @@
   margin: 12px auto;
   display: block;
   user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
   transition: box-shadow 0.2s ease, outline 0.15s ease;
   border-radius: 8px;
+}
+
+.note-image-container:active {
+  cursor: grabbing;
+}
+
+.note-image-container.wrap-inline {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 8px;
+  clear: none;
 }
 
 .note-image-container.wrap-center {
